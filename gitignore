@@ -1,0 +1,9 @@
+# Private documentation (AI context, progress tracking)
+.privatedocs/
+
+# IDE
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
