@@ -1,5 +1,10 @@
 {
     "cSpell.words": [
-        "privatedocs"
+        "httptools",
+        "kubeadm",
+        "privatedocs",
+        "Traefik",
+        "uvloop",
+        "weamind"
     ]
 }
