@@ -1,6 +1,11 @@
 # Private documentation (AI context, progress tracking)
 .privatedocs/
 
+# Secrets and credentials
+.env
+kubeconfig.yaml
+*.kubeconfig
+
 # IDE
 .idea/
 
