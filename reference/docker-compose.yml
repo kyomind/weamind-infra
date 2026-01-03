@@ -1,0 +1,29 @@
+services:
+  app:
+    image: wea-image
+    build: .
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8000:8000"
+    networks:
+      - wea-net
+  db:
+    image: postgres:17.5-bookworm
+    env_file:
+      - .env
+    ports:
+      - "5433:5432"
+    networks:
+      - wea-net
+  redis:
+    image: redis:8.2.1-bookworm
+    networks:
+      - wea-net
+
+networks:
+  wea-net:
+    external: true

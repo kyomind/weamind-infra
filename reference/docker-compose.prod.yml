@@ -1,0 +1,40 @@
+services:
+  app:
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --workers
+      - "2"
+      - --proxy-headers
+      - --loop
+      - uvloop
+      - --http
+      - httptools
+    environment:
+      - ENV=production
+    container_name: wea-app-prod
+    restart: always
+    volumes:
+      - ./logs:/code/logs # Bind mount logs directory (比照 dev)
+  db:
+    container_name: wea-db-prod
+    restart: always
+    volumes:
+      - wea-db-data-prod:/var/lib/postgresql/data
+  redis:
+    container_name: wea-redis-prod
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - wea-redis-data-prod:/data
+
+volumes:
+  wea-db-data-prod:
+    external: true
+  wea-redis-data-prod:
+    external: true
