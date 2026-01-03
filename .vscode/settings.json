@@ -1,7 +1,10 @@
 {
     "cSpell.words": [
         "httptools",
+        "isready",
         "kubeadm",
+        "kubeconfig",
+        "kyomind",
         "privatedocs",
         "Traefik",
         "uvloop",
