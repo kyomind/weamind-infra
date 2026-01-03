@@ -72,7 +72,7 @@ docker build -t ghcr.io/<username>/<image-name>:<tag> .
 **範例**：
 ```bash
 cd ~/Code/weamind
-docker build -t ghcr.io/kyomind/weamind-line-bot:latest .
+docker build -t ghcr.io/kyomind/weamind:latest .
 ```
 
 **Image 命名規範**：
@@ -89,7 +89,7 @@ docker push ghcr.io/<username>/<image-name>:<tag>
 
 **範例**：
 ```bash
-docker push ghcr.io/kyomind/weamind-line-bot:latest
+docker push ghcr.io/kyomind/weamind:latest
 ```
 
 推送成功後，可在 GitHub 個人頁面看到 Packages 區塊。
@@ -112,7 +112,7 @@ docker push ghcr.io/kyomind/weamind-line-bot:latest
 spec:
   containers:
   - name: line-bot
-    image: ghcr.io/kyomind/weamind-line-bot:latest
+    image: ghcr.io/kyomind/weamind:latest
 ```
 
 ---
@@ -158,7 +158,7 @@ spec:
       - name: ghcr-secret  # 引用剛建立的 secret
       containers:
       - name: line-bot
-        image: ghcr.io/kyomind/weamind-line-bot:latest
+        image: ghcr.io/kyomind/weamind:latest
 ```
 
 </details>
