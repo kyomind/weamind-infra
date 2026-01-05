@@ -13,11 +13,11 @@
 
 ## Day 2-4 - 控制平面安裝（2026-01-05 至 2026-01-07）（3-5h）
 
-- [ ] 控制平面安裝 K3s server（使用 `--disable traefik` 參數），驗證服務為 active 狀態
-- [ ] 取得 node-token 並保存於本地（位於控制平面的 `/var/lib/rancher/k3s/server/node-token`）
-- [ ] 複製 kubeconfig（`/etc/rancher/k3s/k3s.yaml`）到本地，驗證檔案包含正確的 cluster 資訊
-- [ ] 設定本地 kubectl 透過 SSH tunnel 訪問（`ssh -L 6443:localhost:6443 保壘機`），修改 kubeconfig 的 server 為 `https://localhost:6443`
-- [ ] 驗證控制平面健康：`kubectl get nodes` 應顯示控制平面節點為 Ready
-- [ ] （備用方案）在保壘機安裝 kubectl，驗證可從保壘機直接執行 kubectl 指令
+- [x] 控制平面安裝 K3s server（使用 `--disable traefik`，以降低初期變數），並確認 `k3s` 服務為 active (running)
+- [x] 取得 node-token（`/var/lib/rancher/k3s/server/node-token`），並保存於堡壘機個人帳號家目錄（僅作為 worker join 使用）
+- [x] 複製 kubeconfig（`/etc/rancher/k3s/k3s.yaml`）到本機，並移至標準位置 `~/.kube/config`
+- [x] 設定本機 kubectl 透過 SSH tunnel 存取 API server（`-L 6443:127.0.0.1:6443`），kubeconfig 的 server 指向 `https://127.0.0.1:6443`
+- [x] 驗證控制平面健康：本機執行 `kubectl get nodes`，顯示 control-plane 節點為 Ready
+- [ ] （備用方案）在堡壘機安裝 kubectl，驗證可從堡壘機直接執行 kubectl 指令
 
 ---
