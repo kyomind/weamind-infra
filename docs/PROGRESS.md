@@ -21,3 +21,23 @@
 - [ ] （備用方案）在堡壘機安裝 kubectl，驗證可從堡壘機直接執行 kubectl 指令
 
 ---
+
+## Day 5-6 - 工作節點加入（2026-01-06 至 2026-01-07）（2-3h）
+
+- [ ] 工作節點 1 安裝 K3s agent（需使用控制平面的內網 IP 與 node-token），確認 k3s-agent 服務 active
+- [ ] 工作節點 2 安裝 K3s agent（相同參數），確認 k3s-agent 服務 active
+- [ ] 驗證三節點叢集健康：`kubectl get nodes` 應顯示 3 個節點全為 Ready 狀態
+- [ ] 確認節點間內網通訊正常：檢查所有節點可透過內網 IP 相互訪問（可用 ping 或 netcat 測試）
+- [ ] 檢查節點標籤與角色：control-plane 標記為 master，worker 節點標記為 worker
+
+---
+
+## Day 7-8 - Traefik 與網路驗證（2026-01-08 至 2026-01-09）（2-3h）
+
+- [ ] 重新安裝控制平面 K3s（移除 `--disable traefik` 參數），啟用內建 Traefik Ingress Controller
+- [ ] 驗證 Traefik 相關 Pod 正常運行：檢查 `kube-system` namespace 中的 traefik Pod 狀態
+- [ ] 部署測試用 nginx（最小 Deployment + Service + Ingress）：驗證 K8s 調度與 Ingress 路由機制
+- [ ] 驗證 Pod 網路：進入 nginx Pod 執行網路測試，確認 Pod 間可通訊
+- [ ] 驗證 CoreDNS：Pod 內執行 `nslookup kubernetes.default` 確認內部 DNS 解析正常
+
+---
