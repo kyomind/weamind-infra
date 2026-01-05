@@ -65,6 +65,6 @@ weamind-infra/
 
 ## Reference
 
-- 詳細實作計畫：`.privatedocs/K8s實作計畫-精簡版.md`
+- 詳細實作計畫：`.privatedocs/K8s實作計畫.md`
 - 環境變數範本：`.env.example`
 - 參考配置：`reference/` 目錄
