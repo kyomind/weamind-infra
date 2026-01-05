@@ -51,7 +51,9 @@ command: [uvicorn, app.main:app, --host, "0.0.0.0", --port, "8000",
 weamind-infra/
 ├── manifests/          # K8s YAML（待建立）
 ├── reference/          # 來自 WeaMind 的參考配置
-├── docs/               # Markdown 文檔
+├── docs/               # Markdown 文檔（公開）
+│   ├── PROGRESS.md     # 實作進度追蹤
+│   └── WeaMind V2核心架構.md  # 架構與配置規格
 ├── .env.example        # 環境變數範本
 └── .privatedocs/       # 私密文檔（含詳細計畫）
 ```
@@ -65,6 +67,8 @@ weamind-infra/
 
 ## Reference
 
+- 完整架構規格：`docs/WeaMind V2核心架構.md`
+- 實作進度追蹤：`docs/PROGRESS.md`
 - 詳細實作計畫：`.privatedocs/K8s實作計畫.md`
 - 環境變數範本：`.env.example`
 - 參考配置：`reference/` 目錄
