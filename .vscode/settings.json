@@ -6,6 +6,7 @@
         "kubeconfig",
         "kyomind",
         "privatedocs",
+        "Substack",
         "Traefik",
         "uvloop",
         "weamind"
