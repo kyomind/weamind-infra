@@ -5,6 +5,8 @@
         "kubeadm",
         "kubeconfig",
         "kyomind",
+        "netcat",
+        "nslookup",
         "privatedocs",
         "Substack",
         "Traefik",
