@@ -22,7 +22,7 @@
 
 ---
 
-## Day 5-6 - 工作節點加入（2026-01-06 至 2026-01-07）（2-3h）
+## Day 5-6 - 工作節點加入（2026-01-08 至 2026-01-09）（2-3h）
 
 - [x] 工作節點 1 安裝 K3s agent（使用控制平面內網 IP `10.0.0.3` 與 node-token 加入叢集），確認 `k3s-agent` 服務為 active (running)
 - [x] 工作節點 2 安裝 K3s agent（使用相同的 K3S_URL 與 node-token），確認 `k3s-agent` 服務為 active (running)
@@ -32,7 +32,7 @@
 
 ---
 
-## Day 7-8 - Traefik 與網路驗證（2026-01-08 至 2026-01-09）（2-3h）
+## Day 7-8 - Traefik 與網路驗證（2026-01-10 至 2026-01-11）（2-3h）
 
 - [ ] 重新安裝控制平面 K3s（移除 `--disable traefik` 參數），啟用內建 Traefik Ingress Controller
 - [ ] 驗證 Traefik 相關 Pod 正常運行：檢查 `kube-system` namespace 中的 traefik Pod 狀態
