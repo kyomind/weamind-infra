@@ -24,11 +24,11 @@
 
 ## Day 5-6 - 工作節點加入（2026-01-06 至 2026-01-07）（2-3h）
 
-- [ ] 工作節點 1 安裝 K3s agent（需使用控制平面的內網 IP 與 node-token），確認 k3s-agent 服務 active
-- [ ] 工作節點 2 安裝 K3s agent（相同參數），確認 k3s-agent 服務 active
-- [ ] 驗證三節點叢集健康：`kubectl get nodes` 應顯示 3 個節點全為 Ready 狀態
-- [ ] 確認節點間內網通訊正常：檢查所有節點可透過內網 IP 相互訪問（可用 ping 或 netcat 測試）
-- [ ] 檢查節點標籤與角色：control-plane 標記為 master，worker 節點標記為 worker
+- [x] 工作節點 1 安裝 K3s agent（使用控制平面內網 IP `10.0.0.3` 與 node-token 加入叢集），確認 `k3s-agent` 服務為 active (running)
+- [x] 工作節點 2 安裝 K3s agent（使用相同的 K3S_URL 與 node-token），確認 `k3s-agent` 服務為 active (running)
+- [x] 驗證三節點叢集健康：本機執行 `kubectl get nodes`，應顯示 1 個 control-plane + 2 個 worker，且全部為 Ready
+- [x] 確認節點間內網通訊正常：於 worker 節點使用內網 IP ping control-plane 與另一台 worker，封包 0% loss
+- [x] 檢查節點角色顯示：control-plane 節點顯示 `control-plane`，worker 節點 `ROLES` 為 `<none>`（K3s 預設行為，屬正常狀態）
 
 ---
 
