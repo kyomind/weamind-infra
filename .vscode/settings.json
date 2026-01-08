@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
         "httptools",
+        "iface",
         "isready",
         "kubeadm",
         "kubeconfig",
@@ -9,6 +10,7 @@
         "nslookup",
         "privatedocs",
         "Substack",
+        "svclb",
         "Traefik",
         "uvloop",
         "weamind"
