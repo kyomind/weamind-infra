@@ -1,6 +1,6 @@
 # WeaMind K8s 實作進度
 
-## Day 1 - 基礎設施準備（2026-01-04）✅
+## Day 1 - 基礎設施準備（2026-01-04）
 
 - [x] Hetzner Cloud 開設 3 台 VM（1 控制平面 + 2 工作節點）
 - [x] 建立私有網路（Private Network）確保內網互通
@@ -11,7 +11,7 @@
 
 ---
 
-## Day 2-4 - 控制平面安裝（2026-01-05 至 2026-01-07）✅
+## Day 2-4 - 控制平面安裝（2026-01-05 至 2026-01-07）
 
 - [x] 控制平面安裝 K3s server（使用 `--disable traefik`，以降低初期變數），並確認 `k3s` 服務為 active (running)
 - [x] 取得 node-token（`/var/lib/rancher/k3s/server/node-token`），並保存於堡壘機個人帳號家目錄（僅作為 worker join 使用）
@@ -21,7 +21,7 @@
 
 ---
 
-## Day 5-6 - 工作節點加入（2026-01-08）✅
+## Day 5-6 - 工作節點加入（2026-01-08 至 2026-01-09）
 
 - [x] 工作節點 1 安裝 K3s agent（使用控制平面內網 IP `10.0.0.3` 與 node-token 加入叢集），確認 `k3s-agent` 服務為 active (running)
 - [x] 工作節點 2 安裝 K3s agent（使用相同的 K3S_URL 與 node-token），確認 `k3s-agent` 服務為 active (running)
@@ -31,7 +31,7 @@
 
 ---
 
-## Day 7-8 - Traefik 與網路驗證（2026-01-08 至 2026-01-09）✅
+## Day 7-8 - Traefik 與網路驗證（2026-01-10 至 2026-01-11）
 
 - [x] 啟用內建 Traefik Ingress Controller：透過移除 `--disable traefik` 並重啟服務實現
 - [x] **關鍵修正：強制綁定私有網路**：解決 Hetzner 預設抓取公網 IP 導致隧道不通的問題，明確指定 `--node-ip` 與 `--flannel-iface`。
