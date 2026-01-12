@@ -44,8 +44,8 @@
 
 ## Day 9 - 應用程式準備（2026-01-12）
 
-- [ ] WeaMind repo 新增 `/health` endpoint（FastAPI 簡單返回 `{"status": "ok"}`）
-- [ ] 複製配置文件到 `weamind-infra/reference/`（Dockerfile、docker-compose.yml、docker-compose.prod.yml、Makefile）
+- [x] WeaMind repo 新增 `/health` endpoint（FastAPI 簡單返回 `{"status": "ok"}`）
+- [x] 複製配置文件到 `weamind-infra/reference/`（Dockerfile、docker-compose.yml、docker-compose.prod.yml、Makefile）
 - [ ] 從保壘機 `.env` 生成 `weamind-infra/.env.example`（僅保留 key，清空 value）
 - [ ] 配置 `.gitignore`：`.env`、`.privatedocs/secrets/`、`kubeconfig.yaml`
 - [ ] 在保壘機測試 `/health` endpoint（`curl http://localhost:8000/health`）
