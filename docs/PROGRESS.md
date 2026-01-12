@@ -41,3 +41,25 @@
 - [x] 驗證 CoreDNS 解析能力：Pod 內成功解析 `kubernetes.default.svc.cluster.local`，確認 cluster DNS search domain 與 API Service 正常
 
 ---
+
+## Day 9 - 應用程式準備（2026-01-12）
+
+- [ ] WeaMind repo 新增 `/health` endpoint（FastAPI 簡單返回 `{"status": "ok"}`）
+- [ ] 複製配置文件到 `weamind-infra/reference/`（Dockerfile、docker-compose.yml、docker-compose.prod.yml、Makefile）
+- [ ] 從保壘機 `.env` 生成 `weamind-infra/.env.example`（僅保留 key，清空 value）
+- [ ] 配置 `.gitignore`：`.env`、`.privatedocs/secrets/`、`kubeconfig.yaml`
+- [ ] 在保壘機測試 `/health` endpoint（`curl http://localhost:8000/health`）
+
+---
+
+## Day 10-12 - 應用程式容器化與 Registry 設定（2026-01-13 至 2026-01-15）
+
+- [ ] 生成 GitHub Personal Access Token（`write:packages`, `read:packages`）
+- [ ] 本地 Docker 登入 ghcr.io
+- [ ] 確認 `reference/Dockerfile` 可用（基於 `ghcr.io/astral-sh/uv:python3.12-bookworm-slim`）
+- [ ] 本地構建 Docker image（tag 為 `ghcr.io/kyomind/weamind:latest`）
+- [ ] 推送至 GitHub Container Registry
+- [ ] 設定 image 為 public
+- [ ] 驗證 image 可拉取（`docker pull ghcr.io/kyomind/weamind:latest`）
+
+---
