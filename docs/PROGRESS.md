@@ -52,14 +52,13 @@
 
 ---
 
-## Day 10-12 - 應用程式容器化與 Registry 設定（2026-01-13 至 2026-01-15）
+## Day 10-12 - 容器化與 GHCR 自動發布（2026-01-12）
 
-- [ ] 生成 GitHub Personal Access Token（`write:packages`, `read:packages`）
-- [ ] 本地 Docker 登入 ghcr.io
-- [ ] 確認 `reference/Dockerfile` 可用（基於 `ghcr.io/astral-sh/uv:python3.12-bookworm-slim`）
-- [ ] 本地構建 Docker image（tag 為 `ghcr.io/kyomind/weamind:latest`）
-- [ ] 推送至 GitHub Container Registry
-- [ ] 設定 image 為 public
-- [ ] 驗證 image 可拉取（`docker pull ghcr.io/kyomind/weamind:latest`）
+- [x] WeaMind 建立 `publish-ghcr.yml` workflow：CI 成功後自動發布 `latest` 和 `sha-xxx` tags（使用 `workflow_run` 機制）
+- [x] WeaMind 建立 `publish-release.yml` workflow：git tag 觸發，產出語義化版本號（如 `1.0.7`, `1.0`, `1`, `latest`）
+- [x] 兩個 workflows 皆添加多平台支援（`linux/amd64` 和 `linux/arm64`）
+- [x] WeaMind 修改 `docker-compose.yml`：從本地 build 改為使用 `ghcr.io/kyomind/weamind:latest`
+- [x] 設定 GHCR package 為 public（允許無認證 pull）
+- [x] 驗證流程：本地成功 pull image（Apple Silicon）與 Bastion 部署成功
 
 ---
