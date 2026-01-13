@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: weamind-config
+  namespace: weamind
+data:
+  ENV: "production"
+  BASE_URL: "https://k8s.kyomind.tw"
+
+  POSTGRES_HOST: "10.0.0.2"
+  POSTGRES_PORT: "5433"
+  POSTGRES_DB: "weamind"
+  POSTGRES_USER: "wea_bot"
+
+  REDIS_URL: "redis://10.0.0.2:6379/0"
+
+  PROCESSING_LOCK_TTL_SECONDS: "2"
