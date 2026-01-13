@@ -62,3 +62,16 @@
 - [x] 驗證流程：本地成功 pull image（Apple Silicon）與 Bastion 部署成功
 
 ---
+
+## Day 13-14 - 撰寫 line-bot Manifests（2026-01-16 至 2026-01-17）（2-3h）
+
+- [ ] 建立 `manifests/namespace.yaml`（定義 `weamind` namespace）
+- [ ] 撰寫 `manifests/configmap.yaml`：非敏感配置，參考 `.env.example`，**關鍵：POSTGRES_HOST/REDIS_URL 使用保壘機內網 IP**
+- [ ] 撰寫 `.privatedocs/secrets/secret.yaml`：敏感資料 base64 編碼（從保壘機 `.env` 取值），**不提交 Git**
+- [ ] 撰寫 `manifests/deployment.yaml`：image `ghcr.io/kyomind/weamind:latest`，2 replicas，health probes 指向 `/health`，envFrom 注入 ConfigMap + Secret，資源限制 256Mi/250m
+- [ ] 撰寫 `manifests/service.yaml`：ClusterIP，port 80 → targetPort 8000
+- [ ] 撰寫 `manifests/ingress.yaml`：host 為 K8s 端點，ingressClassName `traefik`，**不設定 TLS（由 Hetzner LB 處理）**
+- [ ] 驗證 YAML 語法：`kubectl apply --dry-run=client -f manifests/` 無錯誤
+- [ ] 確認 `.gitignore` 包含 `.privatedocs/secrets/`（secret.yaml 不被 Git 追蹤）
+
+---

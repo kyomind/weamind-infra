@@ -36,6 +36,8 @@
 
 ## Guidelines
 
+**背景說明**：實作時會使用 ChatGPT 或 Google Gemini 等頂尖 AI 協助，這些 AI 非常熟悉 DevOps 和 K8s 最佳實踐。因此，任務描述應**聚焦於目標和關鍵決策**，避免過度細節（如具體 YAML 欄位、參數名稱），讓 AI 在執行時自動補充技術細節。
+
 生成的任務必須符合以下標準：
 
 ### Day 標題格式
@@ -50,26 +52,32 @@
 
 ### 子任務格式要求
 
-1. **動詞開頭**：使用明確的動作動詞（安裝、配置、驗證、測試...）
-2. **包含驗證點**：說明如何確認完成（預期狀態、檔案存在、服務回應...）
-3. **關鍵資訊**：重要參數、配置要點、注意事項
-4. **適度使用指令**：可用指令輔助說明驗證方式，但避免變成執行手冊
-5. **避免模糊**：不使用「了解」「學習」等無明確完成標準的詞彙
+1. **動詞開頭**：使用明確的動作動詞（建立、撰寫、驗證、測試...）
+2. **聚焦產出**：明確說明要產生什麼檔案或達成什麼狀態
+3. **標示關鍵決策**：用**加粗**標示架構決策或容易出錯的配置點（如「使用內網 IP」「不設 TLS」）
+4. **包含驗證點**：簡潔說明如何確認完成（預期狀態、檔案存在、指令回應）
+5. **避免技術細節**：不列舉 YAML 欄位名稱、具體參數值（AI 會自動補充 K8s 最佳實踐）
+6. **避免模糊**：不使用「了解」「學習」等無明確完成標準的詞彙
 
 ### 範例對比
-
-❌ **不夠具體**：
+過於簡略**：
 ```markdown
 - [ ] 安裝 K3s server
 - [ ] 配置 kubectl
 - [ ] 測試連線
 ```
 
-✅ **具體可檢核（折衷版）**：
+❌ **過度細節**（AI 已知的最佳實踐）：
 ```markdown
-- [ ] K3s server 安裝（使用 `--disable traefik` 參數），驗證服務為 active 狀態
-- [ ] 取得 node-token，保存於本地（位於控制平面的 `/var/lib/rancher/k3s/server/node-token`）
-- [ ] 配置本地 kubectl 透過 SSH tunnel 訪問（修改 kubeconfig server 位址）
+- [ ] 撰寫 deployment.yaml：設定 metadata.labels 為 app: line-bot、spec.selector.matchLabels 對應 template.metadata.labels、image 為 ghcr.io/kyomind/weamind:latest、imagePullPolicy: Always、replicas: 2、containers.ports.containerPort: 8000、livenessProbe.httpGet.path 為 /health、readinessProbe.httpGet.path 為 /health、resources.requests.memory: 256Mi...
+```
+
+✅ **聚焦目標與關鍵決策**（推薦）：
+```markdown
+- [ ] 建立 `manifests/namespace.yaml`（定義 `weamind` namespace）
+- [ ] 撰寫 `manifests/configmap.yaml`：非敏感配置，**關鍵：POSTGRES_HOST 使用保壘機內網 IP**
+- [ ] 撰寫 `manifests/deployment.yaml`：image `ghcr.io/kyomind/weamind:latest`，2 replicas，health probes 指向 `/health`，資源限制 256Mi/250m
+- [ ] 驗證 YAML 語法：`kubectl apply --dry-run=client -f manifests/` 無錯誤nfig server 位址）
 - [ ] 驗證控制平面：`kubectl get nodes` 應顯示節點為 Ready
 ```
 
