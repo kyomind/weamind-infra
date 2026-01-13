@@ -77,8 +77,7 @@
 - [ ] 建立 `manifests/namespace.yaml`（定義 `weamind` namespace）
 - [ ] 撰寫 `manifests/configmap.yaml`：非敏感配置，**關鍵：POSTGRES_HOST 使用保壘機內網 IP**
 - [ ] 撰寫 `manifests/deployment.yaml`：image `ghcr.io/kyomind/weamind:latest`，2 replicas，health probes 指向 `/health`，資源限制 256Mi/250m
-- [ ] 驗證 YAML 語法：`kubectl apply --dry-run=client -f manifests/` 無錯誤nfig server 位址）
-- [ ] 驗證控制平面：`kubectl get nodes` 應顯示節點為 Ready
+- [ ] 驗證 YAML 語法：`kubectl apply --dry-run=client -f manifests/` 無錯誤
 ```
 
 ### 驗證點類型
