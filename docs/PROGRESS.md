@@ -65,8 +65,12 @@
 
 ## Day 13-14 - 撰寫 line-bot Manifests（2026-01-16 至 2026-01-17）（2-3h）
 
-- [ ] 建立 `manifests/namespace.yaml`（定義 `weamind` namespace）
-- [ ] 撰寫 `manifests/configmap.yaml`：非敏感配置，參考 `.env.example`，**關鍵：POSTGRES_HOST/REDIS_URL 使用保壘機內網 IP**
+- [x] 建立 `manifests/namespace.yaml`：定義 `weamind` namespace，作為所有 K8s 資源的隔離邊界
+- [x] 撰寫 `manifests/configmap.yaml`：僅放非敏感配置，來源對齊 `.env.example`
+- [x] 明確使用保壘機內網 IP（`10.0.0.2`）作為 `POSTGRES_HOST` 與 `REDIS_URL`，避免誤用 localhost 或 Service 名稱
+- [x] 修正 PostgreSQL 對 K8s 實際可連通的 host port（`POSTGRES_PORT=5433`），依據 `nc` 內網連線驗證結果
+- [x] 移除 K8s line-bot 不需要的帳號設定（`WEA_DATA_USER`），維持最小權限與最小設定集合
+- [x] 驗證 ConfigMap 套用結果，確認 data key 數量與實際內容符合預期（`kubectl get cm -o yaml`）
 - [ ] 撰寫 `.privatedocs/secrets/secret.yaml`：敏感資料 base64 編碼（從保壘機 `.env` 取值），**不提交 Git**
 - [ ] 撰寫 `manifests/deployment.yaml`：image `ghcr.io/kyomind/weamind:latest`，2 replicas，health probes 指向 `/health`，envFrom 注入 ConfigMap + Secret，資源限制 256Mi/250m
 - [ ] 撰寫 `manifests/service.yaml`：ClusterIP，port 80 → targetPort 8000
