@@ -52,10 +52,10 @@
 
 ---
 
-## Day 10-12 - 容器化與 GHCR 自動發布（2026-01-12）
+## Day 10-12 - 容器化與 GHCR 自動發布（2026-01-13 至 2026-01-15）
 
-- [x] WeaMind 建立 `publish-ghcr.yml` workflow：CI 成功後自動發布 `latest` 和 `sha-xxx` tags（使用 `workflow_run` 機制）
-- [x] WeaMind 建立 `publish-release.yml` workflow：git tag 觸發，產出語義化版本號（如 `1.0.7`, `1.0`, `1`, `latest`）
+- [x] WeaMind 建立 `publish-ghcr.yml` workflow：CI 成功後自動發布 `latest` 和 `sha-xxx` tags（使用 `workflow_run` 機制`）
+- [x] WeaMind 建立 `publish-release.yml` workflow：git tag 觸發，產出語義化版本號（如 `1.0.7`, `1.0`, `1`）
 - [x] 兩個 workflows 皆添加多平台支援（`linux/amd64` 和 `linux/arm64`）
 - [x] WeaMind 修改 `docker-compose.yml`：從本地 build 改為使用 `ghcr.io/kyomind/weamind:latest`
 - [x] 設定 GHCR package 為 public（允許無認證 pull）
