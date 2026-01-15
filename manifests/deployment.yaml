@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weamind
+  namespace: weamind # 部署在 weamind namespace，與其他資源隔離
+spec:
+  replicas: 2 # 保持 2 個 Pod 副本運行，確保高可用性
+  selector:
+    matchLabels:
+      app: weamind # Deployment 透過這個 label 找到它管理的 Pod
+  template: # Pod 模板：定義每個 Pod 的配置
+    metadata:
+      labels:
+        app: weamind # Pod 的 label，必須與上面的 selector 一致
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/kyomind/weamind:latest # 使用 GHCR 上的 latest tag
+          imagePullPolicy: Always # 每次部署都重新拉取 image，確保使用最新版本
+          command: # 明確指定啟動指令（覆蓋 Dockerfile 的 CMD/ENTRYPOINT）
+            - uvicorn
+            - app.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+            - --workers
+            - "2" # 2 個 worker processes（與 Docker Compose 保持一致）
+            - --proxy-headers # 信任代理 headers（X-Forwarded-* 等）
+            - --loop
+            - uvloop # 使用高效能的 uvloop
+            - --http
+            - httptools
+          ports:
+            - name: http
+              containerPort: 8000 # 容器監聽的 port
+          envFrom: # 批次注入環境變數（比 env 更簡潔）
+            - configMapRef:
+                name: weamind-config # 注入非敏感配置
+            - secretRef:
+                name: weamind-secret # 注入敏感資料（會自動 base64 decode）
+          readinessProbe: # 就緒探針：Pod 準備好接收流量了嗎？
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5 # 啟動後等 5 秒才開始檢查
+            periodSeconds: 10 # 每 10 秒檢查一次
+          livenessProbe: # 存活探針：Pod 還活著嗎？失敗會重啟 Pod
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15 # 給 app 更多時間啟動（避免誤殺）
+            periodSeconds: 20 # 每 20 秒檢查一次
