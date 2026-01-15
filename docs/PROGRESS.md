@@ -71,8 +71,16 @@
 - [x] 修正 PostgreSQL 對 K8s 實際可連通的 host port（`POSTGRES_PORT=5433`），依據 `nc` 內網連線驗證結果
 - [x] 移除 K8s line-bot 不需要的帳號設定（`WEA_DATA_USER`），維持最小權限與最小設定集合
 - [x] 驗證 ConfigMap 套用結果，確認 data key 數量與實際內容符合預期（`kubectl get cm -o yaml`）
-- [ ] 撰寫 `.privatedocs/secrets/secret.yaml`：敏感資料 base64 編碼（從保壘機 `.env` 取值），**不提交 Git**
-- [ ] 撰寫 `manifests/deployment.yaml`：image `ghcr.io/kyomind/weamind:latest`，2 replicas，health probes 指向 `/health`，envFrom 注入 ConfigMap + Secret，資源限制 256Mi/250m
+
+- [x] 撰寫 `.privatedocs/secrets/secret.yaml`：改用 `stringData` 明文定義敏感資料，避免手動 base64 與 UTF-8 編碼錯誤，**不提交 Git**
+- [x] 釐清 Secret 關鍵規則：人手撰寫一律使用 `stringData`，僅在確定為 base64 時才使用 `data`
+- [x] 排查並修復 `CreateContainerError (invalid UTF-8)`：根因為錯誤使用 `data` + 非 base64 字串
+- [x] 驗證 Secret 套用結果與 Deployment 行為，確認 Pod 能正確注入敏感環境變數
+
+- [x] 撰寫 `manifests/deployment.yaml`：image `ghcr.io/kyomind/weamind:latest`，2 replicas，command 與 docker-compose 一致
+- [x] 設定 readiness / liveness probes 指向 `/health`，確認 Pod 進入 Ready 狀態
+- [x] 驗證 Deployment / ReplicaSet 行為，確認僅有單一 active RS，Pods `2/2 Running`
+
 - [ ] 撰寫 `manifests/service.yaml`：ClusterIP，port 80 → targetPort 8000
 - [ ] 撰寫 `manifests/ingress.yaml`：host 為 K8s 端點，ingressClassName `traefik`，**不設定 TLS（由 Hetzner LB 處理）**
 - [ ] 驗證 YAML 語法：`kubectl apply --dry-run=client -f manifests/` 無錯誤
