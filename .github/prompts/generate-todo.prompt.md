@@ -7,7 +7,7 @@
 你可以讀取以下文件：
 
 - `.privatedocs/K8s實作計畫.md` — 完整的 28 天實作計畫與技術規格
-- `docs/PROGRESS.md` — 當前實作進度（包含已完成的任務）
+- `./PROGRESS.md` — 當前實作進度（包含已完成的任務）
 - 專案 codebase — 了解當前實作狀態
 
 ## Action
