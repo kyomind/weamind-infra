@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: weamind-line-bot
+  namespace: weamind
+spec:
+  type: ClusterIP
+  selector:
+    app: weamind
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
