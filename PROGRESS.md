@@ -86,6 +86,5 @@
 - [x] 叢集內驗證 Service：用臨時 curl Pod 呼叫 `http://weamind-line-bot/health` 回 `200 {"status":"ok"}`
 - [x] NodePort 驗證 Ingress 路由：在 node 上以 `Host: k8s.kyomind.tw` 打 `http://127.0.0.1:30417/health` 回 `200 {"status":"ok"}`
 - [x] Dry-run 驗證 manifests：`kubectl apply --dry-run=client -f manifests/` 全數通過
-- [x] 更新 `.gitignore`：忽略 `.privatedocs/secrets/`，確認 `secret.yaml` 不會被 git 追蹤
 
 ---
