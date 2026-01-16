@@ -81,9 +81,11 @@
 - [x] 設定 readiness / liveness probes 指向 `/health`，確認 Pod 進入 Ready 狀態
 - [x] 驗證 Deployment / ReplicaSet 行為，確認僅有單一 active RS，Pods `2/2 Running`
 
-- [ ] 撰寫 `manifests/service.yaml`：ClusterIP，port 80 → targetPort 8000
-- [ ] 撰寫 `manifests/ingress.yaml`：host 為 K8s 端點，ingressClassName `traefik`，**不設定 TLS（由 Hetzner LB 處理）**
-- [ ] 驗證 YAML 語法：`kubectl apply --dry-run=client -f manifests/` 無錯誤
-- [ ] 確認 `.gitignore` 包含 `.privatedocs/secrets/`（secret.yaml 不被 Git 追蹤）
+- [x] 建立 `manifests/service.yaml`：ClusterIP Service（port 80 -> targetPort 8000），並修正 selector 對齊 Pod label `app=weamind`，確認 Endpoints 產生
+- [x] 建立 `manifests/ingress.yaml`：Traefik Ingress（Host `k8s.kyomind.tw`，path `/`），後端指向 `weamind-line-bot:80`，確認 Backends 綁定正確
+- [x] 叢集內驗證 Service：用臨時 curl Pod 呼叫 `http://weamind-line-bot/health` 回 `200 {"status":"ok"}`
+- [x] NodePort 驗證 Ingress 路由：在 node 上以 `Host: k8s.kyomind.tw` 打 `http://127.0.0.1:30417/health` 回 `200 {"status":"ok"}`
+- [x] Dry-run 驗證 manifests：`kubectl apply --dry-run=client -f manifests/` 全數通過
+- [x] 更新 `.gitignore`：忽略 `.privatedocs/secrets/`，確認 `secret.yaml` 不會被 git 追蹤
 
 ---
