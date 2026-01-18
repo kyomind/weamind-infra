@@ -89,18 +89,15 @@
 
 ---
 
-## Day 15 - 網路連通性驗證（2026-01-18）（1-1.5h）
+## Day 15 - 內部網路連通性驗證（2026-01-18）（1-1.5h）
 
-- [ ] 取得保壘機內網 IP：透過 `ip addr show` 或 Hetzner 控制台確認內網介面 IP（`10.0.0.x` 格式），記錄於運維文檔
-- [ ] 測試 K8s 節點到保壘機內網連通性：於 worker 節點執行 `nc -zv <保壘機內網IP> 5432`（PostgreSQL）與 `6379`（Redis），確認 `succeeded` 回應
-- [ ] 保壘機 PostgreSQL 容器配置調整：
-  - 檢查 `docker-compose.yml` 的 port mapping（應為 `5432:5432`）
-  - 進入容器修改 `pg_hba.conf`：新增 K8s 內網段白名單（如 `host all all 10.0.0.0/24 md5`）
-  - 確認 `postgresql.conf` 的 `listen_addresses = '*'` 或包含內網 IP
-  - 重啟 PostgreSQL 容器（`docker-compose restart postgres`），確認服務 healthy
-- [ ] Redis 配置檢查：確認 `redis.conf` 或啟動參數 bind 包含 `0.0.0.0` 或保壘機內網 IP，允許 K8s 節點連入
-- [ ] 驗證 PostgreSQL 連線：從 K8s worker 節點執行 `psql -h <保壘機內網IP> -U wea_bot -d weamind`，確認能登入並執行 `\dt` 查看資料表
-- [ ] 驗證 Redis 連線：從 K8s worker 節點執行 `redis-cli -h <保壘機內網IP> ping`，確認回應 `PONG`
+- [x] 取得保壘機內網 IP：透過 `ip addr show` 確認內網介面 `enp7s0`，內網 IP 為 `10.0.0.2/32`（Hetzner Private Network，/32 為雲端路由設計，非傳統子網）
+- [x] 驗證 K8s 節點 → 保壘機內網基本連通性：於 worker 節點以 `nc -zv 10.0.0.2 5433`（PostgreSQL）與 `nc -zv 10.0.0.2 6379`（Redis）確認 TCP 連線可達
+- [x] 確認 PostgreSQL 實際對外 port 設定：`docker-compose.yml` 使用 `5433:5432`（避免與其他環境的 5432 衝突），並驗證主機 `0.0.0.0:5433` 正在 listen
+- [x] 驗證堡壘機 PostgreSQL 容器狀態：透過 `docker compose exec db psql -U wea_bot -d weamind` 成功登入，並可執行 `\dt` 列出資料表
+- [x] 以 K8s Pod 視角驗證 PostgreSQL 連線：使用一次性測試 Pod（`postgres:17.5-bookworm`）連線至 `10.0.0.2:5433`，成功執行 `\dt`
+- [x] 以 K8s Pod 視角驗證 Redis 連線：使用測試 Pod（`redis:8.2.1-bookworm`）執行 `redis-cli -h 10.0.0.2 -p 6379 ping`，回應 `PONG`
+- [x] 驗證實際 line-bot Pod 環境變數：確認 `POSTGRES_HOST=10.0.0.2`、`POSTGRES_PORT=5433`、`REDIS_URL=redis://10.0.0.2:6379/0` 與 ConfigMap 設計一致
 
 ---
 
