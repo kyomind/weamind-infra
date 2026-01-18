@@ -88,3 +88,31 @@
 - [x] Dry-run 驗證 manifests：`kubectl apply --dry-run=client -f manifests/` 全數通過
 
 ---
+
+## Day 15 - 網路連通性驗證（2026-01-18）（1-1.5h）
+
+- [ ] 取得保壘機內網 IP：透過 `ip addr show` 或 Hetzner 控制台確認內網介面 IP（`10.0.0.x` 格式），記錄於運維文檔
+- [ ] 測試 K8s 節點到保壘機內網連通性：於 worker 節點執行 `nc -zv <保壘機內網IP> 5432`（PostgreSQL）與 `6379`（Redis），確認 `succeeded` 回應
+- [ ] 保壘機 PostgreSQL 容器配置調整：
+  - 檢查 `docker-compose.yml` 的 port mapping（應為 `5432:5432`）
+  - 進入容器修改 `pg_hba.conf`：新增 K8s 內網段白名單（如 `host all all 10.0.0.0/24 md5`）
+  - 確認 `postgresql.conf` 的 `listen_addresses = '*'` 或包含內網 IP
+  - 重啟 PostgreSQL 容器（`docker-compose restart postgres`），確認服務 healthy
+- [ ] Redis 配置檢查：確認 `redis.conf` 或啟動參數 bind 包含 `0.0.0.0` 或保壘機內網 IP，允許 K8s 節點連入
+- [ ] 驗證資料庫連線：從 K8s worker 節點使用 `psql` 或 `redis-cli` 測試實際連線，確認認證與查詢正常
+
+---
+
+## Day 16 - LB 配置與公網打通（2026-01-19）（1-1.5h）
+
+- [ ] Hetzner Load Balancer 建立與配置：
+  - 建立 LB 資源（選擇與 K8s 節點相同 location）
+  - 後端目標：添加兩台 K8s worker 節點的**內網 IP**，port `80`
+  - 健康檢查：協定 HTTP，路徑 `/health`，間隔 15 秒，3 次失敗移除
+  - **啟用託管憑證**（Managed Certificate）：勾選後 Hetzner 自動簽發 Let's Encrypt 並處理續約
+- [ ] DNS 配置：於域名服務商新增 `k8s.kyomind.tw` A 記錄，指向 Hetzner LB 的公網 IP，等待 DNS 生效（`dig k8s.kyomind.tw` 應解析至 LB IP）
+- [ ] 等待託管憑證簽發：於 Hetzner 控制台監控憑證狀態，預計 3-5 分鐘完成（狀態從 pending 變為 active）
+- [ ] 驗證 LB 端到端通訊：`curl https://k8s.kyomind.tw/health` 回應 `200 {"status":"ok"}`（確認 LB → Traefik → Service → Pod 全鏈路正常）
+- [ ] 建立 LINE webhook 切換 SOP 文檔：記錄切換步驟、驗證方式、回滾流程，存放於 `docs/` 目錄
+
+---
