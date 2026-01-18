@@ -99,7 +99,8 @@
   - 確認 `postgresql.conf` 的 `listen_addresses = '*'` 或包含內網 IP
   - 重啟 PostgreSQL 容器（`docker-compose restart postgres`），確認服務 healthy
 - [ ] Redis 配置檢查：確認 `redis.conf` 或啟動參數 bind 包含 `0.0.0.0` 或保壘機內網 IP，允許 K8s 節點連入
-- [ ] 驗證資料庫連線：從 K8s worker 節點使用 `psql` 或 `redis-cli` 測試實際連線，確認認證與查詢正常
+- [ ] 驗證 PostgreSQL 連線：從 K8s worker 節點執行 `psql -h <保壘機內網IP> -U wea_bot -d weamind`，確認能登入並執行 `\dt` 查看資料表
+- [ ] 驗證 Redis 連線：從 K8s worker 節點執行 `redis-cli -h <保壘機內網IP> ping`，確認回應 `PONG`
 
 ---
 
