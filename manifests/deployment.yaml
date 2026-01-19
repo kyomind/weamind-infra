@@ -13,6 +13,8 @@ spec:
       labels:
         app: weamind # Pod 的 label，必須與上面的 selector 一致
     spec:
+      nodeSelector:
+        nodepool: worker # 只在 worker 節點上排程，避免佔用 control-plane
       containers:
         - name: app
           image: ghcr.io/kyomind/weamind:latest # 使用 GHCR 上的 latest tag
