@@ -8,6 +8,7 @@
         "kubeconfig",
         "kyomind",
         "netcat",
+        "nodepool",
         "nslookup",
         "privatedocs",
         "Substack",
