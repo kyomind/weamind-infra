@@ -103,14 +103,20 @@
 
 ## Day 16 - LB 配置與公網打通（2026-01-19）（1-1.5h）
 
-- [ ] Hetzner Load Balancer 建立與配置：
-  - 建立 LB 資源（選擇與 K8s 節點相同 location）
-  - 後端目標：添加兩台 K8s worker 節點的**內網 IP**，port `80`
-  - 健康檢查：協定 HTTP，路徑 `/health`，間隔 15 秒，3 次失敗移除
-  - **啟用託管憑證**（Managed Certificate）：勾選後 Hetzner 自動簽發 Let's Encrypt 並處理續約
-- [ ] DNS 配置：於域名服務商新增 `k8s.kyomind.tw` A 記錄，指向 Hetzner LB 的公網 IP，等待 DNS 生效（`dig k8s.kyomind.tw` 應解析至 LB IP）
-- [ ] 等待託管憑證簽發：於 Hetzner 控制台監控憑證狀態，預計 3-5 分鐘完成（狀態從 pending 變為 active）
-- [ ] 驗證 LB 端到端通訊：`curl https://k8s.kyomind.tw/health` 回應 `200 {"status":"ok"}`（確認 LB → Traefik → Service → Pod 全鏈路正常）
-- [ ] 建立 LINE webhook 切換 SOP 文檔：記錄切換步驟、驗證方式、回滾流程，存放於 `docs/` 目錄
+- [x] Hetzner Load Balancer 建立與配置：建立 LB 資源，選擇與 K8s 節點相同 location（Nuremberg），並加入 `weamind-network (10.0.0.0/16)`
+- [x] 設定 LB 後端目標：加入 `weamind-002`、`weamind-003` 兩台 worker，使用 **Private IP**，port `80`，避免流量打到 control-plane
+- [x] 建立 LB Service：HTTP `80 → 80`，Load Balancing Algorithm 使用 Round Robin（低流量、最低複雜度）
+- [x] 設定 LB Health Check：HTTP `/health`，Interval 15s，Retries 3，Expected status `200`
+- [x] 排查 LB Health Check 先綠後紅問題：確認 Ingress 為 host-based routing，未帶 Host header 時 `/health` 回 `404`
+- [x] 以 worker 節點實測驗證差異：`curl http://127.0.0.1/health` → 404，`curl -H 'Host: k8s.kyomind.tw' http://127.0.0.1/health` → 200
+- [x] 修正 LB Health Check 行為：於 Service 設定補上 `Domain: k8s.kyomind.tw`，強制 health check 帶 Host header（DNS 尚未存在亦可）
+- [x] 驗證修正結果：Targets 狀態由 Unhealthy 穩定轉為 Healthy，LB 顯示 `All services are healthy`
+- [x] 發現 weamind Pods 預設被排程至 control-plane（`weamind-001`），確認原因為 node 無 taint（`Taints: <none>`）
+- [x] 簡易修正 Pod 排程位置：對 worker 節點加上 label（`nodepool=worker`），並於 Deployment 加入 `nodeSelector`
+- [x] 驗證 Pod 重新排程結果：兩個 weamind Pods 成功分別運行於 `weamind-002`、`weamind-003`
+- [ ] DNS 配置：於域名服務商新增 `k8s.kyomind.tw` A record，指向 Hetzner LB 公網 IP（`91.98.3.241`）
+- [ ] 啟用並等待 Managed Certificate：於 Hetzner LB 啟用託管憑證，等待狀態由 pending → active（約 3–5 分鐘）
+- [ ] 驗證 HTTPS 端到端通訊：`curl https://k8s.kyomind.tw/health` 回 `200 {"status":"ok"}`
+- [ ] 建立 LINE webhook 切換 SOP：整理切換步驟、驗證方式與回滾流程，存放於 `docs/`
 
 ---
