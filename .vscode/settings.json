@@ -1,6 +1,8 @@
 {
     "cSpell.words": [
+        "certbot",
         "configmap",
+        "datname",
         "httptools",
         "iface",
         "isready",
@@ -11,6 +13,7 @@
         "nodepool",
         "nslookup",
         "privatedocs",
+        "psql",
         "Substack",
         "svclb",
         "Traefik",
