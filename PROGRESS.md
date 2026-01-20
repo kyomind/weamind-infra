@@ -114,9 +114,18 @@
 - [x] 發現 weamind Pods 預設被排程至 control-plane（`weamind-001`），確認原因為 node 無 taint（`Taints: <none>`）
 - [x] 簡易修正 Pod 排程位置：對 worker 節點加上 label（`nodepool=worker`），並於 Deployment 加入 `nodeSelector`
 - [x] 驗證 Pod 重新排程結果：兩個 weamind Pods 成功分別運行於 `weamind-002`、`weamind-003`
-- [ ] DNS 配置：於域名服務商新增 `k8s.kyomind.tw` A record，指向 Hetzner LB 公網 IP（`91.98.3.241`）
-- [ ] 啟用並等待 Managed Certificate：於 Hetzner LB 啟用託管憑證，等待狀態由 pending → active（約 3–5 分鐘）
-- [ ] 驗證 HTTPS 端到端通訊：`curl https://k8s.kyomind.tw/health` 回 `200 {"status":"ok"}`
-- [ ] 建立 LINE webhook 切換 SOP：整理切換步驟、驗證方式與回滾流程，存放於 `docs/`
+
+- [x] DNS 配置：於域名服務商新增 `k8s.kyomind.tw` A record，指向 Hetzner LB 公網 IP（`91.98.3.241`），作為 K8s 環境的獨立對外端點（避免與單機環境混用）
+- [x] TLS 方案決策：確認 **Hetzner Managed Certificate 僅支援 Hetzner DNS**，在 Cloudflare DNS 架構下不可行，改採 **cert-manager + Cloudflare DNS-01** 為最短可行路徑
+- [x] 安裝並配置 cert-manager：以官方 bundle 一次性安裝 CRD / controller / webhook / RBAC，理解其為「叢集層級平台元件」，獨立於應用 namespace
+- [x] 建立 ClusterIssuer（Let's Encrypt + Cloudflare）：使用 Cloudflare API Token（最小權限）進行 DNS-01 驗證，**避免佔用 80/443 port**，亦不需調整既有 nginx / certbot 容器
+- [x] 申請 `k8s.kyomind.tw` TLS 憑證：建立 Certificate 資源，觀察 cert-manager 建立 CertificateRequest / Challenge 流程，等待 DNS TXT propagation（實測約 1–2 分鐘）
+- [x] 更新 Ingress 配置：綁定 TLS Secret `k8s-kyomind-tw-tls`，由 Traefik 於 K8s 內部終止 TLS（非 Hetzner LB）
+- [x] Hetzner LB 443 設定調整：新增 **TCP 443 → 443 passthrough** service
+- [x] 驗證 HTTPS 端到端通訊：
+  - `nc -zv k8s.kyomind.tw 443` 驗證 L4 連通
+  - `curl https://k8s.kyomind.tw/health` 驗證 TLS + Ingress + Pod
+  - 理解 `curl -I` 回 `405` 為 FastAPI 僅允許 GET（非錯誤）
+- [x] 建立 LINE webhook 切換 SOP：整理切換步驟、驗證方式與回滾流程，存放於 `docs/LINE-Webhook-切換流程.md`
 
 ---
