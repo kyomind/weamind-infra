@@ -4,6 +4,10 @@ metadata:
   name: weamind
   namespace: weamind
 spec:
+  tls:
+    - hosts:
+        - k8s.kyomind.tw
+      secretName: k8s-kyomind-tw-tls
   ingressClassName: traefik
   rules:
     - host: k8s.kyomind.tw
