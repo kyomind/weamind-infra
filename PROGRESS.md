@@ -129,3 +129,23 @@
 - [x] 建立 LINE webhook 切換 SOP：整理切換步驟、驗證方式與回滾流程，存放於 `docs/LINE-Webhook-切換流程.md`
 
 ---
+
+## Day 17 - LINE Webhook 切換（2026-01-27）（30-45min）
+
+- [x] K8s 環境前置檢查：確認 Pods `2/2 Running`（且實際排程於 worker node）、TLS 憑證有效，`curl https://k8s.kyomind.tw/health` 回應 `200 OK`，排除 LB / Ingress / TLS 層問題
+- [x] 更新 LINE Developers webhook URL：初次誤設為 `https://k8s.kyomind.tw/webhook` 導致 LINE Verify 回 `404`，後透過 Pod 內 introspection 確認 FastAPI 實際路由為 `/line/webhook`，修正為 `https://k8s.kyomind.tw/line/webhook` 後 Verify 成功
+- [x] 端到端功能測試：實際透過 LINE 發送訊息，確認 webhook 請求成功進入 K8s Pod、Bot 正常回覆，並完成 Redis lock、資料庫寫入與天氣資料查詢
+- [x] 觀察 Pod 日誌：執行 `kubectl logs -f <pod-name> -n weamind`，確認 `/line/webhook` 回 `200`、無 exception；同時辨識到殘留 `POST /webhook 404` 為錯誤路徑請求，非系統異常
+
+---
+
+## Day 18 - 高可用性驗證與文件（2026-01-28）（1-1.5h）
+
+- [ ] 高可用性測試：刪除一個 weamind Pod（`kubectl delete pod`），觀察 Deployment 自動重建，期間持續透過 LINE 發送訊息驗證服務不中斷
+- [ ] 驗證負載均衡行為：透過重複測試或 LB metrics，確認流量在兩個 worker 節點間分配
+- [ ] 回滾演練：將 LINE webhook 切回單機版端點，確認原環境服務正常，再切回 K8s 版（驗證雙向切換可行性）
+- [ ] 完善 SOP 文件：將實測發現、效能觀察、注意事項補充至 `docs/LINE-Webhook-切換流程.md`
+- [ ] 更新 README.md：撰寫專案簡介、架構概覽、技術棧、功能亮點、快速部署指南
+- [ ] 最終檢查：確認 manifests/ 所有 YAML 格式正確、註解清晰、`.privatedocs/secrets/` 已加入 `.gitignore`
+
+---
