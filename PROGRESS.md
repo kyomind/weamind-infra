@@ -139,13 +139,18 @@
 
 ---
 
-## Day 18 - 高可用性驗證與文件（2026-01-28）（1-1.5h）
+## Day 18 - 高可用性驗證（2026-01-28）（1-1.5h）
 
 - [ ] 高可用性測試：刪除一個 weamind Pod（`kubectl delete pod`），觀察 Deployment 自動重建，期間持續透過 LINE 發送訊息驗證服務不中斷
 - [ ] 驗證負載均衡行為：透過重複測試或 LB metrics，確認流量在兩個 worker 節點間分配
 - [ ] 回滾演練：將 LINE webhook 切回單機版端點，確認原環境服務正常，再切回 K8s 版（驗證雙向切換可行性）
-- [ ] 完善 SOP 文件：將實測發現、效能觀察、注意事項補充至 `docs/LINE-Webhook-切換流程.md`
-- [ ] 更新 README.md：撰寫專案簡介、架構概覽、技術棧、功能亮點、快速部署指南
-- [ ] 最終檢查：確認 manifests/ 所有 YAML 格式正確、註解清晰、`.privatedocs/secrets/` 已加入 `.gitignore`
+- [ ] 完善 SOP 文件：將實測發現、效能觀察、注意事項（如 `/line/webhook` 路徑）補充至 `docs/LINE-Webhook-切換流程.md`
+
+---
+
+## Day 19 - 文件完成（2026-01-29）（1-1.5h）
+
+- [ ] 更新 README.md：撰寫專案簡介、架構概覽、技術 stack、功能亮點、快速部署指南
+- [ ] PROGRESS.md 最終更新：補充實際完成時程與工時統計
 
 ---
