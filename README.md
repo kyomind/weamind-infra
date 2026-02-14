@@ -12,8 +12,40 @@ Kubernetes manifests for [WeaMind](https://github.com/kyomind/weamind) LINE Bot.
 
 ## Architecture
 
-```
-LINE Platform → Hetzner LB (TCP) → Traefik (TLS) → line-bot Pods → Bastion VM (DB/Redis)
+```mermaid
+flowchart TD
+    LINE[LINE Platform] -->|Webhook HTTPS| LB
+
+    subgraph Hetzner["Hetzner Cloud (Private Network)"]
+        LB[Hetzner LB<br/>TCP 443 Passthrough]
+
+        subgraph K3s["K3s Cluster (3 Nodes)"]
+            subgraph CP["Control Plane"]
+                API[API Server]
+            end
+
+            subgraph Workers["Worker Nodes ×2"]
+                Ingress[Traefik Ingress<br/>TLS Termination]
+                Pod1[line-bot Pod]
+                Pod2[line-bot Pod]
+            end
+
+            API -.->|manages| Workers
+        end
+
+        subgraph Bastion["Bastion VM (Data Layer)"]
+            PG[(PostgreSQL)]
+            Redis[(Redis)]
+        end
+    end
+
+    LB --> Ingress
+    Ingress --> Pod1
+    Ingress --> Pod2
+    Pod1 --> PG
+    Pod1 --> Redis
+    Pod2 --> PG
+    Pod2 --> Redis
 ```
 
 - **混合架構**：僅應用層在 K8s，資料庫保留在保壘機（內網連接）
