@@ -16,7 +16,7 @@ Kubernetes manifests for [WeaMind](https://github.com/kyomind/weamind) LINE Bot.
 flowchart TD
     LINE[LINE Platform] -->|Webhook HTTPS| LB
 
-    subgraph Hetzner["Hetzner Cloud (Private Network)"]
+    subgraph Hetzner["Hetzner Private Network"]
         LB[Hetzner LB<br/>TCP 443 Passthrough]
 
         subgraph K3s["K3s Cluster (3 Nodes)"]
@@ -24,7 +24,7 @@ flowchart TD
                 API[API Server]
             end
 
-            subgraph Workers["Worker Nodes ×2"]
+            subgraph Workers["Worker Nodes × 2"]
                 Ingress[Traefik Ingress<br/>TLS Termination]
                 Pod1[line-bot Pod]
                 Pod2[line-bot Pod]
@@ -33,7 +33,7 @@ flowchart TD
             API -.->|manages| Workers
         end
 
-        subgraph Bastion["Bastion VM (Data Layer)"]
+        subgraph Bastion["Bastion VM - Data Layer"]
             PG[(PostgreSQL)]
             Redis[(Redis)]
         end
