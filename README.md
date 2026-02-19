@@ -75,7 +75,7 @@ flowchart TD
 
 ### 資料層保留在 VM
 
-PostgreSQL 與 Redis 透過內網連接 K8s 叢集。資料層的穩定性優先於「全都容器化」的技術潔癖。
+PostgreSQL 與 Redis 透過內網連接 K8s 叢集。資料層穩定性優先，避免引入 StatefulSet 的管理複雜度。
 
 ### cert-manager + DNS-01
 
@@ -83,7 +83,7 @@ Hetzner 託管憑證不支援 Cloudflare DNS，改用 cert-manager 搭配 DNS-01
 
 ### LINE Webhook URL 切換
 
-秒級生效，無 DNS 傳播延遲。K8s 與單機環境可並行運行，方便測試與回滾。
+秒級生效，無 DNS 傳播延遲。K8s 與單機環境可並行運行，方便測試與 rollback。
 
 ## Related Resources
 
