@@ -46,9 +46,9 @@
 
 - [x] WeaMind repo 新增 `/health` endpoint（FastAPI 簡單返回 `{"status": "ok"}`）
 - [x] 複製配置文件到 `weamind-infra/reference/`（Dockerfile、docker-compose.yml、docker-compose.prod.yml、Makefile）
-- [x] 從保壘機 `.env` 生成 `weamind-infra/.env.example`（僅保留 key，清空 value）
+- [x] 從堡壘機 `.env` 生成 `weamind-infra/.env.example`（僅保留 key，清空 value）
 - [x] 配置 `.gitignore`：`.env`、`.privatedocs/secrets/`、`kubeconfig.yaml`
-- [x] 在保壘機測試 Docker Compose 單機版服務的 `/health` endpoint（`curl https://api.kyomind.tw/health` 回應 `{"status":"ok"}`）
+- [x] 在堡壘機測試 Docker Compose 單機版服務的 `/health` endpoint（`curl https://api.kyomind.tw/health` 回應 `{"status":"ok"}`）
 
 ---
 
@@ -67,7 +67,7 @@
 
 - [x] 建立 `manifests/namespace.yaml`：定義 `weamind` namespace，作為所有 K8s 資源的隔離邊界
 - [x] 撰寫 `manifests/configmap.yaml`：僅放非敏感配置，來源對齊 `.env.example`
-- [x] 明確使用保壘機內網 IP（`10.0.0.2`）作為 `POSTGRES_HOST` 與 `REDIS_URL`，避免誤用 localhost 或 Service 名稱
+- [x] 明確使用堡壘機內網 IP（`10.0.0.2`）作為 `POSTGRES_HOST` 與 `REDIS_URL`，避免誤用 localhost 或 Service 名稱
 - [x] 修正 PostgreSQL 對 K8s 實際可連通的 host port（`POSTGRES_PORT=5433`），依據 `nc` 內網連線驗證結果
 - [x] 移除 K8s line-bot 不需要的帳號設定（`WEA_DATA_USER`），維持最小權限與最小設定集合
 - [x] 驗證 ConfigMap 套用結果，確認 data key 數量與實際內容符合預期（`kubectl get cm -o yaml`）
@@ -91,8 +91,8 @@
 
 ## Day 15 - 內部網路連通性驗證（2026-01-18）（1-1.5h）
 
-- [x] 取得保壘機內網 IP：透過 `ip addr show` 確認內網介面 `enp7s0`，內網 IP 為 `10.0.0.2/32`（Hetzner Private Network，/32 為雲端路由設計，非傳統子網）
-- [x] 驗證 K8s 節點 → 保壘機內網基本連通性：於 worker 節點以 `nc -zv 10.0.0.2 5433`（PostgreSQL）與 `nc -zv 10.0.0.2 6379`（Redis）確認 TCP 連線可達
+- [x] 取得堡壘機內網 IP：透過 `ip addr show` 確認內網介面 `enp7s0`，內網 IP 為 `10.0.0.2/32`（Hetzner Private Network，/32 為雲端路由設計，非傳統子網）
+- [x] 驗證 K8s 節點 → 堡壘機內網基本連通性：於 worker 節點以 `nc -zv 10.0.0.2 5433`（PostgreSQL）與 `nc -zv 10.0.0.2 6379`（Redis）確認 TCP 連線可達
 - [x] 確認 PostgreSQL 實際對外 port 設定：`docker-compose.yml` 使用 `5433:5432`（避免與其他環境的 5432 衝突），並驗證主機 `0.0.0.0:5433` 正在 listen
 - [x] 驗證堡壘機 PostgreSQL 容器狀態：透過 `docker compose exec db psql -U wea_bot -d weamind` 成功登入，並可執行 `\dt` 列出資料表
 - [x] 以 K8s Pod 視角驗證 PostgreSQL 連線：使用一次性測試 Pod（`postgres:17.5-bookworm`）連線至 `10.0.0.2:5433`，成功執行 `\dt`
@@ -139,18 +139,7 @@
 
 ---
 
-## Day 18 - 高可用性驗證（2026-01-28）（1-1.5h）
+## Day 18 - 文件完成（2026-02-19）（1-1.5h）
 
-- [ ] 高可用性測試：刪除一個 weamind Pod（`kubectl delete pod`），觀察 Deployment 自動重建，期間持續透過 LINE 發送訊息驗證服務不中斷
-- [ ] 驗證負載均衡行為：透過重複測試或 LB metrics，確認流量在兩個 worker 節點間分配
-- [ ] 回滾演練：將 LINE webhook 切回單機版端點，確認原環境服務正常，再切回 K8s 版（驗證雙向切換可行性）
-- [ ] 完善 SOP 文件：將實測發現、效能觀察、注意事項（如 `/line/webhook` 路徑）補充至 `docs/LINE-Webhook-切換流程.md`
-
----
-
-## Day 19 - 文件完成（2026-01-29）（1-1.5h）
-
-- [ ] 更新 README.md：撰寫專案簡介、架構概覽、技術 stack、功能亮點、快速部署指南
-- [ ] PROGRESS.md 最終更新：補充實際完成時程與工時統計
-
----
+- [x] 更新 README.md：撰寫專案簡介、架構概覽、Tech Stack、架構特點、部署概述、決策邏輯
+- [x] PROGRESS.md 最終更新：補充實際完成時程
