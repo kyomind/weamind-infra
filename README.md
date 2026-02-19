@@ -43,7 +43,7 @@ flowchart TD
 ```
 
 **架構特點**：
-- **混合架構**：應用層在 K8s，資料層保留在保壘機（穩定性優先，避免 StatefulSet 複雜度）
+- **混合架構**：應用層在 K8s，資料層保留在堡壘機（穩定性優先，避免 StatefulSet 複雜度）
 - **雙環境並行**：K8s (`k8s.kyomind.tw`) 與單機 (`api.kyomind.tw`) 獨立運行，透過 LINE webhook URL 切換（秒級生效，無 DNS 傳播延遲）
 
 ## Tech Stack
@@ -52,7 +52,7 @@ flowchart TD
 - **Traefik** Ingress Controller（K3s 內建）
 - **Hetzner Load Balancer** 負載平衡器
 - **cert-manager** + Let's Encrypt（Cloudflare DNS-01 驗證）
-- **PostgreSQL** 與 **Redis** 於保壘機（不在 K8s 內）
+- **PostgreSQL** 與 **Redis** 於堡壘機（不在 K8s 內）
 
 ## Deployment Overview
 
@@ -62,7 +62,7 @@ flowchart TD
 2. **網路配置**：強制綁定私有網路介面 (`--node-ip` + `--flannel-iface`)，避免誤抓公網 IP
 3. **Traefik 設定**：確保內建 Ingress Controller 正確綁定私有網路
 4. **cert-manager 安裝**：部署 cert-manager + ClusterIssuer (Cloudflare DNS-01)
-5. **應用部署**：依序套用 `manifests/` 中的 YAML (namespace → configmap → secret → deployment → service → ingress)
+5. **應用部署**：依序套用 `manifests/` 中的 YAML（Namespace → ConfigMap → Secret → Deployment → Service → Ingress）
 6. **負載平衡器配置**：Hetzner LB 設定 TCP 443 轉發 + 健康檢查
 7. **DNS 指向**：Cloudflare A record `k8s.kyomind.tw` 指向 LB 公網 IP
 8. **流量切換**：修改 LINE Developers webhook URL 從 `api.kyomind.tw` 切換到 `k8s.kyomind.tw`

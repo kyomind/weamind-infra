@@ -3,6 +3,7 @@
         "certbot",
         "configmap",
         "datname",
+        "deepwiki",
         "httptools",
         "iface",
         "isready",
