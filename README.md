@@ -1,6 +1,6 @@
 # WeaMind Infrastructure
 
-WeaMind 的 Kubernetes 基礎設施 — 展示從單機 Docker 到生產級 K8s 叢集的遷移實踐。
+WeaMind 的 Kubernetes 基礎設施 — 展示從單機 Docker 到 K8s 叢集的遷移實踐。
 
 > 主應用程式：[WeaMind](https://github.com/kyomind/weamind) - LINE Bot FastAPI application
 
@@ -55,8 +55,6 @@ flowchart TD
 - **PostgreSQL** 與 **Redis** 於堡壘機（不在 K8s 內）
 
 ## Deployment Overview
-
-部署流程概述：
 
 1. **K3s 叢集建立**：control-plane 安裝 K3s server，workers 使用 node-token 加入
 2. **網路配置**：強制綁定私有網路介面 (`--node-ip` + `--flannel-iface`)，避免誤抓公網 IP
