@@ -9,7 +9,7 @@
 ## 架構重點（必讀）
 
 ```
-LINE → k8s.kyomind.tw → Hetzner LB (SSL終止) → K3s(Traefik) → line-bot Pods → 原VM(PostgreSQL/Redis)
+LINE → k8s.kyomind.tw → Hetzner LB (TCP passthrough) → K3s(Traefik，TLS終止) → line-bot Pods → 原VM(PostgreSQL/Redis)
 ```
 
 **流量架構設計（獨立端點）**：
