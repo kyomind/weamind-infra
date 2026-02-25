@@ -77,7 +77,7 @@ Single binary, built-in Traefik, CNCF-certified. For a small cluster maintained 
 
 ### Data layer on VM
 
-PostgreSQL and Redis connect to the K8s cluster over a private network. Keeping the data layer on a VM prioritises stability and avoids the operational overhead of StatefulSets.
+PostgreSQL and Redis connect to the K8s cluster over a private network. Keeping the data layer on a VM prioritizes stability and avoids the operational overhead of StatefulSets.
 
 ### cert-manager + DNS-01
 
