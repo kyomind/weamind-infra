@@ -1,5 +1,7 @@
 # WeaMind Infrastructure
 
+> 📖 [English Version](README.en.md)
+
 WeaMind 的 Kubernetes 基礎設施 — 展示從單機 Docker 到 K8s 叢集的遷移實踐。
 
 > 主應用程式：[WeaMind](https://github.com/kyomind/weamind) - LINE Bot FastAPI application
@@ -43,8 +45,8 @@ flowchart TD
 ```
 
 **架構特點**：
-- **混合架構**：應用層在 K8s，資料層保留在堡壘機（穩定性優先，避免 StatefulSet 複雜度）
-- **雙環境並行**：K8s (`k8s.kyomind.tw`) 與單機 (`api.kyomind.tw`) 獨立運行，透過 LINE webhook URL 切換（秒級生效，無 DNS 傳播延遲）
+- **混合架構**：應用層在 K8s，資料層保留在堡壘機（穩定性優先，避免 StatefulSet 複雜度）。
+- **雙環境並行**：K8s (`k8s.kyomind.tw`) 與單機 (`api.kyomind.tw`) 獨立運行，透過 LINE webhook URL 切換（秒級生效，無 DNS 傳播延遲）。
 
 ## Tech Stack
 
@@ -56,14 +58,14 @@ flowchart TD
 
 ## Deployment Overview
 
-1. **K3s 叢集建立**：control-plane 安裝 K3s server，workers 使用 node-token 加入
-2. **網路配置**：強制綁定私有網路介面 (`--node-ip` + `--flannel-iface`)，避免誤抓公網 IP
-3. **Traefik 設定**：確保內建 Ingress Controller 正確綁定私有網路
-4. **cert-manager 安裝**：部署 cert-manager + ClusterIssuer (Cloudflare DNS-01)
-5. **應用部署**：依序套用 `manifests/` 中的 YAML（Namespace → ConfigMap → Secret → Deployment → Service → Ingress）
-6. **負載平衡器配置**：Hetzner LB 設定 TCP 443 轉發 + 健康檢查
-7. **DNS 指向**：Cloudflare A record `k8s.kyomind.tw` 指向 LB 公網 IP
-8. **流量切換**：修改 LINE Developers webhook URL 從 `api.kyomind.tw` 切換到 `k8s.kyomind.tw`
+1. **K3s 叢集建立**：control-plane 安裝 K3s server，workers 使用 node-token 加入。
+2. **網路配置**：強制綁定私有網路介面 (`--node-ip` + `--flannel-iface`)，避免誤抓公網 IP。
+3. **Traefik 設定**：確保內建 Ingress Controller 正確綁定私有網路。
+4. **cert-manager 安裝**：部署 cert-manager + ClusterIssuer (Cloudflare DNS-01)。
+5. **應用部署**：依序套用 `manifests/` 中的 YAML（Namespace → ConfigMap → Secret → Deployment → Service → Ingress）。
+6. **負載平衡器配置**：Hetzner LB 設定 TCP 443 轉發 + 健康檢查。
+7. **DNS 指向**：Cloudflare A record `k8s.kyomind.tw` 指向 LB 公網 IP。
+8. **流量切換**：修改 LINE Developers webhook URL 從 `api.kyomind.tw` 切換到 `k8s.kyomind.tw`。
 
 詳細實作進度與踩坑記錄請見 [PROGRESS.md](PROGRESS.md)。
 
