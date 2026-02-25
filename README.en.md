@@ -2,7 +2,7 @@
 
 > 📖 [中文版](README.md)
 
-Kubernetes infrastructure for [WeaMind](https://github.com/kyomind/weamind) — demonstrating a migration from single-host Docker to a K8s cluster.
+Kubernetes infrastructure for [WeaMind](https://github.com/kyomind/weamind) — demonstrating a migration from a single-server Docker Compose setup to a K8s cluster.
 
 > Main application: [WeaMind](https://github.com/kyomind/weamind) — LINE Bot built with FastAPI
 
@@ -46,7 +46,7 @@ flowchart TD
 
 **Architecture highlights**:
 - **Hybrid approach**: Application layer on K8s, data layer on the bastion VM (stability first, avoiding StatefulSet complexity)
-- **Dual-environment**: K8s (`k8s.kyomind.tw`) and single-host (`api.kyomind.tw`) run in parallel; traffic is switched by updating the LINE webhook URL (takes effect in seconds, no DNS propagation delay)
+- **Dual-environment**: K8s (`k8s.kyomind.tw`) and single-server (`api.kyomind.tw`) run in parallel; traffic is switched by updating the LINE webhook URL (takes effect in seconds, no DNS propagation delay)
 
 ## Tech Stack
 
@@ -59,7 +59,7 @@ flowchart TD
 ## Deployment Overview
 
 1. **K3s cluster setup**: Install K3s server on the control plane; workers join via node-token
-2. **Network configuration**: Pin to private network interface (`--node-ip` + `--flannel-iface`) to avoid binding to the public IP
+2. **Network configuration**: Bind to the private network interface (`--node-ip` + `--flannel-iface`) to avoid using the public IP
 3. **Traefik configuration**: Ensure the built-in Ingress Controller binds to the private network
 4. **cert-manager installation**: Deploy cert-manager + ClusterIssuer (Cloudflare DNS-01)
 5. **Application deployment**: Apply YAMLs in `manifests/` in order — Namespace → ConfigMap → Secret → Deployment → Service → Ingress
@@ -85,7 +85,7 @@ Hetzner's managed certificates don't support Cloudflare DNS, so cert-manager wit
 
 ### LINE Webhook URL switching
 
-Takes effect in seconds with no DNS propagation delay. K8s and single-host environments can run in parallel, making testing and rollback straightforward.
+Takes effect in seconds with no DNS propagation delay. K8s and single-server environments can run in parallel, making testing and rollback straightforward.
 
 ## Related Resources
 
