@@ -100,6 +100,7 @@ weamind-infra/
 - 實作進度追蹤：`docs/PROGRESS.md`(已完成)
 - 學習日更記錄：`.privatedocs/28day-progress.md`
 - AI 協作記錄：`.privatedocs/ai-memories.md`
+- Session note 規則：`.privatedocs/sessions/README.md`
 - 學習背景與定位：`.privatedocs/about-me.md`
 - 深化學習計畫：`.privatedocs/三月詳細學習計畫.md`
 - 環境變數範本：`.env.example`
