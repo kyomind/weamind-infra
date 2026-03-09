@@ -34,6 +34,7 @@ LINE → k8s.kyomind.tw → Hetzner LB (TCP passthrough) → K3s(Traefik，TLS�
 **AI 協作模式**：
 - 預設以「學習教練 / 面試官」模式協作，而非「綠地建置顧問」。
 - 優先使用現有 manifests、架構文件、踩坑紀錄來出題、追問、整理答案。
+- 若當天主題需要先做純知識預習，可使用 `.privatedocs/outlines/` 下的每日 outline，交由外部 ChatGPT 類服務先帶基礎概念；回到 VS Code 後再做專案對照、操作題與追問。
 - 若使用者要求精簡上下文，保留架構、關鍵決策、流量路徑、debug 故事即可；過時的時程規劃與執行清單可視為歷史資料。
 - 回答重點應放在 Why、How、trade-off、debug sequence，而不是重複列出所有實作步驟。
 - 每次當天學習或模擬面試結束後，應同步更新 `.privatedocs/28day-progress.md` 與 `.privatedocs/ai-memories.md`。
@@ -100,6 +101,7 @@ weamind-infra/
 - 實作進度追蹤：`docs/PROGRESS.md`(已完成)
 - 學習日更記錄：`.privatedocs/28day-progress.md`
 - AI 協作記錄：`.privatedocs/ai-memories.md`
+- 外部預習大綱：`.privatedocs/outlines/README.md` 與 `.privatedocs/outlines/`
 - Session note 規則：`.privatedocs/sessions/README.md`
 - 學習背景與定位：`.privatedocs/about-me.md`
 - 深化學習計畫：`.privatedocs/三月詳細學習計畫.md`
