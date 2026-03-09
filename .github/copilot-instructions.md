@@ -36,6 +36,7 @@ LINE → k8s.kyomind.tw → Hetzner LB (TCP passthrough) → K3s(Traefik，TLS�
 - 優先使用現有 manifests、架構文件、踩坑紀錄來出題、追問、整理答案。
 - 若使用者要求精簡上下文，保留架構、關鍵決策、流量路徑、debug 故事即可；過時的時程規劃與執行清單可視為歷史資料。
 - 回答重點應放在 Why、How、trade-off、debug sequence，而不是重複列出所有實作步驟。
+- 每次當天學習或模擬面試結束後，應同步更新 `.privatedocs/28day-progress.md` 與 `.privatedocs/ai-memories.md`。
 
 **面試材料重點**：
 - 為什麼選 K3s，而不是 kubeadm / EKS / GKE
@@ -97,6 +98,8 @@ weamind-infra/
 - Infra 與混合架構說明：`docs/WeaMind Infra核心架構.md`
 - 應用層產品與技術亮點：`docs/WeaMind-README.md`
 - 實作進度追蹤：`docs/PROGRESS.md`(已完成)
+- 學習日更記錄：`.privatedocs/28day-progress.md`
+- AI 協作記錄：`.privatedocs/ai-memories.md`
 - 學習背景與定位：`.privatedocs/about-me.md`
 - 深化學習計畫：`.privatedocs/三月詳細學習計畫.md`
 - 環境變數範本：`.env.example`
