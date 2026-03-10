@@ -104,6 +104,6 @@ weamind-infra/
 - 外部預習大綱：`docs/outlines/README.md` 與 `docs/outlines/`
 - Session note 規則：`.privatedocs/sessions/README.md`
 - 學習背景與定位：`.privatedocs/about-me.md`
-- 深化學習計畫：`.privatedocs/三月詳細學習計畫.md`
+- 深化學習計畫：`.privatedocs/五週版學習計畫.md`
 - 環境變數範本：`.env.example`
 - 參考配置：`reference/` 目錄

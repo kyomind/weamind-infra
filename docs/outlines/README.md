@@ -74,7 +74,7 @@
 
 在新的對話裡，如果要產生 outline，GitHub Copilot 應遵守這個流程：
 
-1. 先對照 `.privatedocs/三月詳細學習計畫.md`，確認今天日期、主題與學習範圍。
+1. 先對照 `.privatedocs/五週版學習計畫.md`，確認今天日期、主題與學習範圍。
 2. 判斷今天有哪些內容屬於「純知識預習」，哪些內容應保留到 VS Code 內做專案對照。
 3. 在 `docs/outlines/` 建立新檔，檔名依 `YYYY-MM-DD-slug.md`。
 4. 內容必須明確寫出：
