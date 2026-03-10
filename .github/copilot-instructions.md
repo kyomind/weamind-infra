@@ -102,7 +102,6 @@ weamind-infra/
 - 學習日更記錄：`.privatedocs/28day-progress.md`
 - AI 協作記錄：`.privatedocs/ai-memories.md`
 - 外部預習大綱：`docs/outlines/README.md` 與 `docs/outlines/`
-- Session note 規則：`.privatedocs/sessions/README.md`
 - 學習背景與定位：`.privatedocs/about-me.md`
 - 深化學習計畫：`.privatedocs/五週版學習計畫.md`
 - 環境變數範本：`.env.example`
