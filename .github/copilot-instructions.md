@@ -44,6 +44,14 @@ LINE → k8s.kyomind.tw → Hetzner LB (TCP passthrough) → K3s(Traefik，TLS�
 - 回答重點應放在 Why、How、trade-off、debug sequence，而不是重複列出所有實作步驟。
 - 每次當天學習或模擬面試結束後，應先更新 `.privatedocs/五週版學習計畫.md` 的「當前執行追蹤」，再更新 `.privatedocs/28day-progress.md`；`.privatedocs/ai-memories.md` 僅保留高階 handoff，不重複 lesson 細節。
 
+**記憶與檔案分工**：
+- 系統 memory 可正常使用，不需要刻意避開；但它是輔助記憶，不是這個 repo 的正式單一來源。
+- `.privatedocs/五週版學習計畫.md` 是正式進度與下一步的唯一錨點；若其他摘要與它衝突，一律以這份檔案的「當前執行追蹤」為準。
+- `.privatedocs/28day-progress.md` 只記錄使用者當天實際學到什麼、已能講清楚什麼，不承擔接手順序或正式進度判定。
+- `.privatedocs/ai-memories.md` 保留高階 handoff、權威來源順序與互動偏好，不重複 lesson 細節，也不維護每日進度。
+- `docs/lessons/` 內的 `outline.md`、`qa.md`、`report.md` 負責單一 lesson 的範圍、對照題與收斂，不應被其他摘要檔取代。
+- 若某條規則已明確寫在 repo 文件中，優先維護原文件；不要只因 system memory 可用，就把同一份規則額外複寫到另一個記憶檔裡。
+
 **面試材料重點**：
 - 為什麼選 K3s，而不是 kubeadm / EKS / GKE
 - 為什麼資料庫仍放 VM，而不是一起搬進 K8s
