@@ -67,11 +67,16 @@
 2. `qa.md`：這次 internal learning 的小題清單、回答摘要與修正。
 3. `report.md`：這次學完後，再回填的學習紀錄與收斂結果。
 
+若這次對話中有較多延伸提問、骨架整理或不適合塞進 `qa.md` 的補充內容，可另外加一份：
+
+4. `notes.md`：放這次 lesson 中途需要另外記下來的延伸問題、補充說明與暫時結論。
+
 範例：
 
 - `docs/lessons/2026-03-10-weamind-traffic-path/outline.md`
 - `docs/lessons/2026-03-10-weamind-traffic-path/qa.md`
 - `docs/lessons/2026-03-10-weamind-traffic-path/report.md`
+- `docs/lessons/2026-03-10-weamind-traffic-path/notes.md`（可選）
 
 ---
 
@@ -130,6 +135,14 @@ lesson 資料夾格式：
 
 不是每份都要完全一樣，但應保持「專案特定、可回帶、可面試」這三個特性。
 
+### `notes.md` 適合放什麼：
+
+1. 使用者的延伸提問與 AI 的補充回答。
+2. 目前已知但尚未正式收斂進 `report.md` 的暫時結論。
+3. 不適合塞進單一 Q/A 題目，但之後複習會有價值的補充說明。
+4. 一件事情記一則，不要把 `notes.md` 寫成第二份 lesson 摘要。
+5. 若要固定格式，建議每則 note 用 H2，直接寫內容，不必加太多 metadata。
+
 ---
 
 ## 內容原則
@@ -171,6 +184,16 @@ lesson 應優先回答：
 3. 全部 Q/A 跑完後，最後才把重點收斂進 `report.md`。
 
 題目應盡量小、具體、可直接對照 repo。不要把一題寫成一整個章節。
+
+### 原則 6：notes 是補充，不是第二份 qa
+
+`notes.md` 的用途是承接 lesson 中途冒出的延伸內容，避免把 `qa.md` 撐得太雜。
+
+正確分工是：
+
+1. 題目、回答摘要、修正紀錄放 `qa.md`。
+2. 延伸問答、補充說明、暫時結論放 `notes.md`。
+3. 最終收斂仍回到 `report.md`。
 
 ---
 
