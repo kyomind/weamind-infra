@@ -52,6 +52,7 @@ LINE → k8s.kyomind.tw → Hetzner LB (TCP passthrough) → K3s(Traefik，TLS�
 - `.privatedocs/五週版學習計畫.md` 是正式進度與下一步的唯一錨點；若其他摘要與它衝突，一律以這份檔案的「當前執行追蹤」為準。
 - `.privatedocs/28day-progress.md` 只記錄使用者當天實際學到什麼、已能講清楚什麼，不承擔接手順序或正式進度判定。
 - `.privatedocs/ai-memories.md` 保留高階 handoff、權威來源順序與互動偏好，不重複 lesson 細節，也不維護每日進度。
+- `.privatedocs/weamind/` 保存使用者在實作 infra 過程中的完整歷史對話，包含與外部 AI 的長篇交談；它可作為需要補細節、查 debug 脈絡或還原當時決策背景時的補充來源，但不是每次接手都要完整閱讀的日常錨點。
 - `docs/lessons/` 內的 `outline.md`、`qa.md`、`report.md` 負責單一 lesson 的範圍、對照題與收斂，不應被其他摘要檔取代。
 - 若某條規則已明確寫在 repo 文件中，優先維護原文件；不要只因 system memory 可用，就把同一份規則額外複寫到另一個記憶檔裡。
 
@@ -117,6 +118,7 @@ weamind-infra/
 - 實作進度追蹤：`docs/PROGRESS.md`(已完成)
 - 學習日更記錄：`.privatedocs/28day-progress.md`
 - AI 協作記錄：`.privatedocs/ai-memories.md`
+- 完整歷史對話與外部 AI 交談存檔：`.privatedocs/weamind/`
 - 外部預習大綱：`docs/outlines/README.md` 與 `docs/outlines/`
 - 學習背景與定位：`.privatedocs/about-me.md`
 - 深化學習計畫：`.privatedocs/五週版學習計畫.md`
