@@ -56,11 +56,13 @@
 資料夾內至少放兩份文件：
 
 1. `outline.md`：這次 internal learning 要怎麼進行。
-2. `report.md`：這次學完後，再回填的學習紀錄與收斂結果。
+2. `qa.md`：這次 internal learning 的小題清單、回答摘要與修正。
+3. `report.md`：這次學完後，再回填的學習紀錄與收斂結果。
 
 範例：
 
 - `docs/lessons/2026-03-10-weamind-traffic-path/outline.md`
+- `docs/lessons/2026-03-10-weamind-traffic-path/qa.md`
 - `docs/lessons/2026-03-10-weamind-traffic-path/report.md`
 
 ---
@@ -104,6 +106,20 @@ lesson 資料夾格式：
 5. 學完後已能講清楚什麼
 6. 仍待補強什麼
 
+### `qa.md` 建議包含：
+
+1. 3 到 5 題小範圍題目
+2. 每題對應的 repo 檔案或操作目標
+3. 使用者回答摘要
+4. AI 修正或補充
+5. 每題狀態，例如：未開始、進行中、已完成
+
+格式建議：
+
+1. 每題用 `## Q1`、`## Q2` 這種層級。
+2. 題內欄位用 `### 題目`、`### 對照檔案`、`### 使用者回答摘要` 這類 H3。
+3. 避免大量單行粗體欄位，讓整份 QA 更穩定、好掃讀。
+
 不是每份都要完全一樣，但應保持「專案特定、可回帶、可面試」這三個特性。
 
 ---
@@ -136,6 +152,18 @@ lesson 應優先回答：
 2. 對話結束後，再把這次真正學到的重點寫進 `report.md`。
 3. `report.md` 應反映這次互動實際發生了什麼，而不是先寫好標準答案。
 
+### 原則 5：先做小題，再寫 report
+
+`qa.md` 是 internal lesson 的主操作區。
+
+建議流程：
+
+1. 先用 `outline.md` 定義今天的主題與範圍。
+2. 再用 `qa.md` 逐題進行 3 到 5 題小練習。
+3. 全部 Q/A 跑完後，最後才把重點收斂進 `report.md`。
+
+題目應盡量小、具體、可直接對照 repo。不要把一題寫成一整個章節。
+
 ---
 
 ## 維護方式
@@ -149,4 +177,5 @@ lesson 應優先回答：
 
 - `2026-03-10-weamind-traffic-path/`
 	- `outline.md`
+	- `qa.md`
 	- `report.md`

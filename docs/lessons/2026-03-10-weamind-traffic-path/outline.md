@@ -19,11 +19,10 @@
 
 ## 建議學習順序
 
-1. 先確認 `weamind-line-bot` Service 的 type、port 與 targetPort。
-2. 再確認 Ingress 是不是把 `k8s.kyomind.tw` 導向這個 Service。
-3. 對照 README 與架構文件，把 Hetzner LB 和 Traefik 補進完整流量路徑。
-4. 用自己的話講一次 WeaMind 的流量骨架。
-5. 最後回答為什麼不是直接把 line-bot Service 對外暴露。
+1. 先跑 `qa.md` 中的 3 到 5 題小題，不一次問太大題。
+2. 每一題都優先回到 repo 看實際 YAML 或文件，再回答。
+3. 題目完成後，再回頭整理今天的流量骨架與角色邊界。
+4. 最後才把這次真正確認過的理解寫進 `report.md`。
 
 ## 這次要追問的 Why / How 題
 
@@ -37,3 +36,4 @@
 1. 能用自己的話講出 `Client / LINE → DNS → Hetzner LB → Traefik → Service → Pods`。
 2. 能說明 `ClusterIP` 在這個架構裡為什麼不是限制，反而是合理分工。
 3. 能分清楚 external LB、Ingress Controller、Service 各自在做什麼。
+4. `qa.md` 中的題目至少完成 3 題，且每題都有回答摘要與修正紀錄。

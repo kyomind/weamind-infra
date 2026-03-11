@@ -9,6 +9,9 @@
 這份 report 已開始依照實際對話回填。
 
 目前已完成第一輪 repo 對照與問答，主軸聚焦在 Service、Ingress、Deployment 的角色分工，以及 Service 為什麼不直接對 Pod 以外的外部流量負責。
+目前 `qa.md` 的 5 題已完成，可視為這份 lesson 的第一輪驗收已完成。
+
+本次對話的細部題目與修正紀錄，已另行整理到 `qa.md`。
 
 ## 這次對話實際學了什麼
 
@@ -16,6 +19,7 @@
 - Traefik 不直接把流量送到 Pod，而是透過 Service 轉送，因為 Pod 是動態資源，會因為重建、擴縮或更新而改變。
 - Service 的另一個重要責任是把流量分配到後面符合 selector 的多個 Pods，但它不負責決定 Pod 數量。
 - 在 WeaMind repo 中，Ingress 會把流量送到 `weamind-line-bot` Service，Service 再依照 selector 對到 Deployment 建出的 Pods。
+- Deployment、Service、Ingress 三者的責任邊界已完成第一輪釐清：Deployment 維持 Pod，Service 提供穩定入口並分流，Ingress 宣告外部 HTTP/HTTPS 路由規則。
 
 ## 使用者原本卡住什麼
 
@@ -29,12 +33,14 @@
 - 在 [manifests/deployment.yaml](manifests/deployment.yaml#L1) 中，Pod template label 也是 `app: weamind`，因此 Service 可以對到這批 Pods。
 - 在 [manifests/ingress.yaml](manifests/ingress.yaml#L1) 中，Ingress 會把 `k8s.kyomind.tw` 的流量送到 `weamind-line-bot:80`。
 - 如果 Service 的 Endpoints 是空的，第一輪應優先回頭檢查 Service selector 與 Deployment Pod labels 是否一致，而不是先去看 Deployment 名稱。
+- 即使沒有 Service，Pod 也不是完全不可見；更精準的說法是，沒有 Service 就缺少一個穩定、可長期依賴的抽象入口。
 
 ## 學完後已能講清楚什麼
 
 - 為什麼 WeaMind 的 line-bot Service 使用 ClusterIP 是合理設計。
 - 為什麼 Traefik 不直接把流量送到 Pod，而是先經過 Service。
 - Service、Deployment、Ingress Controller 三者在這個專案中的責任邊界。
+- Deployment、Service、Ingress 三者在這個專案中的責任邊界。
 - 如果 Service 層出問題，第一輪應先檢查 selector、Pod labels 與 Endpoints。
 
 ## 仍待補強什麼
@@ -45,5 +51,5 @@
 
 ## 下一步
 
-- 完成這次 lesson 對話。
-- 將對話中真正確認過的理解與仍有疑問的點寫回本檔。
+- 下一輪可接著補 Endpoints、readiness、`port` / `targetPort` 的差異。
+- 或者開始 Day 2 的新 lesson，處理 Hetzner LB → Traefik → Service 的完整流量路徑。
