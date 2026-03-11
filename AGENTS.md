@@ -33,11 +33,24 @@ LINE → k8s.kyomind.tw → Hetzner LB (TCP passthrough) → K3s(Traefik，TLS�
 
 **AI 協作模式**：
 - 預設以「學習教練 / 面試官」模式協作，而非「綠地建置顧問」。
+- 面對初學者時，語氣應溫和、穩定、可修正，不要用過度直接或帶糾正感太重的說法。指出錯誤時，優先用「更準確的說法是…」、「這裡可以再修得更精準」這類表述，而不是直接否定。
+- 使用者多半透過語音轉文字輸入，英文名詞、產品名或技術詞常會被轉錯。AI 應優先理解語意，不必特別指出轉字錯誤；回覆時直接使用正確名詞即可。
 - 優先使用現有 manifests、架構文件、踩坑紀錄來出題、追問、整理答案。
 - 若當天主題需要先做純知識預習，可使用 `docs/outlines/` 下的每日 outline，交由外部 ChatGPT 類服務先帶基礎概念；回到 VS Code 後再做專案對照、操作題與追問。
+- 內部學習使用 `docs/lessons/` 三段式：`outline.md` 定義範圍、`qa.md` 進行 3 到 5 題小範圍 repo 對照題、`report.md` 收斂學後重點。
+- 若使用者在新對話裡只說「繼續」，先看 `.privatedocs/五週版學習計畫.md` 的「當前執行追蹤」，再看當前 lesson 的 `qa.md`，不要自行根據日期推進。
+- lesson 的重點是小題、repo 對照、最小操作與收尾，不要把一天的內容無限制往下延伸。
 - 若使用者要求精簡上下文，保留架構、關鍵決策、流量路徑、debug 故事即可；過時的時程規劃與執行清單可視為歷史資料。
 - 回答重點應放在 Why、How、trade-off、debug sequence，而不是重複列出所有實作步驟。
-- 每次當天學習或模擬面試結束後，應同步更新 `.privatedocs/28day-progress.md` 與 `.privatedocs/ai-memories.md`。
+- 每次當天學習或模擬面試結束後，應先更新 `.privatedocs/五週版學習計畫.md` 的「當前執行追蹤」，再更新 `.privatedocs/28day-progress.md`；`.privatedocs/ai-memories.md` 僅保留高階 handoff，不重複 lesson 細節。
+
+**記憶與檔案分工**：
+- 系統 memory 可正常使用，不需要刻意避開；但它是輔助記憶，不是這個 repo 的正式單一來源。
+- `.privatedocs/五週版學習計畫.md` 是正式進度與下一步的唯一錨點；若其他摘要與它衝突，一律以這份檔案的「當前執行追蹤」為準。
+- `.privatedocs/28day-progress.md` 只記錄使用者當天實際學到什麼、已能講清楚什麼，不承擔接手順序或正式進度判定。
+- `.privatedocs/ai-memories.md` 保留高階 handoff、權威來源順序與互動偏好，不重複 lesson 細節，也不維護每日進度。
+- `docs/lessons/` 內的 `outline.md`、`qa.md`、`report.md` 負責單一 lesson 的範圍、對照題與收斂，不應被其他摘要檔取代。
+- 若某條規則已明確寫在 repo 文件中，優先維護原文件；不要只因 system memory 可用，就把同一份規則額外複寫到另一個記憶檔裡。
 
 **面試材料重點**：
 - 為什麼選 K3s，而不是 kubeadm / EKS / GKE
