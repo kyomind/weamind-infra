@@ -173,6 +173,32 @@ lesson 應優先回答：
 1. 視需要更新 `.privatedocs/28day-progress.md`。
 2. 更新 `.privatedocs/ai-memories.md`，讓後續接手知道 lessons 已建立與目前進度。
 
+---
+
+## 新對話如何接手
+
+如果使用者在新對話裡只說「繼續」，AI 不應直接猜測今天要學哪一天，也不應直接從日期往後推。
+
+正確順序是：
+
+1. 先看 `.privatedocs/五週版學習計畫.md` 裡的「當前執行追蹤」，確認目前真正進行到哪裡。
+2. 再看目前 lesson 的 `qa.md`，確認這份 lesson 是否還有未完成的小題。
+3. 再看目前 lesson 的 `outline.md`，確認今天原本要完成的範圍。
+4. 最後才看 `report.md`，快速收斂目前已經學到什麼。
+
+一句話原則：
+
+- 進度先看計畫追蹤區。
+- 執行先看 `qa.md`。
+- 收斂最後看 `report.md`。
+
+若這三者彼此衝突，優先順序如下：
+
+1. `.privatedocs/五週版學習計畫.md` 的「當前執行追蹤」
+2. 當前 lesson 的 `qa.md`
+3. 當前 lesson 的 `outline.md`
+4. 當前 lesson 的 `report.md`
+
 目前已建立的 lesson：
 
 - `2026-03-10-weamind-traffic-path/`

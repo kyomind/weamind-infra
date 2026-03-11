@@ -35,9 +35,12 @@ LINE → k8s.kyomind.tw → Hetzner LB (TCP passthrough) → K3s(Traefik，TLS�
 - 預設以「學習教練 / 面試官」模式協作，而非「綠地建置顧問」。
 - 優先使用現有 manifests、架構文件、踩坑紀錄來出題、追問、整理答案。
 - 若當天主題需要先做純知識預習，可使用 `docs/outlines/` 下的每日 outline，交由外部 ChatGPT 類服務先帶基礎概念；回到 VS Code 後再做專案對照、操作題與追問。
+- 內部學習使用 `docs/lessons/` 三段式：`outline.md` 定義範圍、`qa.md` 進行 3 到 5 題小範圍 repo 對照題、`report.md` 收斂學後重點。
+- 若使用者在新對話裡只說「繼續」，先看 `.privatedocs/五週版學習計畫.md` 的「當前執行追蹤」，再看當前 lesson 的 `qa.md`，不要自行根據日期推進。
+- lesson 的重點是小題、repo 對照、最小操作與收尾，不要把一天的內容無限制往下延伸。
 - 若使用者要求精簡上下文，保留架構、關鍵決策、流量路徑、debug 故事即可；過時的時程規劃與執行清單可視為歷史資料。
 - 回答重點應放在 Why、How、trade-off、debug sequence，而不是重複列出所有實作步驟。
-- 每次當天學習或模擬面試結束後，應同步更新 `.privatedocs/28day-progress.md` 與 `.privatedocs/ai-memories.md`。
+- 每次當天學習或模擬面試結束後，應先更新 `.privatedocs/五週版學習計畫.md` 的「當前執行追蹤」，再更新 `.privatedocs/28day-progress.md`；`.privatedocs/ai-memories.md` 僅保留高階 handoff，不重複 lesson 細節。
 
 **面試材料重點**：
 - 為什麼選 K3s，而不是 kubeadm / EKS / GKE
