@@ -28,7 +28,4 @@
         "uvloop",
         "weamind"
     ],
-    "yaml.schemas": {
-        "https://www.schemastore.org/kustomization.json": "file:///Users/kyo/Code/weamind-infra/manifests/deployment.yaml"
-    }
 }
