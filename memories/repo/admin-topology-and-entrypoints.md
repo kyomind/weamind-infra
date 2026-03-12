@@ -9,3 +9,4 @@
 - control-plane 也可本地執行 `kubectl`，但較好的敘事是把 bastion 視為主要遠端管理入口，而不是把 node 當主要入口。
 - 目前已知 bastion 是 ARM；K3s cluster nodes 是 x86。談到 `kubectl` binary、tooling binary 或 container image 時要注意架構相容性。
 - SSH 主要是用於登入 bastion / control-plane 與搬運設定；`kubectl` 的核心連線對象仍是 `kubeconfig` 指向的 Kubernetes API server。
+- 若本機透過 SSH proxy / 通道間接連 cluster，該通道逾時後 `kubectl` 可能出現 `127.0.0.1:6443 connection refused`；此時應先提醒使用者重新打開通道，再判斷是否為 cluster 資源異常。
