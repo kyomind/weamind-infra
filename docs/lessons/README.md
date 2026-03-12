@@ -65,27 +65,27 @@
 
 `docs/lessons/YYYY-MM-DD-slug/`
 
-資料夾內至少放三份文件：
+資料夾內至少放三份文件，並建議加上前置排序：
 
-1. `outline.md`：這次 internal learning 要怎麼進行。
-2. `qa.md`：這次 internal learning 的小題清單、回答摘要與修正。
-3. `report.md`：這次學完後，再回填的學習紀錄與收斂結果。
+1. `01-outline.md`：這次 internal learning 要怎麼進行。
+2. `02-qa.md`：這次 internal learning 的小題清單、回答摘要與修正。
+3. `04-report.md`：這次學完後，再回填的學習紀錄與收斂結果。
 
-若這次對話中有較多延伸提問、骨架整理或不適合塞進 `qa.md` 的補充內容，可另外加一份：
+若這次對話中有較多延伸提問、骨架整理或不適合塞進 `02-qa.md` 的補充內容，可另外加一份：
 
-4. `notes.md`：放這次 lesson 中途需要另外記下來的延伸問題、補充說明與暫時結論。
+4. `05-note.md`：放這次 lesson 中途需要另外記下來的延伸問題、補充說明與暫時結論。
 
 若當天主題需要搭配 `kubectl` 或其他實作指令練習，應另外加一份：
 
-5. `command.md`：獨立記錄這次 lesson 的指令練習、觀察重點、輸出判讀與不熟的地方。
+5. `03-command.md`：獨立記錄這次 lesson 的指令練習、觀察重點、輸出判讀與不熟的地方。
 
 範例：
 
-- `docs/lessons/2026-03-10-weamind-traffic-path/outline.md`
-- `docs/lessons/2026-03-10-weamind-traffic-path/qa.md`
-- `docs/lessons/2026-03-10-weamind-traffic-path/report.md`
-- `docs/lessons/2026-03-10-weamind-traffic-path/notes.md`（可選）
-- `docs/lessons/2026-03-10-weamind-traffic-path/command.md`（當天有指令練習時建議加入）
+- `docs/lessons/2026-03-10-weamind-traffic-path/01-outline.md`
+- `docs/lessons/2026-03-10-weamind-traffic-path/02-qa.md`
+- `docs/lessons/2026-03-10-weamind-traffic-path/03-command.md`（當天有指令練習時建議加入）
+- `docs/lessons/2026-03-10-weamind-traffic-path/04-report.md`
+- `docs/lessons/2026-03-10-weamind-traffic-path/05-note.md`（可選）
 
 ---
 
@@ -111,7 +111,7 @@ lesson 資料夾格式：
 
 ## 每份 lesson 建議結構
 
-### `outline.md` 建議包含：
+### `01-outline.md` 建議包含：
 
 1. 今日主題
 2. 這次要解的專案問題
@@ -121,11 +121,11 @@ lesson 資料夾格式：
 
 補充原則：
 
-1. `outline.md` 要明確寫出今天是先做 QA、先做 command，或兩者如何穿插。
+1. `01-outline.md` 要明確寫出今天是先做 QA、先做 command，或兩者如何穿插。
 2. QA 和 command 的先後不固定，應依當天主題決定，不預設永遠哪個在前。
-3. 若今天需要先建立流程骨架，再做操作驗證，就應在 `outline.md` 寫成「先最小 QA，再 command，再回 QA 收斂」。
+3. 若今天需要先建立流程骨架，再做操作驗證，就應在 `01-outline.md` 寫成「先最小 QA，再 command，再回 QA 收斂」。
 
-### `report.md` 建議包含：
+### `04-report.md` 建議包含：
 
 1. 今日主題
 2. 這次對話實際學了什麼
@@ -136,11 +136,11 @@ lesson 資料夾格式：
 
 補充原則：
 
-1. `report.md` 主要是收斂文件，預設在 lesson 結束後集中回填。
+1. `04-report.md` 主要是收斂文件，預設在 lesson 結束後集中回填。
 2. 若對話過程中已出現穩定結論，也可以邊做邊補，但不應在 lesson 一開始就預寫標準答案。
 3. 最終仍應在 lesson 收尾時重新整理一次，避免 report 只剩零散過程筆記。
 
-### `command.md` 建議包含：
+### `03-command.md` 建議包含：
 
 1. 今日指令練習目標
 2. 今天要看的資源
@@ -149,7 +149,7 @@ lesson 資料夾格式：
 5. 從輸出確認了什麼
 6. 哪些地方還不順手
 
-### `qa.md` 建議包含：
+### `02-qa.md` 建議包含：
 
 1. 3 到 5 題小範圍題目
 2. 每題對應的 repo 檔案或操作目標
@@ -174,12 +174,12 @@ lesson 資料夾格式：
 
 不是每份都要完全一樣，但應保持「專案特定、可回帶、可面試」這三個特性。
 
-### `notes.md` 適合放什麼：
+### `05-note.md` 適合放什麼：
 
 1. 使用者的延伸提問與 AI 的補充回答。
-2. 目前已知但尚未正式收斂進 `report.md` 的暫時結論。
+2. 目前已知但尚未正式收斂進 `04-report.md` 的暫時結論。
 3. 不適合塞進單一 Q/A 題目，但之後複習會有價值的補充說明。
-4. 一件事情記一則，不要把 `notes.md` 寫成第二份 lesson 摘要。
+4. 一件事情記一則，不要把 `05-note.md` 寫成第二份 lesson 摘要。
 5. 若要固定格式，建議每則 note 用 H2，直接寫內容，不必加太多 metadata。
 
 ---
@@ -204,48 +204,48 @@ lesson 應優先回答：
 
 ### 原則 4：report 不預先寫答案
 
-`report.md` 不應在學習前就填入完整內容。
+`04-report.md` 不應在學習前就填入完整內容。
 
 正確做法是：
 
-1. 先用 `outline.md` 引導對話與學習。
-2. 對話結束後，再把這次真正學到的重點寫進 `report.md`。
-3. `report.md` 應反映這次互動實際發生了什麼，而不是先寫好標準答案。
+1. 先用 `01-outline.md` 引導對話與學習。
+2. 對話結束後，再把這次真正學到的重點寫進 `04-report.md`。
+3. `04-report.md` 應反映這次互動實際發生了什麼，而不是先寫好標準答案。
 
 ### 原則 5：先定義流程，再做記錄與收斂
 
-`outline.md` 是 internal lesson 的流程規劃區；`qa.md` 與 `command.md` 是主操作記錄區。
+`01-outline.md` 是 internal lesson 的流程規劃區；`02-qa.md` 與 `03-command.md` 是主操作記錄區。
 
 常見流程：
 
-1. 先用 `outline.md` 定義今天的主題與範圍。
-2. 再依 `outline.md` 決定今天是先做 QA、先做 command，或兩者穿插進行。
-3. lesson 結束後，再把重點收斂進 `report.md`；若中途已有穩定結論，也可局部回填。
+1. 先用 `01-outline.md` 定義今天的主題與範圍。
+2. 再依 `01-outline.md` 決定今天是先做 QA、先做 command，或兩者穿插進行。
+3. lesson 結束後，再把重點收斂進 `04-report.md`；若中途已有穩定結論，也可局部回填。
 
 題目應盡量小、具體、可直接對照 repo。不要把一題寫成一整個章節。
 
 ### 原則 5.25：指令練習獨立於 QA
 
-若 lesson 有明確的 `kubectl` 或其他操作練習，預設不要把完整指令訓練內容塞進 `qa.md`。
+若 lesson 有明確的 `kubectl` 或其他操作練習，預設不要把完整指令訓練內容塞進 `02-qa.md`。
 
 建議分工：
 
-1. `qa.md` 放專案對照題、回答摘要與修正。
-2. `command.md` 放指令、觀察目標、輸出判讀與手感補強。
-3. `outline.md` 只需要指出今天是否有 command drill，以及它服務哪個學習目標。
-4. `report.md` 最後再收斂今天哪些概念已和指令操作連起來。
+1. `02-qa.md` 放專案對照題、回答摘要與修正。
+2. `03-command.md` 放指令、觀察目標、輸出判讀與手感補強。
+3. `01-outline.md` 只需要指出今天是否有 command drill，以及它服務哪個學習目標。
+4. `04-report.md` 最後再收斂今天哪些概念已和指令操作連起來。
 
 ### 原則 5.3：順序由 outline 決定
 
-lesson 的執行順序，預設由 `outline.md` 決定，而不是固定套用同一個模板。
+lesson 的執行順序，預設由 `01-outline.md` 決定，而不是固定套用同一個模板。
 
 可接受的模式例如：
 
 1. 先 QA，再 command，再回 QA。
 2. 先 command 做觀察，再用 QA 收斂解釋。
-3. QA 與 command 穿插進行，但每一步都要在 `outline.md` 先寫清楚。
+3. QA 與 command 穿插進行，但每一步都要在 `01-outline.md` 先寫清楚。
 
-一句話原則：`outline.md` 負責規劃流程；`qa.md` 與 `command.md` 負責記錄執行；`report.md` 負責收斂結果。
+一句話原則：`01-outline.md` 負責規劃流程；`02-qa.md` 與 `03-command.md` 負責記錄執行；`04-report.md` 負責收斂結果。
 
 ### 原則 5.5：大題卡住時，先拆小題
 
@@ -258,7 +258,7 @@ lesson 的執行順序，預設由 `outline.md` 決定，而不是固定套用�
 3. 每個小題盡量設計成 2 到 3 個選項，降低回答門檻。
 4. 要求使用者先選一個選項，再補一句理由即可。
 5. 如果小題仍答不出來，再只補那個小題的答案，不直接整題暴雷。
-6. 等小題都完成後，再把整題收斂成完整說法並回填 `qa.md`。
+6. 等小題都完成後，再把整題收斂成完整說法並回填 `02-qa.md`。
 
 一句話原則：卡在大題時，先拆小題；卡在小題時，再補小題答案。
 
@@ -266,13 +266,13 @@ lesson 的執行順序，預設由 `outline.md` 決定，而不是固定套用�
 
 ### 原則 6：notes 是補充，不是第二份 qa
 
-`notes.md` 的用途是承接 lesson 中途冒出的延伸內容，避免把 `qa.md` 撐得太雜。
+`05-note.md` 的用途是承接 lesson 中途冒出的延伸內容，避免把 `02-qa.md` 撐得太雜。
 
 正確分工是：
 
-1. 題目、回答摘要、修正紀錄放 `qa.md`。
-2. 延伸問答、補充說明、暫時結論放 `notes.md`。
-3. 最終收斂仍回到 `report.md`。
+1. 題目、回答摘要、修正紀錄放 `02-qa.md`。
+2. 延伸問答、補充說明、暫時結論放 `05-note.md`。
+3. 最終收斂仍回到 `04-report.md`。
 
 ---
 
@@ -293,7 +293,7 @@ lesson 的執行順序，預設由 `outline.md` 決定，而不是固定套用�
 接手原則：
 
 1. 先看 `.privatedocs/五週版學習計畫.md` 的「當前執行追蹤」。
-2. 再看當前 lesson 的 `qa.md`，確認是否還有未完成的小題。
-3. 需要補範圍時再看 `outline.md`；要收斂已學內容時再看 `report.md`。
+2. 再看當前 lesson 的 `02-qa.md`，確認是否還有未完成的小題。
+3. 需要補範圍時再看 `01-outline.md`；要收斂已學內容時再看 `04-report.md`。
 
-一句話原則：進度先看主計畫，執行先看 `qa.md`。
+一句話原則：進度先看主計畫，執行先看 `02-qa.md`。

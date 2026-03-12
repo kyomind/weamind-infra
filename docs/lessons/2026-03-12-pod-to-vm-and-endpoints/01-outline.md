@@ -28,21 +28,21 @@
 ## 建議學習順序
 
 1. 先看 `manifests/configmap.yaml`，確認 app 連 PostgreSQL / Redis 時實際用的是什麼 host。
-2. 先做 `qa.md` 的 Q1，但第一輪先聚焦在「Pod 到底連哪裡」，不急著一次講完整個注入過程。
+2. 先做 `02-qa.md` 的 Q1，但第一輪先聚焦在「Pod 到底連哪裡」，不急著一次講完整個注入過程。
 3. 再看 `manifests/deployment.yaml`，補上這些環境變數是怎麼被注入 Pod 的，然後把 Q1 補完整。
-4. 接著進入 `command.md`，做今天第一輪指令練習，實際看 Pods、Service、Endpoints 的輸出。
-5. 再回到 `qa.md` 的 Q2 到 Q4，把設計理由、故障症狀與排查順序講清楚。
-6. 最後把穩定結論收斂進 `report.md`；若中途已有穩定結論，也可先局部回填。
+4. 接著進入 `03-command.md`，做今天第一輪指令練習，實際看 Pods、Service、Endpoints 的輸出。
+5. 再回到 `02-qa.md` 的 Q2 到 Q4，把設計理由、故障症狀與排查順序講清楚。
+6. 最後把穩定結論收斂進 `04-report.md`；若中途已有穩定結論，也可先局部回填。
 
 ## 今日 command 練習
 
-這部分獨立記錄在 `command.md`，不再混在 `qa.md` 裡。
+這部分獨立記錄在 `03-command.md`，不再混在 `02-qa.md` 裡。
 
 command 練習的目的不是背大全，而是把今天學到的資源、指令與輸出判讀綁在一起。
 
 在今天這份 lesson 裡，command 不放在最前面，而是放在最小 QA 之後。原因是今天要先知道自己正在驗證哪條流程，指令輸出才會有意義。
 
-本次 lesson 對應檔案：`command.md`
+本次 lesson 對應檔案：`03-command.md`
 
 1. 記今天要看的資源
 2. 記今天實際敲了哪些指令
@@ -51,10 +51,10 @@ command 練習的目的不是背大全，而是把今天學到的資源、指令
 
 ## 文件分工
 
-1. `outline.md`：規劃今天學習順序，以及 QA / command 如何穿插。
-2. `qa.md`：記錄今天的專案問題、回答摘要與修正。
-3. `command.md`：記錄今天的指令、觀察目標、輸出判讀與操作手感。
-4. `report.md`：在 lesson 結束後收斂今天真正學到的內容，必要時也可中途先回填穩定結論。
+1. `01-outline.md`：規劃今天學習順序，以及 QA / command 如何穿插。
+2. `02-qa.md`：記錄今天的專案問題、回答摘要與修正。
+3. `03-command.md`：記錄今天的指令、觀察目標、輸出判讀與操作手感。
+4. `04-report.md`：在 lesson 結束後收斂今天真正學到的內容，必要時也可中途先回填穩定結論。
 
 ## 這次要追問的 Why / How 題
 
@@ -68,5 +68,5 @@ command 練習的目的不是背大全，而是把今天學到的資源、指令
 1. 能用自己的話講出 line-bot Pod 如何拿到 PostgreSQL / Redis 的連線設定，並透過 VM 內網 IP 連線。
 2. 能說出 Service、Endpoints、Pods 的對應關係，以及為什麼 Endpoints 是第一輪高價值觀察點。
 3. 能講出 webhook 進不來或 app 不通時，應如何把問題切成 cluster 內流量與 Pod 對外連 VM 兩段。
-4. 至少完成一輪 `command.md` 內的指令練習，並能用輸出回答今天的觀察問題。
-5. `qa.md` 至少完成 3 題，且每題都有 repo 對照與修正紀錄。
+4. 至少完成一輪 `03-command.md` 內的指令練習，並能用輸出回答今天的觀察問題。
+5. `02-qa.md` 至少完成 3 題，且每題都有 repo 對照與修正紀錄。

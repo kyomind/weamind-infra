@@ -8,13 +8,13 @@
 
 這份 report 已建立骨架，等待依今天實際問答回填。
 
-目前已完成 lesson 初始化，並把指令練習獨立到 `command.md`。今天的執行順序會由 `outline.md` 決定，先做最小 QA 建骨架，再做 command 練習，最後回到 QA 與 report 收斂。
+目前已完成 lesson 初始化，並把指令練習獨立到 `03-command.md`。今天的執行順序會由 `01-outline.md` 決定，先做最小 QA 建骨架，再做 command 練習，最後回到 QA 與 report 收斂。
 
 ## 今日 command 練習
 
 ### 練了哪些指令
 
-- 詳見 `command.md`
+- 詳見 `03-command.md`
 
 ### 從輸出確認了什麼
 
@@ -46,5 +46,5 @@
 
 ## 下一步
 
-- 先完成 `qa.md` 的 Q1，建立今天的最小流程骨架。
-- 再進入 `command.md` 做第一輪指令練習，之後回到 Q2 到 Q4。
+- 先完成 `02-qa.md` 的 Q1，建立今天的最小流程骨架。
+- 再進入 `03-command.md` 做第一輪指令練習，之後回到 Q2 到 Q4。

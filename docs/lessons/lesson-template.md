@@ -9,8 +9,8 @@
 
 1. 今天是否已判斷過需不需要外部預習。
 2. 如果不需要外部預習，才直接建立 `docs/lessons/YYYY-MM-DD-slug/`。
-3. 先決定今天是否需要 `command.md` 與 `notes.md`，不要先建一堆空檔。
-4. 先決定今天的執行順序是什麼，並寫進 `outline.md`。
+3. 先決定今天是否需要 `03-command.md` 與 `05-note.md`，不要先建一堆空檔。
+4. 先決定今天的執行順序是什麼，並寫進 `01-outline.md`。
 
 ---
 
@@ -18,18 +18,18 @@
 
 ### 必備
 
-1. `outline.md`
-2. `qa.md`
-3. `report.md`
+1. `01-outline.md`
+2. `02-qa.md`
+3. `04-report.md`
 
 ### 視需要加入
 
-1. `command.md`：今天有明確的 `kubectl` 或其他操作練習時建立。
-2. `notes.md`：今天有較多延伸問答、暫時結論或補充說明時建立。
+1. `03-command.md`：今天有明確的 `kubectl` 或其他操作練習時建立。
+2. `05-note.md`：今天有較多延伸問答、暫時結論或補充說明時建立。
 
 ---
 
-## `outline.md` 模板
+## `01-outline.md` 模板
 
 ```md
 # YYYY-MM-DD Lesson Title Outline
@@ -63,15 +63,15 @@
 
 ## 今日 command 練習
 
-- 若今天沒有 `command.md`，這裡可寫「本次 lesson 不另外做 command 練習」。
-- 若今天有 `command.md`，這裡只寫它在整個 lesson 裡扮演什麼角色，以及它排在流程的哪個位置。
+- 若今天沒有 `03-command.md`，這裡可寫「本次 lesson 不另外做 command 練習」。
+- 若今天有 `03-command.md`，這裡只寫它在整個 lesson 裡扮演什麼角色，以及它排在流程的哪個位置。
 
 ## 文件分工
 
-1. `outline.md`：規劃今天學習順序。
-2. `qa.md`：記錄今天的專案問題、回答摘要與修正。
-3. `command.md`：記錄今天的指令、觀察目標、輸出判讀與操作手感。
-4. `report.md`：收斂今天真正學到的內容。
+1. `01-outline.md`：規劃今天學習順序。
+2. `02-qa.md`：記錄今天的專案問題、回答摘要與修正。
+3. `03-command.md`：記錄今天的指令、觀察目標、輸出判讀與操作手感。
+4. `04-report.md`：收斂今天真正學到的內容。
 
 ## 這次要追問的 Why / How 題
 
@@ -88,7 +88,7 @@
 
 ---
 
-## `qa.md` 模板
+## `02-qa.md` 模板
 
 ```md
 # YYYY-MM-DD Lesson Title QA
@@ -127,7 +127,7 @@
 
 ---
 
-## `command.md` 模板
+## `03-command.md` 模板
 
 ```md
 # YYYY-MM-DD Lesson Title Command
@@ -181,7 +181,7 @@
 
 ---
 
-## `report.md` 模板
+## `04-report.md` 模板
 
 ```md
 # YYYY-MM-DD Lesson Title Report
@@ -197,7 +197,7 @@
 
 ### 練了哪些指令
 
-- 詳見 `command.md`
+- 詳見 `03-command.md`
 
 ### 從輸出確認了什麼
 
@@ -232,7 +232,7 @@
 - 待補
 ```
 
-若今天沒有 `command.md`，就把 `今日 command 練習` 這一節刪掉或改成一句簡短說明。
+若今天沒有 `03-command.md`，就把 `今日 command 練習` 這一節刪掉或改成一句簡短說明。
 
 ---
 
@@ -240,8 +240,8 @@
 
 1. 先看 `README.md`，確認規則沒有變。
 2. 再用這份模板決定今天要建立哪些檔案。
-3. 先寫 `outline.md`，把今天的順序定清楚。
+3. 先寫 `01-outline.md`，把今天的順序定清楚。
 4. 再開始進行 QA、command 或兩者穿插。
-5. 最後回填 `report.md`。
+5. 最後回填 `04-report.md`。
 
-一句話原則：先用 `outline.md` 定順序，再用 `qa.md` / `command.md` 記錄執行，最後用 `report.md` 收斂。
+一句話原則：先用 `01-outline.md` 定順序，再用 `02-qa.md` / `03-command.md` 記錄執行，最後用 `04-report.md` 收斂。
