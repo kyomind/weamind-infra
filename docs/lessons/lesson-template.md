@@ -257,8 +257,8 @@
 - 若要輸出 Logseq 閃卡，格式請直接遵循 `README.md` 中的唯一正式規格。
 
 - probe 的兩種用途怎麼區分？ #DevOps #card
-	- `liveness probe` 在看容器是否還活著
-	- `readiness probe` 在看 Pod 是否已準備好接流量
+  - `liveness probe` 在看容器是否還活著
+  - `readiness probe` 在看 Pod 是否已準備好接流量
 ```
 
 卡片格式與 note 的使用規則，正式版本一律以 `README.md` 為準。
