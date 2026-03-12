@@ -25,7 +25,7 @@
 ### 視需要加入
 
 1. `03-command.md`：今天有明確的 `kubectl` 或其他操作練習時建立。
-2. `05-note.md`：今天有較多延伸問答、暫時結論或補充說明時建立。
+2. `05-note.md`：今天有較多延伸問答、暫時結論、補充說明，或 lesson 結尾要整理 flashcards 時建立。
 
 ---
 
@@ -236,12 +236,36 @@
 
 ---
 
+## `05-note.md` 模板
+
+```md
+# YYYY-MM-DD Lesson Title Note
+
+## Note 1
+
+- 放這次 lesson 的延伸問答、補充說明或暫時結論。
+
+## Flashcards
+
+- 只有在 lesson 結尾真的需要整理卡片時才加入這一區。
+- 卡片內容以最終保留版為主，不要把所有候選草稿都堆進來。
+- 若要輸出 Logseq 閃卡，格式請直接遵循 `README.md` 中的唯一正式規格。
+
+- probe 的兩種用途怎麼區分？ #DevOps #card
+	- `liveness probe` 在看容器是否還活著
+	- `readiness probe` 在看 Pod 是否已準備好接流量
+```
+
+卡片格式的正式規則只維護在 `README.md`，這裡不重複抄寫，避免之後修改時出現兩份規格不一致。
+
+---
+
 ## 開 lesson 時的最小流程
 
 1. 先看 `README.md`，確認規則沒有變。
 2. 再用這份模板決定今天要建立哪些檔案。
 3. 先寫 `01-outline.md`，把今天的順序定清楚。
 4. 再開始進行 QA、command 或兩者穿插。
-5. 最後回填 `04-report.md`。
+5. 最後回填 `04-report.md`；若這次需要卡片，再整理到 `05-note.md` 的獨立區塊。
 
 一句話原則：先用 `01-outline.md` 定順序，再用 `02-qa.md` / `03-command.md` 記錄執行，最後用 `04-report.md` 收斂。
