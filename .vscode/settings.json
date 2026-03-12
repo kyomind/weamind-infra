@@ -1,6 +1,5 @@
 {
     "[markdown]": {
-        "editor.defaultFormatter": "vscode.markdown-language-features",
         "editor.detectIndentation": false,
         "editor.formatOnSave": true,
         "editor.insertSpaces": true,
