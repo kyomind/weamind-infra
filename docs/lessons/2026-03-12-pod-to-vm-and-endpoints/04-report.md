@@ -8,30 +8,12 @@
 
 這份 lesson 已完成第一輪 QA 與互動式 command drill 收斂。
 
-## 今日 command 練習
+## QA 收斂了什麼
 
-### 練了哪些指令
-
-- 詳見 `03-command.md`
-
-### 從輸出確認了什麼
-
-- 使用者已親手完成一輪 `Service → Endpoints → Pods` 的 command drill。
-- 目前已確認 `weamind-line-bot` 後面有 2 個 Running Pods，Endpoints 對到 `10.42.1.14:8000` 與 `10.42.2.13:8000`。
-- 也已確認 `kubectl describe svc weamind-line-bot -n weamind` 中的 selector 是 `app=weamind`，而 `kubectl get pods --show-labels` 顯示兩個 Pods 的 labels 確實包含 `app=weamind`。
-- 另外確認到一個操作面事實：若 SSH proxy 斷掉，`kubectl` 會出現 `127.0.0.1:6443 connection refused`，這屬於管理通道問題，不是 cluster 內資源本身異常。
-
-### 哪裡還不順手
-
-- Endpoints 與 Pod / Service 的關係原本不夠穩，但已透過親手操作補起來。
-- 這次也修正了 command drill 的流程，後續要維持由使用者親手操作、AI 協助判讀的節奏。
-
-## 這次對話實際學了什麼
-
-- 補清楚了 line-bot Pod 並不是連 cluster 內的 PostgreSQL / Redis Service，而是透過 `ConfigMap` 注入的環境變數，直接連原 VM 的內網 IP。
-- 補清楚了為什麼這個專案只把 line-bot 搬進 K8s，而把 PostgreSQL / Redis 保留在原 VM：這是刻意的混合架構決策，重點是控制遷移範圍與維持資料層穩定性。
-- 透過拆題與互動式 command drill，建立了 Service、Endpoints、Pods 三者在執行期的對應關係。
-- 也建立了 Q4 的排查切法：若 Endpoints 是空的，先查 `Service → selector → Pods`；若 Endpoints 正常但 app 連不到資料庫，則切去查 `Pod → VM` 路徑。
+- WeaMind 的 line-bot Pod 不是連 cluster 內的 PostgreSQL / Redis Service，而是透過 `ConfigMap` 與 `Deployment` 注入的環境變數，直接連原 VM 的內網 IP。
+- 這個 repo 採用的是刻意的 K8s + VM 混合架構：只遷移應用層，不遷移資料層，重點是控制遷移範圍並維持 PostgreSQL / Redis 的穩定性。
+- 在 cluster 內流量觀察上，`Endpoints` 是第一輪高價值觀察點，因為它能最快回答「Service 後面現在到底有沒有實際後端」。
+- 排查時要先把問題切層：若 Endpoints 是空的，先查 `Service → selector → Pods`；若 Endpoints 正常但 app 連不到 PostgreSQL / Redis，再切去查 `Pod → VM` 路徑。
 
 ## 使用者原本卡住什麼
 
@@ -39,13 +21,16 @@
 - 對 Q3 的 Endpoints 概念不夠穩，知道它存在，但不確定它代表什麼。
 - 對 Q4 的後半段有一個合理疑問：Endpoints 正常與 app 連不到 PostgreSQL / Redis 是否屬於同一層問題。
 
-## 對話中釐清的關鍵點
+## 今日 command 練習收斂
 
-- `ConfigMap` 負責提供連線位址，`Deployment` 負責把設定注入 Pod，兩者要一起講才完整。
-- 這個 repo 的重點不是「Kubernetes 能不能跑資料庫」，而是「WeaMind 為什麼刻意只遷移應用層」。
-- Endpoints 的價值不在於抽象定義，而在於它能快速告訴你 Service 後面現在實際有沒有可導流的後端 Pod。
-- Endpoints 正常只能證明 `Service → Pod` 這段大致成立，不能證明 `Pod → VM PostgreSQL/Redis` 一定沒問題；它主要用來幫你切分排查路徑。
-- 若 `kubectl` 突然連不到 `127.0.0.1:6443`，第一輪要先懷疑 SSH proxy / 管理通道是否逾時。
+- 這一輪 command drill 的主要價值，不是多看了幾個 kubectl 指令，而是把 `Service → Endpoints → Pods` 這條執行期觀察鏈正式對起來。
+- 現在已能用一條固定骨架去看 cluster 內流量是否真的接到 app，而不是只停在 YAML 或抽象名詞。
+- 也順手確認了一個操作面訊號：若 SSH proxy 斷掉，`kubectl` 看到的 `127.0.0.1:6443 connection refused` 屬於管理通道問題，不是 cluster 內資源本身異常。
+
+## 今日真正留下來的核心收穫
+
+- 今天真正留下來的，不是四個零散知識點，而是兩條可以分開講、也可以分開查的路徑：`Service → Endpoints → Pods` 與 `Pod → VM`。
+- 這讓 WeaMind 這份 lesson 不只是在記 Kubernetes 名詞，而是建立一套之後能拿去面試、複習與排查的說法。
 
 ## 學完後已能講清楚什麼
 
@@ -56,6 +41,8 @@
 
 ## 仍待補強什麼
 
+- `Service`、`Endpoints`、`Pods` 三者的對照已經清楚很多，但之後仍要多做幾輪，才能把這條觀察鏈變成反射動作。
+- command drill 的節奏也已校正完成，後續應繼續維持「使用者親手操作、AI 協助判讀」這個模式。
 - 之後仍可補一輪從 Pod 內實測 PostgreSQL / Redis 連線的 command drill，讓今天的 `Pod → VM` 路徑不只停在 YAML 與 logs 層。
 - 之後可把今天的排查切法再濃縮成更短的面試版答案，提升臨場表達穩定度。
 
