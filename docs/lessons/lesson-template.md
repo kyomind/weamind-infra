@@ -22,7 +22,7 @@
 
 ## `01-outline.md` 模板
 
-```md
+<template example 01-outline.md>
 # YYYY-MM-DD Lesson Title Outline
 
 ## 今日主題
@@ -78,13 +78,13 @@
 1.
 2.
 3.
-```
+</template example 01-outline.md>
 
 ---
 
 ## `02-qa.md` 模板
 
-```md
+<template example 02-qa.md>
 # YYYY-MM-DD Lesson Title QA
 
 > 原則：每題都先回到 repo 檔案、YAML 或既有 SOP，不直接背名詞。
@@ -115,7 +115,7 @@
 ### 狀態
 
 - 未開始
-```
+</template example 02-qa.md>
 
 需要更多題目時，直接往下加 `## Q2`、`## Q3`。
 
@@ -123,10 +123,15 @@
 
 ## `03-command.md` 模板
 
-```md
+<template example 03-command.md>
 # YYYY-MM-DD Lesson Title Command
 
 ## 今日指令練習目標
+
+1.
+2.
+
+## 這次要驗證的路徑或問題
 
 1.
 2.
@@ -137,50 +142,89 @@
 2.
 3.
 
-## 互動式練習題
+## Command 1
 
-### Command Q1
+### 要驗證的問題
 
-- 先寫這一輪要驗證的問題。
-- 若需要，可直接附 2 到 3 個指令選項，讓使用者先選。
+-
 
-## 今天預計要練的指令
-
-### 1. 指令名稱或目的
+### 指令
 
 ```bash
 
 ```
 
-要看什麼：
+### 關鍵輸出
+
+```text
+
+```
+
+### 使用者選擇理由
 
 -
--
-
-## 練習後要回答的問題
-
-1.
-2.
-3.
-
-## 實際練習紀錄
-
-### 實際敲了哪些指令
-
-- 待補
-
-### 使用者實際輸出
-
-- 待補
 
 ### AI 判讀與修正
 
-- 待補
+-
 
-### 哪裡還不順手
+### 一句話收斂
 
-- 待補
+-
+
+### 狀態
+
+- 未開始
+
+## Command 2
+
+### 要驗證的問題
+
+-
+
+### 指令
+
+```bash
+
 ```
+
+### 關鍵輸出
+
+```text
+
+```
+
+### 使用者選擇理由
+
+-
+
+### AI 判讀與修正
+
+-
+
+### 一句話收斂
+
+-
+
+### 狀態
+
+- 未開始
+
+## 最後收斂
+
+### 今天用哪些指令看懂了什麼
+
+-
+-
+
+### 練習後還不順手的地方
+
+-
+
+### 補充
+
+- 視需要補最小上下文即可。
+</template example 03-command.md>
 
 若今天沒有 command 練習，就不要建立這份檔案。
 
@@ -188,7 +232,7 @@
 
 ## `04-report.md` 模板
 
-```md
+<template example 04-report.md>
 # YYYY-MM-DD Lesson Title Report
 
 ## 今日主題
@@ -235,7 +279,7 @@
 ## 下一步
 
 - 待補
-```
+</template example 04-report.md>
 
 若今天沒有 `03-command.md`，就把 `今日 command 練習` 這一節刪掉或改成一句簡短說明。
 
@@ -243,7 +287,7 @@
 
 ## `05-note.md` 模板
 
-```md
+<template example 05-note.md>
 # YYYY-MM-DD Lesson Title Note
 
 ## Note 1
@@ -259,7 +303,7 @@
 - probe 的兩種用途怎麼區分？ #DevOps #card
   - `liveness probe` 在看容器是否還活著
   - `readiness probe` 在看 Pod 是否已準備好接流量
-```
+</template example 05-note.md>
 
 卡片格式與 note 的使用規則，正式版本一律以 `README.md` 為準。
 
