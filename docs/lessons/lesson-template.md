@@ -287,7 +287,9 @@
 <template example 05-note.md>
 # YYYY-MM-DD Lesson Title Note
 
-## Note 1
+## Notes
+
+### 1. 問題或延伸主題標題
 
 - 放這次 lesson 的延伸問答、補充說明或暫時結論。
 

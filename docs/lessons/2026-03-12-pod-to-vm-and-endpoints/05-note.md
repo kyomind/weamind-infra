@@ -1,6 +1,8 @@
 # 2026-03-12 Pod To VM And Endpoints Notes
 
-## Pod IP 是怎麼來的？在 cluster 裡是不是唯一？
+## Notes
+
+### 1. Pod IP 是怎麼來的？在 cluster 裡是不是唯一？
 
 使用者在 command drill 看到 `10.42.1.14` 與 `10.42.2.13` 之後，追問這些 Pod IP 是否是在啟動時自動分配，以及它們是否在 cluster 內唯一。
 
@@ -13,7 +15,7 @@
 
 一句話收斂：Pod IP 是執行期由 cluster 網路動態分配的、當下唯一但不保證永久不變，因此流量應依賴 Service，而不是直接綁定 Pod IP。
 
-## Pod 可以怎麼被「特定」？
+### 2. Pod 可以怎麼被「特定」？
 
 使用者在 command drill 中追問：Service 看起來很容易指定到某個特定資源，但 Pod 是否也能被特定，還是只能透過 label 來抓。
 
