@@ -18,6 +18,8 @@
 2. `weamind-line-bot` Service
 3. `weamind-line-bot` Endpoints
 
+---
+
 ## Command 1
 
 ### 要驗證的問題
@@ -54,6 +56,8 @@ weamind-line-bot   10.42.1.14:8000,10.42.2.13:8000   54d
 ### 狀態
 
 - 已完成
+
+---
 
 ## Command 2
 
@@ -100,6 +104,8 @@ weamind-5985b7f7f6-wdptx   1/1     Running   0          51d   10.42.2.13
 
 - 已完成
 
+---
+
 ## Command 3
 
 ### 要驗證的問題
@@ -140,6 +146,8 @@ Endpoints:                10.42.2.13:8000,10.42.1.14:8000
 
 - 已完成
 
+---
+
 ## Command 4
 
 ### 要驗證的問題
@@ -176,6 +184,8 @@ weamind-5985b7f7f6-wdptx   1/1     Running   0          51d   app=weamind,pod-te
 ### 狀態
 
 - 已完成
+
+---
 
 ## 最後收斂
 
