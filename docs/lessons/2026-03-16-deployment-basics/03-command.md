@@ -43,30 +43,41 @@ kubectl describe service weamind-line-bot -n weamind
 ### 指令
 
 ```bash
+kubectl get pods -n weamind
 kubectl get deployment -n weamind
 ```
 
 ### 關鍵輸出
 
 ```bash
-待執行
+NAME                       READY   STATUS    RESTARTS   AGE
+weamind-5985b7f7f6-t2qpm   1/1     Running   0          55d
+weamind-5985b7f7f6-wdptx   1/1     Running   0          55d
+
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+weamind   2/2     2            2           59d
 ```
 
 ### 使用者選擇理由
 
-- 待補
+- 使用者一開始在 `kubectl get pods -n weamind` 和 `kubectl get deployment -n weamind` 之間猶豫。
+- 先看 Pods 後，發現雖然能看到有兩個 Pod 在跑，但這個畫面本身不直接告訴你「期望副本數是什麼」以及「目前是否達成 Deployment 想維持的數量」。
+- 接著改看 Deployment，才發現這一層才是最直接能對照期望副本數、目前就緒數與可用數的入口。
 
 ### AI 判讀與修正
 
-- 待補
+- 這次判斷方向是對的，而且你自己先試 Pod 再修正到 Deployment，這個修正過程本身就有學習價值。
+- `kubectl get pods` 的價值在於看「現在有哪些實際執行個體」，但它不是第一眼最準確的管理層入口，因為它沒有直接告訴你 Deployment 宣告想維持幾個副本。
+- `kubectl get deployment -n weamind` 才能直接看到 `READY 2/2`、`UP-TO-DATE 2`、`AVAILABLE 2`，也就是目前這個 Deployment 想維持 2 個副本，而且現況已經達成。
+- 補一個更精準的說法：Pods 不是完全不能對照 Deployment，而是它們比較像「底層結果」；若題目是在問期望副本數與目前是否達成，Deployment 仍是更直接的入口。
 
 ### 一句話收斂
 
-- 待補
+- 想確認 `weamind` 目前宣告幾個副本、是否已達成，第一眼應先看 Deployment，而不是先看 Pods。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
