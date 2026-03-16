@@ -112,6 +112,45 @@ kubectl get rs -n weamind -l app=weamind
 
 一句話收斂：想直接看某個 Deployment 底下的 ReplicaSet，最穩的入口通常是 `kubectl describe deployment <name> -n <namespace>`；`kubectl get rs -l ...` 則是用 labels 做近似篩選。
 
+### 8. Pod 要怎麼對回 ReplicaSet？
+
+使用者在 command 4 卡住：`kubectl get pods -n weamind --show-labels` 雖然看到 Pods 與 labels，但不確定這是否足以看出它們對應到哪個 ReplicaSet。
+
+這題先用最小版本理解即可：
+
+- Pod 名稱 `weamind-5985b7f7f6-t2qpm`、`weamind-5985b7f7f6-wdptx` 的前半段 `weamind-5985b7f7f6`，已經和目前承接中的 ReplicaSet 名稱 `weamind-5985b7f7f6` 對上。
+- Pods 上的 label `pod-template-hash=5985b7f7f6`，也和這個 ReplicaSet 名稱尾段的 hash 一致。
+- 因此即使這個輸出沒有直接寫出 owner reference，仍然能用「名稱前綴 + pod-template-hash」把 Pod 對回目前的 ReplicaSet。
+
+若之後需要更精準驗證 owner 關係，可再往下看單一 Pod 的 `ownerReferences`，但今天先不必展開到那一層。
+
+一句話收斂：在今天這題裡，Pod 名稱前綴和 `pod-template-hash` 就足夠把 Pod 對回 `weamind-5985b7f7f6` 這個 ReplicaSet。
+
+### 9. 為什麼第 4 題是高價值的 command drill？
+
+使用者在完成 command 4 後特別指出：這題不是那種一眼就有明白答案的題，但可以沿著輸出一步步把 Pod、ReplicaSet 與 labels 連回同一條管理鏈，因此覺得很經典。
+
+這題的價值在於：
+
+- 它不是單純考名詞定義，而是要求從真實輸出中拼出資源關係。
+- 它讓使用者練到的不是「背出 Deployment → ReplicaSet → Pod」，而是能從 Pod 名稱前綴與 `pod-template-hash` 這些線索，把執行期的 Pods 對回目前承接中的 ReplicaSet。
+- 它也剛好符合 command drill 的理想形式：題目夠小、輸出夠短，但結論需要使用者自己推理，不是直接讀一行就結束。
+
+一句話收斂：高價值的 command drill，不一定是資訊量最大的那題，而是能逼使用者從輸出把資源關係自己串起來的那題。
+
+### 10. `rollout status` 和 `successfully rolled out` 先怎麼理解？
+
+使用者在 command 5 雖然能正確選到 `kubectl rollout status deployment/weamind -n weamind`，但進一步追問：`rollout status` 到底在看什麼，以及 `successfully rolled out` 的成功代表什麼。
+
+今天先用最小版本理解即可：
+
+- `rollout` 對 Deployment 來說，可以先理解成「把新的 Pod template 版本逐步推進到實際運行狀態」的更新過程。
+- `rollout status` 看的不是一般資源有沒有存在，而是這次更新流程有沒有完成收斂。
+- `deployment "weamind" successfully rolled out` 代表目前這個 Deployment 的最新版本已成功接手，新 ReplicaSet 已可用，更新流程沒有停在半套狀態。
+- 這不等於所有 deeper health 訊號都看完了，但至少表示 Deployment controller 看到這次 rollout 已完成，而不是還在等 Pod Ready 或卡在更新中。
+
+一句話收斂：`successfully rolled out` 可以先白話記成「最新版本已成功接手，Deployment 的這次更新流程完成了」。
+
 ## Flashcards
 
 - 在 WeaMind 的 Deployment 題裡，Deployment、ReplicaSet、Pod 的最小管理鏈是什麼？ #DevOps #card

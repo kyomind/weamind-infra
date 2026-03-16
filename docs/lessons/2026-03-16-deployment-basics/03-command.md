@@ -234,31 +234,38 @@ kubectl describe deployment weamind -n weamind
 ### 指令
 
 ```bash
-kubectl get pods -n weamind
 kubectl get pods -n weamind --show-labels
 ```
 
 ### 關鍵輸出
 
 ```bash
-待執行
+NAME                       READY   STATUS    RESTARTS   AGE   LABELS
+weamind-5985b7f7f6-t2qpm   1/1     Running   0          55d   app=weamind,pod-template-hash=5985b7f7f6
+weamind-5985b7f7f6-wdptx   1/1     Running   0          55d   app=weamind,pod-template-hash=5985b7f7f6
 ```
 
 ### 使用者選擇理由
 
-- 待補
+- 使用者選 `kubectl get pods -n weamind --show-labels`，因為這題是在問實際跑的是哪些 Pods，以及它們和 ReplicaSet 的對應關係。
+- 使用者的直覺是：既然 repo 沒有手寫 ReplicaSet YAML，那這層關係應該還是得回到 Deployment 去理解；但只看 `describe deployment` 又不夠直接看到 Pod 和 ReplicaSet 的逐一對應。
+- 使用者雖然從輸出看到 `pod-template-hash=5985b7f7f6`，但仍不確定這是否足以證明 Pod 對應到哪個 ReplicaSet，因此暫時無法自己收斂這題。
 
 ### AI 判讀與修正
 
-- 待補
+- 這一輪選 `--show-labels` 是合理的，因為如果只看 Pod 名稱，能看到前綴相似，但還少一層更明確的對照訊號；labels 正好把這層訊號補出來。
+- 這題的最小收斂要抓兩個對應點：第一，Pod 名稱 `weamind-5985b7f7f6-t2qpm`、`weamind-5985b7f7f6-wdptx` 前半段的 `weamind-5985b7f7f6`，已經和前一輪看到的 ReplicaSet 名稱 `weamind-5985b7f7f6` 對上。第二，Pods 上的 `pod-template-hash=5985b7f7f6`，也正好和這個 ReplicaSet 名稱尾段的 hash 一致。
+- 所以雖然這個輸出沒有直接寫出「owner 是哪個 ReplicaSet」，但它已經給出足夠強的對照線索：目前這兩個 Pods 是由 `weamind-5985b7f7f6` 這個 ReplicaSet 建出來的。
+- 你的直覺也對一半：因為 repo 沒有獨立手寫 ReplicaSet YAML，所以這層關係確實要回到 Deployment 的 rollout 結果去理解；但執行期要把 Pod 對回 ReplicaSet，最直接的觀察點不是 Deployment YAML 本身，而是 Pod 名稱前綴加上 `pod-template-hash` 這個 label。
+- 如果之後要看更精準的 owner 關係，而不是靠名稱和 hash 判讀，可以再補看單一 Pod 的 `ownerReferences`；但對今天這題來說，先能用 Pod 名稱與 `pod-template-hash` 對回 ReplicaSet，就已經夠用了。
 
 ### 一句話收斂
 
-- 待補
+- Pod 名稱前綴和 `pod-template-hash` 都能對回 ReplicaSet 名稱，因此這次輸出的兩個 Pods 都是由 `weamind-5985b7f7f6` 這個 ReplicaSet 建出來的。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
@@ -289,24 +296,29 @@ kubectl rollout status deployment/weamind -n weamind
 ### 關鍵輸出
 
 ```bash
-待執行
+deployment "weamind" successfully rolled out
 ```
 
 ### 使用者選擇理由
 
-- 待補
+- 使用者選 `kubectl rollout status deployment/weamind -n weamind`，因為題目是在問某個 Deployment 的 rollout 是否完成，理應直接看和 deployment rollout 狀態最相關的指令。
+- 使用者也同時意識到：自己雖然知道這是正確入口，但還不完全清楚 `rollout status` 真正代表什麼，以及 `successfully rolled out` 背後的成功條件是什麼。
 
 ### AI 判讀與修正
 
-- 待補
+- 這次選 `rollout status` 是對的，因為它不是在看一般資源存在與否，而是在看這個 Deployment 的更新流程是否已收斂到成功狀態。
+- 對 Deployment 來說，`rollout` 可以先理解成「把新的 Pod template 版本逐步推進到實際運行狀態」的過程；所以 `rollout status` 關注的不是 Service 或 ConfigMap 本身，而是 Deployment 這條更新鏈是否完成交接。
+- `deployment "weamind" successfully rolled out` 可以先做最小理解：Deployment 目前期望的新版本已經成功推進，新的 ReplicaSet 已可用，所需副本數也已達到可接受狀態，因此這次 rollout 沒有停在半套狀態。
+- 這不等於它在回答所有健康資訊，但至少表示 Deployment controller 觀察到這次 rollout 已完成，而不是仍在等待新 Pod 起來、等待 Ready，或卡在某個更新過程中。
+- 你可以先把它白話記成：最新版本的 Pod template 已經成功接手，目前這個 Deployment 的更新流程已完成。
 
 ### 一句話收斂
 
-- 待補
+- `kubectl rollout status deployment/<name> -n <namespace>` 是看 Deployment 更新是否已完成的直接入口；`successfully rolled out` 代表最新版本已成功接手。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
@@ -314,11 +326,16 @@ kubectl rollout status deployment/weamind -n weamind
 
 ### 今天用哪些指令看懂了什麼
 
-- 待補
+- 用 `kubectl get deployment -n weamind` 確認 Deployment 想維持的副本數與目前是否達成。
+- 用 `kubectl get rs -n weamind` 看出目前承接中的 ReplicaSet 與舊 rollout 歷史。
+- 用 `kubectl describe deployment weamind -n weamind` 直接從 Deployment 視角確認 `NewReplicaSet`、`OldReplicaSets` 與 rolling update 狀態。
+- 用 `kubectl get pods -n weamind --show-labels` 把 Pods 透過名稱前綴與 `pod-template-hash` 對回 ReplicaSet。
+- 用 `kubectl rollout status deployment/weamind -n weamind` 確認目前這個 Deployment 的 rollout 已成功完成。
 
 ### 練習後還不順手的地方
 
-- 待補
+- `kubectl get rs`、`kubectl describe deployment`、`kubectl get pods --show-labels` 三者各自適合拿來回答什麼問題，仍需要再多練幾次才會更直覺。
+- `rollout status` 的精確語意，目前已抓到大方向，但之後還可以再和 rollout strategy、progressing condition 一起補強。
 
 ### 補充
 
