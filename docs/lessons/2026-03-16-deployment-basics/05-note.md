@@ -212,3 +212,53 @@ kubectl get rs -n weamind -l app=weamind
 	- 不是 Service 自己定時輪詢某個 Pod
 	- 控制面會根據 Pod 狀態與 readiness 變化，更新 Endpoints / EndpointSlice
 	- Service 之後依更新後的後端清單導流
+
+### 第二批：Command Drill Cards
+
+- 想先確認 Deployment 想維持幾個副本、目前是否達成，第一眼該看哪個指令？ #DevOps #card
+	- `kubectl get deployment -n weamind`
+	- 它直接顯示 `READY`、`UP-TO-DATE`、`AVAILABLE`
+	- 適合回答「期望副本數是什麼、現在有沒有達成」
+
+- `kubectl get rs -n weamind` 在這題裡主要拿來看什麼？ #DevOps #card
+	- 看 `weamind` namespace 內所有 ReplicaSets
+	- 適合快速掃目前是哪個 ReplicaSet 在承接，以及舊 rollout 歷史還有哪些版本
+	- 若 namespace 裡 app 很多，這個指令就不等於只看某一個 Deployment
+
+- 在 ReplicaSet 輸出裡，`DESIRED`、`CURRENT`、`READY` 各代表什麼？ #DevOps #card
+	- `DESIRED`：想維持幾個 Pod
+	- `CURRENT`：目前實際建立出幾個 Pod
+	- `READY`：目前有幾個 Pod 已通過就緒條件
+	- 若 Pod 已建立但還沒 Ready，常會看到 `CURRENT > READY`
+
+- 如果想直接從 Deployment 視角看 `NewReplicaSet` 和 `OldReplicaSets`，該用什麼指令？ #DevOps #card
+	- `kubectl describe deployment weamind -n weamind`
+	- 它比 `get rs` 更貼近「某個 Deployment 底下目前由誰承接」這個問題
+	- 代價是資訊較多、雜訊也較高
+
+- 要怎麼從 Pod 輸出把 Pod 對回 ReplicaSet？ #DevOps #card
+	- 先看 `kubectl get pods -n weamind --show-labels`
+	- 用 Pod 名稱前綴 `weamind-5985b7f7f6-...` 對回 ReplicaSet `weamind-5985b7f7f6`
+	- 再用 `pod-template-hash=5985b7f7f6` 做第二層確認
+
+- 為什麼 Pod/ReplicaSet 那題是高價值的 command drill？ #DevOps #card
+	- 因為它不是直接讀答案，而是要從輸出推理資源關係
+	- 它訓練的是把 `Deployment -> ReplicaSet -> Pod` 的執行期對應自己串起來
+	- 這比單純背定義更能驗證是否真的看懂
+
+- 想確認 Deployment 的 rollout 是否完成，第一眼該看哪個指令？ #DevOps #card
+	- `kubectl rollout status deployment/weamind -n weamind`
+	- 它看的不是一般資源是否存在，而是這次 Deployment 更新流程是否完成收斂
+	- `successfully rolled out` 可先白話理解成「最新版本已成功接手」
+
+### 第三批：Notes 補充 Cards
+
+- 在 Deployment 題裡，管理鏈和執行鏈要怎麼分？ #DevOps #card
+	- 管理鏈是 `Deployment -> ReplicaSet -> Pod`
+	- 它回答的是誰在宣告期望狀態、誰在維持副本數、誰是被建立出來的執行單位
+	- 執行鏈則是 Pod 建好後，如何被放到節點上並啟動
+
+- Pod 被建立之後的最小執行鏈是什麼？ #DevOps #card
+	- `Scheduler -> Node / kubelet -> container runtime`
+	- Scheduler 先決定 Pod 落到哪個節點
+	- 該節點上的 kubelet 再把 Pod 交給 container runtime 啟動 container
