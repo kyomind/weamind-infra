@@ -15,6 +15,7 @@
         "isready",
         "kubeadm",
         "kubeconfig",
+        "kubelet",
         "kyomind",
         "netcat",
         "nodepool",
