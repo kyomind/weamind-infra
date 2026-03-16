@@ -55,6 +55,63 @@
 
 一句話收斂：在今天的語境裡，workload 可以先簡單理解成「這個要被 Kubernetes 持續跑著並管理的服務或應用」。
 
+### 5. 為什麼 `kubectl get rs -n weamind` 沒指定 Deployment 名稱，還是能看？
+
+使用者在 command 2 追問：這個指令只有指定 namespace，沒有指定 `deployment/weamind`，為什麼仍然能看出哪個 ReplicaSet 正在承接。
+
+這裡要把 CLI 查詢範圍和資源隸屬關係拆開：
+
+- `kubectl get rs -n weamind` 的意思，是列出 `weamind` namespace 內所有 ReplicaSets。
+- 它不是直接對某個 Deployment 做精準查詢，所以理論上若這個 namespace 有很多不同 app，就會一起列出來。
+- 在 WeaMind 目前這個情境下，輸出裡的 ReplicaSet 名稱都以 `weamind-` 開頭，因此很容易從名稱前綴看出它們屬於同一個 Deployment 的 rollout 歷史。
+- 若之後 namespace 變複雜，或需要更精準確認 owner 關係，才適合再補 `kubectl describe deployment weamind -n weamind`、看 labels，或直接看 owner references。
+
+一句話收斂：這個指令能看，是因為它在列 namespace 內所有 ReplicaSets；這次剛好能從 `weamind-` 前綴直接辨識出它們屬於同一個 Deployment。
+
+### 6. `CURRENT` 和 `READY` 差在哪裡？
+
+使用者在 command 2 看到 `DESIRED / CURRENT / READY` 後，進一步追問 `CURRENT` 和 `READY` 的差別。
+
+最小理解可先這樣記：
+
+- `DESIRED`：這個 ReplicaSet 想維持幾個 Pod。
+- `CURRENT`：目前實際已建立出幾個 Pod。
+- `READY`：目前這些 Pod 裡，有幾個已通過就緒條件、可以被視為 Ready。
+
+因此：
+
+- `CURRENT` 偏向「數量已經存在」。
+- `READY` 偏向「這些 Pod 已能對外提供服務」。
+- 若 Pod 已建立但還沒通過 readiness probe，就常會看到 `CURRENT` 大於 `READY`。
+
+一句話收斂：`CURRENT` 看的是 Pod 有沒有被建出來，`READY` 看的是建出來之後是否已通過就緒條件。
+
+### 7. 如果只想看某一個 Deployment 底下的 ReplicaSet，該怎麼查？
+
+使用者在 command 2 後追問：`kubectl get rs -n weamind` 會列出 namespace 內所有 ReplicaSets；那如果目標是只看某一個 Deployment 底下的 ReplicaSet，指令應該怎麼改。
+
+這裡要先分成兩種需求：
+
+- 如果目標是「最實用地看某個 Deployment 目前接的是哪個 ReplicaSet」，最直接的入口通常是：
+
+```bash
+kubectl describe deployment weamind -n weamind
+```
+
+- 這個輸出裡通常能直接看到 `NewReplicaSet` 與 `OldReplicaSets`，也就是最貼近「這個 Deployment 底下有哪些 ReplicaSets」的資訊。
+
+- 如果目標是「仍想用 get rs 形式，只列出和這個 Deployment 相關的 ReplicaSets」，實務上常見做法是用 label selector，例如在 WeaMind 目前這個 repo 可先用：
+
+```bash
+kubectl get rs -n weamind -l app=weamind
+```
+
+- 但要注意，這其實是用 labels 篩選，不是直接按 owner deployment 精準查詢；若未來有多個 Deployment 共用同樣 label，就可能一起被列出來。
+
+- 因此在「我就是想看某個 Deployment 底下目前哪個 ReplicaSet 在承接」這種學習情境裡，`kubectl describe deployment <name> -n <namespace>` 往往比單純 `get rs` 更準、更貼題。
+
+一句話收斂：想直接看某個 Deployment 底下的 ReplicaSet，最穩的入口通常是 `kubectl describe deployment <name> -n <namespace>`；`kubectl get rs -l ...` 則是用 labels 做近似篩選。
+
 ## Flashcards
 
 - 在 WeaMind 的 Deployment 題裡，Deployment、ReplicaSet、Pod 的最小管理鏈是什麼？ #DevOps #card
