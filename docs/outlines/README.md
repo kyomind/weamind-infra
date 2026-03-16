@@ -98,7 +98,8 @@
    - 建議教學順序
    - 學完後要產出的學習報告格式
 6. 若已判斷今天需要外部預習，預設應先停在 outline 階段，等使用者完成外部預習後，再建立或進入對應 lesson。
-7. 寫完後，若有必要，更新 `.privatedocs/ai-memories.md`，記錄新的 outline 已建立。
+7. outline 建立後，正式開始外部預習前，應再快速自檢一次，確認內容仍符合本檔的結構與輕量原則。
+8. 寫完後，若有必要，更新 `.privatedocs/ai-memories.md`，記錄新的 outline 已建立。
 
 ---
 
