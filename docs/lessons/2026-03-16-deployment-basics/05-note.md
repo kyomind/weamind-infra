@@ -57,32 +57,62 @@
 
 ## Flashcards
 
-- 在 Deployment 基礎題裡，今天先要講清楚的是哪一條鏈？ #DevOps #card
-	- 先講管理鏈，不先展開執行鏈
-	- 管理鏈是 `Deployment → ReplicaSet → Pod`
-	- 它回答的是誰在宣告與維持期望狀態
+- 在 WeaMind 的 Deployment 題裡，Deployment、ReplicaSet、Pod 的最小管理鏈是什麼？ #DevOps #card
+	- `Deployment → ReplicaSet → Pod`
+	- Deployment 宣告期望狀態並管理 ReplicaSet
+	- ReplicaSet 再維持符合條件的 Pods 數量
 
-- 最小執行鏈是什麼？ #DevOps #card
-	- Pod 建立後，由 Scheduler 決定要去哪個 node
-	- 該 node 上的 kubelet 再把 Pod 交給 container runtime 啟動 container
-	- 這條鏈屬於執行面，不是 Deployment Q1 的主回答
+- 在 `manifests/deployment.yaml` 裡，Deployment 是靠什麼知道自己要管哪些 Pods？ #DevOps #card
+	- 靠 `spec.selector.matchLabels` 對應 `spec.template.metadata.labels`
+	- 在 WeaMind 裡關鍵 label 是 `app=weamind`
+	- 它管理的是符合 selector、且由 Pod template 建出的那批 Pods
 
-- 為什麼今天不把管理鏈和執行鏈混在一起講？ #DevOps #card
-	- 因為兩者回答的是不同層次的問題
-	- 管理鏈講的是控制與期望狀態
-	- 執行鏈講的是 Pod 建立後怎麼被排程與啟動
+- `replicas: 2` 在 WeaMind 裡不只是「高可用」，還實際解了哪些問題？ #DevOps #card
+	- 單一 Pod 故障時，不會整個沒有後端
+	- Service 可以同時對多個後端 Pods 導流
+	- 部署更新時，不需要把舊版本 Pods 一次全部停掉
 
-- 這週對執行鏈的安排是什麼？ #DevOps #card
-	- 不獨立拉成一整天
-	- 3/17 補最小執行鏈骨架
-	- 3/18 再補 Scheduler / kubelet 在 control-plane / worker 的位置
-
-- Pod crash 後，Service 是怎麼知道後端變了？ #DevOps #card
-	- 不是 Service 自己定時輪詢某個 Pod
-	- 而是控制面根據 Pod 狀態與 readiness 變化，更新 Endpoints / EndpointSlice
-	- Service 之後依更新後的後端清單導流
+- 為什麼 WeaMind 的 line-bot 應該掛在 Deployment，而不是直接手寫一個 Pod？ #DevOps #card
+	- line-bot 是長期常駐、持續提供 webhook 的服務
+	- Pod 是可替換的執行個體，不適合當主要管理單位
+	- Deployment 才能提供副本管理、自動修復與滾動更新
 
 - 今天先怎麼理解 workload？ #DevOps #card
 	- workload 是 Kubernetes 裡要被執行與管理的應用工作負載
 	- line-bot 這種長期常駐的 Web 服務就是一種 workload
 	- Deployment 是用來管理這類 workload 的控制器之一
+
+- `manifests/deployment.yaml` 直接宣告的是哪一層的期望狀態？ #DevOps #card
+	- 直接宣告的是 Deployment 這一層的期望狀態
+	- 它定義想要幾個副本、用什麼 Pod template、如何更新
+	- 不是直接手寫某個固定 ReplicaSet 或某個固定 Pod 的身分
+
+- 為什麼 repo 沒手寫 ReplicaSet YAML，執行期還是會有 ReplicaSet？ #DevOps #card
+	- 因為 Deployment controller 會根據 Deployment 宣告自動建立並管理 ReplicaSet
+	- 所以 ReplicaSet 不是不存在，而是不用手動直接維護
+	- repo 宣告的是高層控制目標，不需要把每一層都手寫出來
+
+- 為什麼 `manifests/deployment.yaml` 沒寫 ReplicaSet，仍然能支援自動修復？ #DevOps #card
+	- Deployment 會自動建立並管理 ReplicaSet
+	- ReplicaSet 會持續把 Pod 數量維持在目標值
+	- 當 Pod 掛掉時，ReplicaSet 會補新的 Pod 回來
+
+- 當 Pod template 變更時，Deployment 怎麼做到滾動更新？ #DevOps #card
+	- Deployment 會建立新的 ReplicaSet
+	- 舊的 ReplicaSet 不會立刻消失，而是和新的一起參與 rollout
+	- 新的逐步增加、舊的逐步減少，最後完成版本交接
+
+- 在 WeaMind 目前 `replicas: 2` 的情境下，為什麼可以把 rolling update 想成「可能先到 3 再回到 2」？ #DevOps #card
+	- 因為更新時常見做法是先增加新版本 Pod，再逐步減少舊版本 Pod
+	- 這比「先砍掉舊的再補新的」更接近預設 rolling update 的方向
+	- 核心目標是避免可用副本一次掉太多
+
+- 在 Deployment YAML 裡，為什麼要講 Pod template，而不是 Pod 名稱？ #DevOps #card
+	- Deployment 寫的是未來要建立出什麼樣的 Pod 模板
+	- 模板包含 image、labels、command、probes 等設定
+	- Pod 名稱通常是執行期產生的，不是 Deployment 先寫死的
+
+- Pod crash 後，Service 是怎麼知道後端變了？ #DevOps #card
+	- 不是 Service 自己定時輪詢某個 Pod
+	- 控制面會根據 Pod 狀態與 readiness 變化，更新 Endpoints / EndpointSlice
+	- Service 之後依更新後的後端清單導流
