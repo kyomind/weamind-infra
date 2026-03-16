@@ -17,6 +17,7 @@
         "kubeconfig",
         "kubelet",
         "kyomind",
+        "Logseq",
         "netcat",
         "nodepool",
         "nslookup",
@@ -26,6 +27,7 @@
         "svclb",
         "Traefik",
         "uvloop",
+        "wdptx",
         "weamind"
     ],
 }
