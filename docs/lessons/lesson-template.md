@@ -282,13 +282,26 @@
 ## `05-note.md` 模板
 
 <template example 05-note.md>
-# YYYY-MM-DD Lesson Title Note
+# YYYY-MM-DD Lesson Title Notes
 
 ## Notes
 
 ### 1. 問題或延伸主題標題
 
-- 放這次 lesson 的延伸問答、補充說明或暫時結論。
+使用者在 lesson 中追問了什麼，或這一段補充是因為哪個卡點出現。
+
+這裡記錄的重點是：
+
+- 一則一則的延伸問答或補充說明
+- 目前已知、但還沒正式收斂進 `04-report.md` 的暫時結論
+- 之後複習時仍有價值的補充脈絡
+
+避免寫法：
+
+- 不要把整份 note 寫成第二份 lesson 摘要
+- 不要用「暫存結論 / 延伸問題 / 可重用說法」這類大綱式欄位去取代逐則 note
+
+一句話收斂：`05-note.md` 應以「一件事情記一則」為主，而不是再做一份總整理。
 
 ## Flashcards
 
