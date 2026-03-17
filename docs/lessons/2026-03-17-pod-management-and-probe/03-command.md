@@ -166,6 +166,54 @@ kubectl logs -n weamind <pod-name> --tail=30
 
 ---
 
+## Command 4
+
+### 要驗證的問題
+
+- 如果你想確認 `nodeSelector.nodepool=worker` 不是空寫在 YAML，而是 cluster 內的 nodes 真的有這個 label，第一輪應先看哪個指令。
+
+### 三個可選指令
+
+```bash
+kubectl get nodes -L nodepool
+kubectl get deployment weamind -n weamind -o yaml
+kubectl get pods -n weamind -o wide
+```
+
+### 為什麼這樣出題
+
+- 這一輪要直接驗證 node 物件上的 label 是否存在，所以最直接的入口應該是 nodes，而不是 Deployment 或 Pods。
+
+### 指令
+
+```bash
+
+```
+
+### 關鍵輸出
+
+```bash
+
+```
+
+### 使用者選擇理由
+
+- 待補
+
+### AI 判讀與修正
+
+- 待補
+
+### 一句話收斂
+
+- 待補
+
+### 狀態
+
+- 未開始
+
+---
+
 ## 最後收斂
 
 - 待完成：今天用哪些指令分開看懂了 probe、nodeSelector、rollout 與 logs。

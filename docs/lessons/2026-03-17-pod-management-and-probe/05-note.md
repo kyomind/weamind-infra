@@ -38,6 +38,16 @@
 - readiness 失敗的直接後果是 Pod 被標成 NotReady，先從可導流後端清單移除；liveness 失敗的直接後果則是 kubelet 依探針結果觸發 container restart。
 - 同一路徑同時承擔 readiness 與 liveness，代表「停止導流」與「觸發重啟」兩種責任被綁在一起。對簡單服務可以接受，但系統變複雜後，常會拆成不同判斷邏輯以降低耦合。
 
+### NodeSelector 問題補充
+
+- 使用者在 Q2 中追問：Kubernetes 到底怎麼知道哪個 node 是 worker、哪個是 control-plane，因為 `nodepool=worker` 看起來像自訂 label，而不是 Kubernetes 自己保證存在的固定欄位。
+- 這題的最小收斂是：`nodeSelector` 比對的是 node labels。`worker` 不是 Kubernetes 自帶的必然身分；像 `nodepool=worker` 這種寫法，通常是叢集管理者額外加在 node 上的自訂 label。
+- control-plane 比較常見會帶有內建角色 label，例如 `node-role.kubernetes.io/control-plane`，也常搭配 taint，避免一般 workload 被排上去；worker 端則常以自訂 label 來表達「這批 node 是給哪類 Pod 跑的」。
+- 這也表示：Deployment YAML 只寫了 Pod 端的需求，真正的 label 來源是在 cluster node 物件上，而不是這個 app repo 裡另外一份 manifests。
+- repo 內已找到直接證據：`PROGRESS.md` 記錄了「對 worker 節點加上 label（`nodepool=worker`），並於 Deployment 加入 `nodeSelector`」，因此這不是單純推測，而是這個專案確實做過的手動設定。
+- 同一份 `PROGRESS.md` 也記錄了 K3s 裡 worker 節點的 `ROLES` 顯示為 `<none>` 屬正常行為。這說明 worker 不一定會自然出現在一個固定的內建 role 欄位裡，所以另外加自訂 label 來做排程限制，在這個專案裡是合理且可追溯的。
+- `nodepool` 不是唯一正解，它只是這個專案採用的 label key。只要 Pod 端 selector 與 node 端 labels 對得上，像 `disktype=ssd`、`dedicated=ingress`、`topology.kubernetes.io/zone=...` 都可以拿來當排程條件。
+
 ## Flashcards
 
 - 待補
