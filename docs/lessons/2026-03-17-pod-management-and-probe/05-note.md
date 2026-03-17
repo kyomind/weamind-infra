@@ -133,3 +133,50 @@
 	- 會，但形式不同
 	- control-plane 主要是 API 物件的控制面成本
 	- worker 主要是承載 containers 的執行期成本
+
+### 第二批卡片
+
+- 為什麼同一個 `/health` 同時拿來做 readiness 和 liveness，會有耦合風險？ #DevOps #card
+	- 因為同一個端點同時承擔「停止導流」與「觸發重啟」兩種責任
+	- 對簡單服務可以接受
+	- 對較複雜服務，常會拆成不同判斷邏輯避免過度耦合
+
+- 為什麼拿掉 `nodeSelector.nodepool=worker` 後，不一定立刻壞掉，卻仍然有風險？ #DevOps #card
+	- 因為 scheduler 的選擇邊界變鬆，不代表 app 立刻不能跑
+	- app workload 可能被排到 control-plane
+	- 之後會更難控制角色邊界、資源隔離與穩定性
+
+- K3s 裡 worker 一定會有內建 `worker` role 嗎？ #DevOps #card
+	- 不一定
+	- 在這個專案的紀錄裡，worker 節點的 `ROLES` 顯示為 `<none>` 是正常行為
+	- 所以另外加 `nodepool=worker` 這類自訂 label 來限制排程，是合理做法
+
+- 為什麼 `kubectl rollout status` 不能拿來判斷 app 邏輯一定正常？ #DevOps #card
+	- 它主要在看 Deployment 交接是否完成
+	- 例如新 Pod 是否逐步變成 Ready
+	- 它不是直接在看應用程式內部 exception 或業務邏輯是否正常
+
+- `kubectl describe pod` 和 `kubectl logs` 最容易混淆的差別是什麼？ #DevOps #card
+	- `describe pod` 看的是 Pod 狀態與事件
+	- 常見內容包含 conditions、events、probe failed、FailedScheduling、image pull error
+	- `logs` 才是看 container 內應用程式自己的 stdout / stderr
+
+- 為什麼不能把 Deployment 講成直接負責排程或直接啟動 container？ #DevOps #card
+	- 因為 Deployment 在管理鏈上，主要負責宣告期望狀態與更新策略
+	- 排程是 scheduler 的責任
+	- 在 node 上實際把 container 跑起來是 kubelet 與 container runtime 的責任
+
+- scheduler 和 kubelet 的互動，最精準的最小說法是什麼？ #DevOps #card
+	- scheduler 先替待執行的 Pod 決定 node
+	- kubelet 之後觀察到「有 Pod 被綁到自己」
+	- 再協調 container runtime 把它實際建立出來
+
+- Pod object 和 running Pod 的差別是什麼？ #DevOps #card
+	- Pod object 是 control-plane 裡的一筆 API 物件資料
+	- running Pod 是 Pod 被綁到 node 後，在 worker 上的實際運行狀態
+	- 前者偏資料與協調，後者偏執行與資源消耗
+
+- 為什麼不建議說「Pod 跑在 etcd 上」？ #DevOps #card
+	- 因為 etcd 或其他 datastore 的角色是儲存 Pod 物件狀態
+	- 它不是執行 Pod 的元件
+	- 更精準的說法是 Pod spec / state 會被持久化在 cluster datastore
