@@ -298,6 +298,24 @@
 <template example 05-note.md>
 # YYYY-MM-DD Lesson Title Notes
 
+## 學習注意事項
+
+### 外部預習回帶重點
+
+-
+
+### 今天進 lesson 前先記住的邊界
+
+-
+
+### 待驗證的 repo 對照點
+
+-
+
+### 暫時不在今天展開的點
+
+-
+
 ## Notes
 
 ### 1. 問題或延伸主題標題
@@ -319,14 +337,23 @@
 
 ## Flashcards
 
-- 只有在 lesson 結尾真的需要整理卡片時才加入這一區。
+- 這一區在初始化時就先建立，避免後續補寫時結構漂移。
 - 卡片內容以最終保留版為主，不要把所有候選草稿都堆進來。
 - 若要輸出 Logseq 閃卡，格式請直接遵循 `README.md` 中的唯一正式規格。
+
+- 若目前還沒有卡片內容，可先留一行：`- 待補`
 
 - probe 的兩種用途怎麼區分？ #DevOps #card
   - `liveness probe` 在看容器是否還活著
   - `readiness probe` 在看 Pod 是否已準備好接流量
 </template example 05-note.md>
+
+補充規則：
+
+1. `05-note.md` 固定只允許三個 H2：`學習注意事項`、`Notes`、`Flashcards`。
+2. `學習注意事項` 與 `Notes` 內部都要用 H3 分組，不要把所有條列直接平鋪在 H2 底下。
+3. `學習注意事項` 用來放外部預習回帶重點、lesson 邊界、待驗證的 repo 對照點、今天暫不展開的點。
+4. `Flashcards` 是否回填內容，依 lesson 實際需要決定；但區塊本身一開始就先建立。
 
 卡片格式與 note 的使用規則，正式版本一律以 `README.md` 為準。
 
