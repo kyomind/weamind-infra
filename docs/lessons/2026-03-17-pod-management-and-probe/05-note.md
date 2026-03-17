@@ -61,6 +61,75 @@
 - Pod 不是純抽象名詞，但也不是像 VM 一樣獨立存在的一台小機器。比較穩的理解是：Pod 是 Kubernetes 的最小部署單位與執行邊界，container 則是在這個邊界裡真正跑起來的進程。
 - 因此兩條鏈雖然最後都會碰到 Pod，但管理鏈在回答「應該維持哪些 Pods 存在」，執行鏈在回答「這些 Pods 怎麼在某台 node 上真的跑起來」。
 
+### Pod 物件與實際資源消耗補充
+
+- 使用者進一步追問：既然 API Server 裡已經有 Pod 物件，而 Pod 又不是完全虛無的抽象，那這個 Pod 到底消耗哪裡的資源，能不能說它的藍圖是跑在 control-plane 或 etcd 上。
+- 這題要先拆成兩個層次。第一層是「Pod object」：這是 Kubernetes API 裡的一筆物件資料，包含 metadata、spec、status 等欄位。它會被 API Server 接受、被控制器與 scheduler 觀看，並被持久化到 cluster 的 datastore。這一層確實會占用 control-plane 端少量資源，例如 API Server / scheduler / controller 的記憶體、watch cache 與 datastore 儲存空間，但它不是你平常在講 app workload 時真正關心的那種執行期 CPU / RAM 消耗。
+- 第二層是「running Pod」：當 Pod 被綁到某台 node 後，該 node 上的 kubelet 會協調 container runtime 建立 Pod sandbox、網路 / namespace 邊界，然後在這個邊界裡啟動 container。這時真正明顯消耗 CPU / 記憶體的是 node 上跑起來的 containers，以及為了支撐這個 Pod 而存在的執行期開銷。
+- 所以可以說：Pod 在 control-plane 上先以「API 物件」形式存在，在 worker node 上再以「執行邊界」形式落地。這兩者都是真的，但不是同一種存在方式。
+- etcd 或其他 cluster datastore 的角色比較接近「儲存 Pod 物件狀態」，不是「執行 Pod」。所以不建議說 Pod 藍圖是「跑在 etcd 上」；更精準的說法是：Pod spec / state 會被持久化在 cluster datastore，而不是由 datastore 來執行。
+- 這也解釋了你對記憶體的直覺：未排程的 Pod object 確實不是零成本，但它消耗的是控制面的資料與協調成本；而當大家在談 Pod 吃多少 CPU / 記憶體時，通常指的是它被排到 node 後，Pod 內 containers 在 worker 上的實際執行資源。
+- 若要再講得更精準一點，scheduler 在做排程判斷時，主要看的也不是「Pod object 在 control-plane 自己吃了多少 RAM」，而是 Pod spec 裡宣告的 requests / limits 與 node 可用資源，必要時也會把 Pod overhead 算進去。
+
+### Pod 在 control-plane 與 worker 的成本差異
+
+- 使用者最後收斂出的問題是：能不能把 Pod 理解成在 control-plane 與 worker 兩邊都會有資源消耗，只是形式不同。
+- 這個理解方向是對的，但更精準的說法是：Pod 在 control-plane 主要有控制面成本，在 worker 主要有執行期成本。
+- 在 control-plane，Pod 是 API 物件，成本來自 API Server、scheduler、controller 的觀察與協調，以及 datastore 對 Pod 狀態的保存。
+- 在 worker，Pod 則是承載 containers 的運行單位，這一側才會出現比較直覺的 CPU、記憶體、sandbox、網路等執行期開銷。
+- 所以如果面試或複習時要用一句話收斂，可以說：Pod 在 control-plane 是一筆要被管理的物件，在 worker 才是實際承載 container 的運行單位。
+
 ## Flashcards
 
-- 待補
+### 第一批卡片
+
+- readiness probe 和 liveness probe 的核心差別是什麼？ #DevOps #card
+	- readiness probe 在看 Pod 現在能不能接流量
+	- liveness probe 在看 container 是否壞到需要被重啟
+
+- 同樣都打 `/health`，Kubernetes 怎麼分辨這次失敗算 readiness 還是 liveness？ #DevOps #card
+	- 因為 kubelet 會分別執行兩組不同的 probe 設定
+	- 差異來自 kubelet 對兩種 probe 的不同處理
+	- 不是來自 `/health` 回應自己標記類型
+
+- readiness probe 失敗時最直接的效果是什麼？ #DevOps #card
+	- Pod 會變成 NotReady
+	- 並先從 Service 的可導流後端清單移除
+	- 不會直接重啟 container
+
+- liveness probe 失敗時最直接的效果是什麼？ #DevOps #card
+	- kubelet 會依探針結果重啟 container
+
+- `nodeSelector.nodepool=worker` 在 WeaMind 裡的作用是什麼？ #DevOps #card
+	- 它是 Pod 對 scheduler 提出的 node label 篩選條件
+	- 用來把 line-bot workload 固定在 worker
+	- 避免 control-plane 同時承擔 app 負載
+
+- `nodepool=worker` 是 Kubernetes 自帶的固定欄位嗎？ #DevOps #card
+	- 不是
+	- 它是這個專案手動加在 worker 節點上的自訂 label
+	- repo 可由 `PROGRESS.md` 找到證據
+
+- `kubectl rollout status`、`kubectl describe pod`、`kubectl logs` 各自在看哪一層？ #DevOps #card
+	- `rollout status` 看 Deployment 交接進度
+	- `describe pod` 看 Pod 狀態與事件
+	- `logs` 看應用程式自己的 stdout / stderr
+
+- 管理鏈 `Deployment → ReplicaSet → Pod` 在回答什麼問題？ #DevOps #card
+	- 它在回答系統想維持什麼 workload 狀態
+	- 包括副本數、版本交接與誰負責維持這些 Pods 存在
+
+- 執行鏈 `Scheduler → kubelet → container runtime` 在回答什麼問題？ #DevOps #card
+	- 它在回答已被宣告要存在的 Pod
+	- 最後怎麼被排到某台 node
+	- 並在那台 node 上把 container 真正跑起來
+
+- Pod 是純抽象嗎？ #DevOps #card
+	- 不是
+	- Pod 是 Kubernetes 的最小部署單位與容器外層包裝
+	- 真正執行程式的是 container
+
+- Pod 在 control-plane 和 worker 都會有成本嗎？ #DevOps #card
+	- 會，但形式不同
+	- control-plane 主要是 API 物件的控制面成本
+	- worker 主要是承載 containers 的執行期成本
