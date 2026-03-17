@@ -48,6 +48,19 @@
 - 同一份 `PROGRESS.md` 也記錄了 K3s 裡 worker 節點的 `ROLES` 顯示為 `<none>` 屬正常行為。這說明 worker 不一定會自然出現在一個固定的內建 role 欄位裡，所以另外加自訂 label 來做排程限制，在這個專案裡是合理且可追溯的。
 - `nodepool` 不是唯一正解，它只是這個專案採用的 label key。只要 Pod 端 selector 與 node 端 labels 對得上，像 `disktype=ssd`、`dedicated=ingress`、`topology.kubernetes.io/zone=...` 都可以拿來當排程條件。
 
+### Logs 與觀察層級補充
+
+- 使用者在 Q3 裡主動指出：`kubectl logs` 其實也很適合單獨做一輪 command drill，因為它很容易和 `rollout status`、`describe pod` 混在一起。
+- 這個觀察很有價值，因為今天這組題目的核心，不只是記住三個指令，而是先分辨你現在要查的是 Deployment rollout、Pod 狀態與事件，還是 app 自己的錯誤輸出。
+- 最小收斂可以固定成三句：`rollout status` 看 Deployment 交接進度，`describe pod` 看 Pod 狀態與事件，`logs` 看 container 內應用程式的 stdout / stderr。
+
+### 管理鏈與執行鏈補充
+
+- 使用者在 Q4 中已經抓到一個很好的區分：管理鏈偏期望狀態與控制器層級，執行鏈偏實際把 Pod 跑出來的過程。
+- 這題最需要修正的點是 scheduler / kubelet 的互動方式。比較精準的說法不是 scheduler 直接命令 kubelet「開兩個 Pod」，而是 scheduler 先替待執行的 Pod 決定 node，之後該 node 上的 kubelet 觀察到 Pod 已綁到自己，才去協調 container runtime 落地執行。
+- Pod 不是純抽象名詞，但也不是像 VM 一樣獨立存在的一台小機器。比較穩的理解是：Pod 是 Kubernetes 的最小部署單位與執行邊界，container 則是在這個邊界裡真正跑起來的進程。
+- 因此兩條鏈雖然最後都會碰到 Pod，但管理鏈在回答「應該維持哪些 Pods 存在」，執行鏈在回答「這些 Pods 怎麼在某台 node 上真的跑起來」。
+
 ## Flashcards
 
 - 待補
