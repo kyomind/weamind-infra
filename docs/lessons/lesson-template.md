@@ -298,6 +298,24 @@
 <template example 05-note.md>
 # YYYY-MM-DD Lesson Title Notes
 
+## 學習注意事項
+
+### 外部預習回帶重點
+
+-
+
+### 今天進 lesson 前先記住的邊界
+
+-
+
+### 待驗證的 repo 對照點
+
+-
+
+### 暫時不在今天展開的點
+
+-
+
 ## Notes
 
 ### 1. 問題或延伸主題標題
@@ -319,16 +337,16 @@
 
 ## Flashcards
 
-- 只有在 lesson 結尾真的需要整理卡片時才加入這一區。
-- 卡片內容以最終保留版為主，不要把所有候選草稿都堆進來。
-- 若要輸出 Logseq 閃卡，格式請直接遵循 `README.md` 中的唯一正式規格。
+- 待補
+
+### 第一批卡片
 
 - probe 的兩種用途怎麼區分？ #DevOps #card
   - `liveness probe` 在看容器是否還活著
   - `readiness probe` 在看 Pod 是否已準備好接流量
 </template example 05-note.md>
 
-卡片格式與 note 的使用規則，正式版本一律以 `README.md` 為準。
+`05-note.md` 的正式結構、卡片格式與使用規則，一律以 `README.md` 為準；這裡只保留骨架與最小範例。
 
 ---
 
