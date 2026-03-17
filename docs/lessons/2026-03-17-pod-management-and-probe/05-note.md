@@ -38,21 +38,6 @@
 - readiness 失敗的直接後果是 Pod 被標成 NotReady，先從可導流後端清單移除；liveness 失敗的直接後果則是 kubelet 依探針結果觸發 container restart。
 - 同一路徑同時承擔 readiness 與 liveness，代表「停止導流」與「觸發重啟」兩種責任被綁在一起。對簡單服務可以接受，但系統變複雜後，常會拆成不同判斷邏輯以降低耦合。
 
-### `kubectl describe` 的 probe 顯示格式補充
-
-- 使用者在 command drill 中追問：為什麼 `kubectl describe deployment` 會把 probe 顯示成 `http://:http/health`，看起來像 URL 被重複寫了一段。
-- 這個輸出不是多打一個網址，而是把 probe 的幾個欄位壓縮顯示在同一行：`http://` 是協定、空白 host 代表沒有特別指定 `host`、`:http` 指的是命名 port `http`、`/health` 才是 path。
-- 在 [manifests/deployment.yaml](manifests/deployment.yaml#L28-L40) 可以直接對到：container port 的 `name` 是 `http`，而 probe 的 `httpGet.port` 也是填 `http`。
-- 比較好懂的人話是：probe 會用 HTTP 去打這個 container 的 `http` port 上的 `/health`；不是在打某個外部 domain。
-
-### `name: http` 的命名感受補充
-
-- 使用者補問：把 port 命名成 `http` 會不會太 confusing，這算常態還是寫法不妥。
-- 這種命名在 Kubernetes 其實很常見，尤其是單一 HTTP 服務只有一個主要對外 port 時，把 port 直接命名為 `http` 是很常見的慣例。
-- 這樣做的好處是 Service、Probe 或其他資源可以直接用名稱引用，不必反覆硬寫數字 port；像這份 YAML 裡 probe 寫 `port: http` 就比直接寫 `8000` 多了一層語意。
-- 真正容易讓人第一次看卡住的，不是 `name: http` 本身，而是 `kubectl describe` 會把它顯示成 `:http`，視覺上像 URL 的一部分。
-- 若未來一個 container 有多個 ports，或這個 `http` 太泛，可以改成更語意化的名字，例如 `http-api`、`web`、`metrics`。但在這個專案現在的單一 app port 情境下，`http` 本身不算不妥。
-
 ### `http://:http/health` 顯示格式補充
 
 - 使用者在 command drill 第一輪後追問：`kubectl describe deployment` 裡的 `http://:http/health` 看起來像重複寫了 HTTP，這段到底該怎麼讀。
@@ -245,3 +230,48 @@
 	- 因為 etcd 或其他 datastore 的角色是儲存 Pod 物件狀態
 	- 它不是執行 Pod 的元件
 	- 更精準的說法是 Pod spec / state 會被持久化在 cluster datastore
+
+### 第三批卡片
+
+- `kubectl describe` 裡的 `http://:http/health` 該怎麼讀？ #DevOps #card
+	- `http://` 是協定
+	- 空白 host 代表沒有特別指定 host
+	- `:http` 指的是命名 port `http`
+	- `/health` 才是 path
+
+- 為什麼把 container port 命名成 `http` 在 Kubernetes 裡通常是合理的？ #DevOps #card
+	- 因為對單一 HTTP 服務來說，`http` 是常見且可讀的命名
+	- Service、Probe、Ingress 都可以直接用名稱引用這個 port
+	- 這比到處硬寫數字 port 更有語意
+
+- `kubectl get pods -o wide` 能回答什麼，不能回答什麼？ #DevOps #card
+	- 它能回答 Pod 目前被排到哪些 nodes
+	- 但不能單靠這個輸出證明 node labels 一定符合 `nodeSelector`
+	- 若要補齊證據，還要再看 nodes 的 labels
+
+- 若要完整驗證 `nodeSelector.nodepool=worker` 是否真的生效，最小閉環通常是什麼？ #DevOps #card
+	- 先用 `kubectl get pods -o wide` 看 Pods 被排到哪些 nodes
+	- 再用 `kubectl get nodes -L nodepool` 看那些 nodes 是否真的帶有 `nodepool=worker`
+	- 前者看排程結果，後者看 label 證據
+
+- 為什麼健康 Pod 的 `kubectl describe pod` 可能看起來「沒什麼資訊」？ #DevOps #card
+	- 因為 `describe pod` 比較像 Pod 層的狀態面板
+	- 健康 Pod 常只會顯示 `Ready=True`、`Restart Count=0`、`Events=<none>`
+	- 它的價值是先告訴你「目前沒有異常跡象」，不是主動展示失敗案例
+
+- 排查時為什麼不能替指令腦補超過證據邊界的結論？ #DevOps #card
+	- 因為每個指令只回答特定層級的問題
+	- 例如 `rollout status` 不等於 app 一定正常，`get pods -o wide` 也不等於 node labels 已被證明
+	- 真正穩的排查是先確認這個指令回答了什麼，再決定下一個證據入口
+
+- 想看 node labels 時，除了 `kubectl get nodes -L nodepool`，還有哪些常用查法？ #DevOps #card
+	- `kubectl get nodes --show-labels` 適合快速看所有 nodes 的 labels
+	- `kubectl describe node <node-name>` 可以連同節點其他資訊一起看
+	- `kubectl get node <node-name> -o yaml` 最適合直接看 `metadata.labels` 的原始資料
+
+- 遇到不同排查問題時，第一眼常見的命令分工怎麼選？ #DevOps #card
+	- 想看 Deployment 交接是否完成，先看 `kubectl rollout status`
+	- 想看 Pod 為什麼 Running 但 NotReady，先看 `kubectl describe pod`
+	- 想看 app process 是否報錯，先看 `kubectl logs`
+	- 想看 Pods 被排到哪些 nodes，先看 `kubectl get pods -o wide`
+	- 想驗證 node labels，先看 `kubectl get nodes -L <label-key>` 或 `--show-labels`
