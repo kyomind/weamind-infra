@@ -30,4 +30,7 @@
         "wdptx",
         "weamind"
     ],
+    "chat.tools.terminal.autoApprove": {
+        "git -C /Users/kyo/Code/weamind-infra": true
+    },
 }
