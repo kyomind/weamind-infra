@@ -209,3 +209,25 @@
 	- 因為真正的理由還包含單人維運、成本、整合度與展示價值
 	- 只講輕量會把架構決策講得太空
 	- 面試時應把情境、限制與 trade-off 一起講出來
+
+### 第三批卡片
+
+- `kubectl get nodes -L nodepool` 裡的 `-L` 在做什麼？ #DevOps #card
+	- 它會在表格裡額外顯示指定的 label key
+	- 很適合快速驗證 node 上是否真的有某個 label
+	- 如果該 node 沒有這個 label，對應欄位就會留空
+
+- `kubectl config view --minify` 最適合用來回答什麼問題？ #DevOps #card
+	- 最適合先看 kubectl 目前正在使用的那組 kubeconfig 設定
+	- 它會濃縮 active context 相關的最小骨架
+	- 若不加 `--minify`，常會把其他 clusters、users、contexts 一起展開
+
+- command drill 裡怎麼選第一個 kubectl 指令？ #DevOps #card
+	- 先對齊題目所在的層級與資源
+	- 選能最短路徑回答當前問題的入口
+	- 不要一開始就用資訊更完整但雜訊更高的指令
+
+- 如果題目只是在問 rollout 有沒有完成，為什麼不該先看 `describe deployment` 或 `get deployment -o yaml`？ #DevOps #card
+	- 因為那兩種入口會把 strategy、conditions 等資訊一起攤開
+	- 它們不是不能看，而是對這題來說第一眼不夠貼題
+	- 先用 `kubectl rollout status` 確認結果，再決定要不要往更細的層次下鑽
