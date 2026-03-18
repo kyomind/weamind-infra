@@ -90,3 +90,122 @@
 - 所以這題最穩的最小說法是：`ROLES` 是 `kubectl` 根據 node labels 整理出來的顯示結果，不是 node 物件裡一個原生、固定、可拿來直接信任的 API 欄位。真正可控、可依賴的仍是你實際看得到的 node labels、taints 與 selectors。
 
 ## Flashcards
+
+### 第一批卡片
+
+- WeaMind 為什麼選 K3s，而不是 kubeadm 或 EKS / GKE？ #DevOps #card
+	- 因為這個專案是小型叢集、單人維運、成本敏感
+	- K3s 比 kubeadm 更省整合成本
+	- K3s 比 EKS / GKE 更保有叢集操作與作品展示價值
+
+- K3s 在這個專案裡不是「比較簡單」而已，真正的定位是什麼？ #DevOps #card
+	- 它是正規 Kubernetes distribution
+	- 重點是整合度高、維運成本低、仍保留可控性
+	- 不是少掉 cluster state datastore
+
+- control-plane 和 worker 在 WeaMind 裡各自負責什麼？ #DevOps #card
+	- control-plane 負責叢集控制與決策
+	- worker 負責實際承載 workload
+	- Scheduler 在 control-plane，kubelet 在 worker
+
+- `nodeSelector.nodepool=worker` 在 WeaMind 裡真正解決什麼問題？ #DevOps #card
+	- 把 line-bot workload 固定在 worker 節點
+	- 避免 app workload 跑到 control-plane
+	- 讓角色分工真正落到 scheduler 的選節點條件
+
+- kubelet 在 worker node 上最精準的角色是什麼？ #DevOps #card
+	- 它是每台 node 上的 agent
+	- 負責把已指派給自己的 Pod 真正落地執行
+	- 並持續回報 node 與 Pod 狀態
+
+- 為什麼不能把 kubelet 當成 worker 上所有事情的唯一入口？ #DevOps #card
+	- Pod 落地很依賴 kubelet
+	- 但控制面決策、網路資料平面、OS 維運不都由 kubelet 負責
+	- 查 LB、Traefik、runtime 或 OS 問題時不能只盯 kubelet
+
+- kubeconfig 的 `cluster`、`user`、`context` 各自在回答什麼問題？ #DevOps #card
+	- `cluster` 回答 API server 在哪裡、怎麼驗證它
+	- `user` 回答我用什麼身分登入叢集
+	- `context` 回答目前要用哪組 cluster + user
+
+- 為什麼 WeaMind 的 kubeconfig `server` 會是 `https://127.0.0.1:6443`？ #DevOps #card
+	- 因為本機透過 SSH tunnel 把遠端 API server 映射到 localhost:6443
+	- 這代表本機連線入口，不代表 API server 真正在本機執行
+	- kubectl 讀 `~/.kube/config` 後就是透過這條路徑進叢集
+
+- `ROLES` 欄位是 node 物件裡一個原生可依賴的欄位嗎？ #DevOps #card
+	- 不是
+	- 它是 `kubectl get nodes` 根據 node labels 整理出的顯示結果
+	- 排程限制應建立在 labels、taints、selectors，不是 `ROLES`
+
+- 為什麼 K3s 裡 worker 顯示 `<none>` 不代表有問題？ #DevOps #card
+	- 因為 worker 不一定會帶明確 role label
+	- 在這個專案紀錄裡，K3s worker 顯示 `<none>` 是正常現象
+	- 所以才另外補 `nodepool=worker` 來做排程限制
+
+- `kubectl rollout status`、Deployment conditions、rolling update strategy 各自回答什麼問題？ #DevOps #card
+	- `rollout status` 看這次 rollout 有沒有完成
+	- conditions 看 Deployment 目前有哪些狀態訊號
+	- strategy 看新舊 Pod 應該怎麼交接
+
+- Deployment conditions 最常先看哪兩個？ #DevOps #card
+	- `Available` 看可用副本是否到位
+	- `Progressing` 看 rollout 是否正在順利推進
+	- 若出現 `ReplicaFailure`，通常代表副本建立過程出錯
+
+- WeaMind 的 Deployment 沒有明寫 strategy，這代表什麼？ #DevOps #card
+	- 不是沒有更新策略
+	- 而是使用 Deployment 預設的 `RollingUpdate`
+	- 也就是新舊 ReplicaSet 會漸進式交接
+
+### 第二批卡片
+
+- Scheduler 和 kubelet 最小責任邊界怎麼分？ #DevOps #card
+	- Scheduler 只負責決定 Pod 應該去哪台 node
+	- kubelet 負責把已指派給自己的 Pod 真正落地執行
+	- 不要把排程責任和節點執行責任混成同一層
+
+- 為什麼 `nodeSelector` 不是在告訴 kubelet 怎麼跑 container？ #DevOps #card
+	- 因為 `nodeSelector` 是給 scheduler 的選節點條件
+	- 它先縮小可選 node 範圍
+	- 之後目標 node 上的 kubelet 才處理 Pod 落地
+
+- 為什麼 `127.0.0.1:6443` 不代表 API server 在本機上？ #DevOps #card
+	- 因為那是 SSH tunnel 在本機開出的連線入口
+	- 本機 local port 被轉發到遠端 control-plane API
+	- localhost 代表入口位置，不代表服務真實部署位置
+
+- `context` 在 kubeconfig 裡最容易被誤解成什麼？ #DevOps #card
+	- 容易被誤解成另一種獨立連線資訊
+	- 其實它主要是在指定目前要用哪組 cluster + user
+	- 名稱像 `default` 不重要，重點是它實際指向哪組設定
+
+- 為什麼不能只靠 `ROLES` 欄位判斷 worker 身分？ #DevOps #card
+	- 因為很多環境下 worker 會顯示 `<none>`
+	- `ROLES` 是 `kubectl` 根據 labels 整理出的顯示結果
+	- 真正該看的還是 node labels、taints 與 selectors
+
+- kubeadm、K3s、EKS 在 `ROLES` 顯示上可能有什麼差異？ #DevOps #card
+	- kubeadm 的 control-plane 常顯示 `control-plane`，worker 常是 `<none>`
+	- K3s 在這個專案裡也是 control-plane 有角色，worker 為 `<none>`
+	- EKS 常只看到 worker nodes，且 `ROLES` 也常是 `<none>`
+
+- `Available=True` 和 `Progressing=True` 各自最常代表什麼？ #DevOps #card
+	- `Available=True` 常代表已有足夠可用副本
+	- `Progressing=True` 常代表 rollout 正在推進或新 ReplicaSet 已可用
+	- 常見 reason 分別是 `MinimumReplicasAvailable` 與 `NewReplicaSetAvailable`
+
+- `ReplicaFailure` 在 Deployment conditions 裡通常暗示什麼？ #DevOps #card
+	- 它偏向副本建立或維持過程出錯
+	- 可能和 image、權限、配額或建立流程失敗有關
+	- 它不是單純代表 rollout 還沒完成
+
+- `RollingUpdate` 和 `Recreate` 最小差別是什麼？ #DevOps #card
+	- `RollingUpdate` 是新舊 Pod 漸進式交接
+	- `Recreate` 更接近先停舊版，再起新版
+	- 前者重點是降低中斷，後者重點是簡單直接
+
+- 為什麼 WeaMind 不適合用「只因為 K3s 比較輕」來解釋選型？ #DevOps #card
+	- 因為真正的理由還包含單人維運、成本、整合度與展示價值
+	- 只講輕量會把架構決策講得太空
+	- 面試時應把情境、限制與 trade-off 一起講出來
