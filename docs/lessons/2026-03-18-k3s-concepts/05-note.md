@@ -127,6 +127,7 @@
 	- `cluster` 回答 API server 在哪裡、怎麼驗證它
 	- `user` 回答我用什麼身分登入叢集
 	- `context` 回答目前要用哪組 cluster + user
+	- `context` 不是另一種獨立連線資訊，名稱像 `default` 也不是重點
 
 - 為什麼 WeaMind 的 kubeconfig `server` 會是 `https://127.0.0.1:6443`？ #DevOps #card
 	- 因為本機透過 SSH tunnel 把遠端 API server 映射到 localhost:6443
@@ -136,12 +137,7 @@
 - `ROLES` 欄位是 node 物件裡一個原生可依賴的欄位嗎？ #DevOps #card
 	- 不是
 	- 它是 `kubectl get nodes` 根據 node labels 整理出的顯示結果
-	- 排程限制應建立在 labels、taints、selectors，不是 `ROLES`
-
-- 為什麼 K3s 裡 worker 顯示 `<none>` 不代表有問題？ #DevOps #card
-	- 因為 worker 不一定會帶明確 role label
-	- 在這個專案紀錄裡，K3s worker 顯示 `<none>` 是正常現象
-	- 所以才另外補 `nodepool=worker` 來做排程限制
+	- worker 顯示 `<none>` 不一定有問題；排程限制應建立在 labels、taints、selectors，不是 `ROLES`
 
 - `kubectl rollout status`、Deployment conditions、rolling update strategy 各自回答什麼問題？ #DevOps #card
 	- `rollout status` 看這次 rollout 有沒有完成
@@ -169,21 +165,6 @@
 	- 因為 `nodeSelector` 是給 scheduler 的選節點條件
 	- 它先縮小可選 node 範圍
 	- 之後目標 node 上的 kubelet 才處理 Pod 落地
-
-- 為什麼 `127.0.0.1:6443` 不代表 API server 在本機上？ #DevOps #card
-	- 因為那是 SSH tunnel 在本機開出的連線入口
-	- 本機 local port 被轉發到遠端 control-plane API
-	- localhost 代表入口位置，不代表服務真實部署位置
-
-- `context` 在 kubeconfig 裡最容易被誤解成什麼？ #DevOps #card
-	- 容易被誤解成另一種獨立連線資訊
-	- 其實它主要是在指定目前要用哪組 cluster + user
-	- 名稱像 `default` 不重要，重點是它實際指向哪組設定
-
-- 為什麼不能只靠 `ROLES` 欄位判斷 worker 身分？ #DevOps #card
-	- 因為很多環境下 worker 會顯示 `<none>`
-	- `ROLES` 是 `kubectl` 根據 labels 整理出的顯示結果
-	- 真正該看的還是 node labels、taints 與 selectors
 
 - kubeadm、K3s、EKS 在 `ROLES` 顯示上可能有什麼差異？ #DevOps #card
 	- kubeadm 的 control-plane 常顯示 `control-plane`，worker 常是 `<none>`
