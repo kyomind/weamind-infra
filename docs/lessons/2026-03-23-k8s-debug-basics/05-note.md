@@ -1,6 +1,8 @@
 # 2026-03-23 K8s Debug Basics Note
 
-## 外部預習摘要
+## 學習注意事項
+
+### 外部預習回帶重點
 
 - 今天先建立的是通用 debug 心智模型，不是工具清單。
 - debug 的核心不是先開 `logs`、`describe`、`exec`，而是先判斷自己正在驗證哪一層。
@@ -8,20 +10,38 @@
 - Pod 狀態是第一個高價值訊號：Pending、ImagePullBackOff、CreateContainerError、CrashLoopBackOff 分別對應不同階段的問題。
 - 若外部請求完全沒進來，通常先走外到內；若 Pod 自己已出現明顯異常訊號，通常可先把注意力收斂到 Pod / app 內層。
 
-## 今天已先對齊的 repo 對照方向
+### 今日先對齊的 repo 入口
 
 - WeaMind 的外部流量骨架可先對回：LINE webhook → DNS → Hetzner LB → Traefik Ingress → `weamind-line-bot` Service → `weamind` Pods → app。
 - `manifests/deployment.yaml` 內的 image、`envFrom`、command、probe 與 `nodeSelector`，都是 Day 1 判讀 Pod 問題時的高價值觀察點。
 - `manifests/service.yaml` 與 `manifests/ingress.yaml` 則是切 Service / Ingress 層問題時最直接的 repo 入口。
 - `PROGRESS.md` 已提供至少兩個可直接掛回今天框架的真實案例：`CreateContainerError (invalid UTF-8)` 與 LB health check 未帶 Host header 導致 `/health` 回 404。
 
-## 待在 QA 中收斂的重點
+### 今日 lesson 邊界
 
-- 抽象骨架如何完整對回 WeaMind 的真實元件名稱。
-- 不同 Pod 狀態在這個 repo 裡各自應優先對照哪些設定。
-- 哪些真實故事比較像外層流量路徑問題，哪些比較像內層 Pod / app 問題。
-
-## 銜接 Day 2 的提醒
-
+- 今天先把抽象骨架對回 WeaMind 的真實元件名稱。
+- 今天先把不同 Pod 狀態在這個 repo 裡應優先對照哪些設定釘穩。
+- 今天先分清哪些真實故事比較像外層流量路徑問題，哪些比較像內層 Pod / app 問題。
 - 今天先不要把 `describe`、`logs`、`logs --previous`、`exec` 的細節全部混進來。
 - Day 2 再把工具對回今天的框架，回答「當我懷疑這一層時，該用哪個工具拿證據」。
+
+## Notes
+
+### Ingress backend 的 80 與 Service port 的關係
+
+- Ingress 不會直接把請求送到 Pod 的 8000，它先把請求交給某個 Service。
+- 在 [manifests/ingress.yaml](manifests/ingress.yaml) 裡看到的 `backend.service.port.number: 80`，意思是「這條 Ingress 規則要把流量交給 `weamind-line-bot` 這個 Service 的哪一個 Service port」，不是在指 Pod port，也不是單純在描述外部使用者原始打進來的 port。
+- 在 [manifests/service.yaml](manifests/service.yaml) 裡，`port: 80` 代表這個 Service 自己在叢集內提供的入口 port；其他元件若要把流量交給這個 Service，就要打這個 port。
+- 同一份 Service YAML 裡的 `targetPort: 8000`，才是在說這個 Service 收到流量後，最後要把流量導到 Pod / container 的哪個 port。
+- 所以這一段的正確分層是：Traefik 依照 Ingress 規則，把流量交給 `weamind-line-bot:80`；然後 Service 再把流量轉給被 selector 選到的 Pod 的 8000。
+- 若某個 Service 同時暴露多個 ports，Ingress backend 這裡的 port 就很重要，因為它是在告訴 Ingress Controller：這次應該選這個 Service 的哪一個入口，而不是讓它自己猜。
+
+### Host / path 規則與 Service 多 port 的理解
+
+- 目前這份 [manifests/ingress.yaml](manifests/ingress.yaml) 的規則，是把 host `k8s.kyomind.tw`、path `/` 命中的請求，統一交給 `weamind-line-bot` 這個 Service 的 `80`。
+- 這條 Ingress 規則主要看的是 host 與 path，不是在用外部請求原本的 port 來做應用層分流；在 WeaMind 這個案例裡，外部通常是走 443 進來，但真正讓這條規則命中的關鍵是 Host header 與 path。
+- 一個 Service 可以定義不只一個 `port`，但在一般 selector-based Service 裡，這些 ports 仍然是面向同一組被 selector 選到的 Pods，不是每個 port 自動對應不同的一組 Pods。
+- 比較典型的用法是：同一組 Pods 同時暴露多個協定或入口，例如 `http:80 -> targetPort 8000`、`metrics:9090 -> targetPort 9090`；或同一個應用同時提供對外流量與監控端點。
+- 若真的要讓不同 port 對應不同的 Pod 群，通常會拆成不同的 Services，因為 selector、責任邊界與 debug 路徑會更清楚；單一 Service 硬承接多組後端，複雜度通常會明顯上升。
+
+## Flashcards
