@@ -116,13 +116,6 @@ weamind-infra/
 └── .privatedocs/       # 私密文檔、學習計畫、個人背景、歷史資料
 ```
 
-## Development Workflow
-
-1. **編輯 manifests** → `kubectl apply -f manifests/`
-2. **驗證部署** → `kubectl get pods -n weamind`
-3. **查看日誌** → `kubectl logs <pod-name> -n weamind -f`
-4. **切換流量** → 修改 LINE Developers webhook URL
-
 ## Reference
 
 - 完整架構規格：`docs/WeaMind V2核心架構.md`
