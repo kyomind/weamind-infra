@@ -6,6 +6,7 @@
         "editor.tabSize": 2
     },
     "cSpell.words": [
+        "apiserver",
         "certbot",
         "configmap",
         "datname",
@@ -30,4 +31,7 @@
         "wdptx",
         "weamind"
     ],
+    "chat.tools.terminal.autoApprove": {
+        "git -C /Users/kyo/Code/weamind-infra": true
+    },
 }
