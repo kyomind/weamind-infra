@@ -36,6 +36,13 @@ spec:
           ports:
             - name: http
               containerPort: 8000 # 容器監聽的 port
+          resources: # 補最小資源骨架，方便後續對照 Pending / 資源限制情境
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 768Mi
           envFrom: # 批次注入環境變數（比 env 更簡潔）
             - configMapRef:
                 name: weamind-config # 注入非敏感配置
