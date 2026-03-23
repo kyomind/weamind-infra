@@ -89,6 +89,69 @@
 - 以 kubeadm 來說，control-plane 常見會帶 `node-role.kubernetes.io/control-plane`，因此顯示成 `control-plane`；worker 往往沒額外 role label，所以常看到 `<none>`。K3s 在 WeaMind 這個專案裡也呈現類似情況：control-plane 有明確角色顯示，worker 則是 `<none>`。EKS 則更進一步，control-plane 對你根本不可見，worker 也常不會顯示成明確 role，而是依靠雲端或 node group labels 來表達節點屬性。
 - 所以這題最穩的最小說法是：`ROLES` 是 `kubectl` 根據 node labels 整理出來的顯示結果，不是 node 物件裡一個原生、固定、可拿來直接信任的 API 欄位。真正可控、可依賴的仍是你實際看得到的 node labels、taints 與 selectors。
 
+### rollout status、conditions、strategy 的範圍怎麼再切得更細
+
+- 使用者目前的主骨架已經接近正確：`kubectl rollout status` 回答的是「這一次 rollout 的執行結果」；`spec.strategy.rollingUpdate` 回答的是「更新時採用什麼交接策略」；`status.conditions` 則還不夠穩，尚在確認它是不是只回答 rollout 狀態，還是範圍比 rollout 更廣。
+- 更精準的收斂是：`kubectl rollout status` 站在 CLI 觀察入口，回答的是「這次 rollout 現在是否已完成」。它比較像濃縮過後的結果訊息。
+- `status.conditions` 不是只看 rollout 結果，也不只是單一成功或失敗標記。它回答的是「Deployment 物件目前有哪些狀態訊號」，其中有些和 rollout 推進直接相關，例如 `Progressing`；有些則和可用性相關，例如 `Available`。
+- 所以如果只把 `conditions` 理解成 rollout 狀態，會太窄。更準確的說法是：rollout 狀態只是 `conditions` 裡的一部分觀察面，不是它的全部。
+- `spec.strategy.rollingUpdate` 則完全不在結果層或狀態層。它站在 spec / 設定層，回答 controller 在更新時被允許怎麼交接新舊 Pod，例如 `maxSurge`、`maxUnavailable` 這類規則。
+- 也可以把三者收斂成三個問題：
+- `kubectl rollout status`：這次 rollout 現在完成了沒？
+- `status.conditions`：這個 Deployment 目前有哪些狀態訊號？
+- `spec.strategy.rollingUpdate`：新舊 Pod 交接時，規則是怎麼定的？
+- 這題最穩的面試版說法是：`rollout status` 比較像這次部署交接的結論入口；`conditions` 是 Deployment status 裡較細的狀態訊號；`strategy` 則是 Deployment spec 裡預先定義的更新規則。三者分別站在結果層、狀態層、設定層。
+
+### rollout 成功後，conditions 和 strategy 不能怎麼誤推
+
+- 使用者目前的方向是對的：`rollout status` 成功，不等於 `status.conditions` 就只會剩下和成功有關的單一訊號；也不等於 `spec.strategy.rollingUpdate` 會直接告訴你這次為什麼成功。
+- 更準確地說，`status.conditions` 是 Deployment 目前較廣的狀態訊號集合，不只覆蓋 rollout 推進，也覆蓋可用性，必要時還可能帶出失敗訊號。因此 rollout 成功後，不能把 conditions 縮成單一「成功說明欄」。
+- 例如在一個正常成功的 Deployment 裡，你常同時看到 `Progressing=True` 與 `Available=True`。前者比較接近 rollout 已推進到新 ReplicaSet，後者則是在回答可用副本是否到位。這兩個都不是單純「success」三個字的同義改寫。
+- `spec.strategy.rollingUpdate` 則更明確不在原因層。它回答的是 controller 更新時被允許遵守什麼交接規則，例如最多可多建多少 Pod、最多可少掉多少可用 Pod；但它本身不會告訴你這次 rollout 為什麼成功。
+- 這次 rollout 之所以成功，通常還涉及新 Pod 是否能正常建立、是否能通過 readiness、image 能否拉下來、app 是否健康等執行期因素。strategy 只是提供更新規則邊界，不是成功原因說明。
+- 這題最穩的收斂可以講成：`rollout status` 成功，只代表這次部署交接已完成；`conditions` 仍是較廣的狀態訊號集合；`strategy` 則只是更新規則，不負責解釋這次成功的原因。
+
+### `maxSurge` 和 `maxUnavailable` 各自在限制什麼
+
+- 使用者對 `maxSurge` 的直覺方向是對的：它和更新過程中「可以暫時多出多少 Pod」有關，也確實是在用資源換較平滑的交接。
+- 更準確地說，`maxSurge` 回答的是：在 rolling update 過程中，最多允許超出目標副本數多少新的 Pod。它描述的是「可以額外加上去的上限」。
+- 例如 Deployment 期望副本數是 2，若 `maxSurge: 25%`，在這種小副本數情境下，實際常可理解成更新時最多暫時多出 1 個 Pod，讓新 Pod 先起來，再逐步把舊 Pod 降下去。
+- `maxUnavailable` 則是在回答另一個方向：在更新過程中，最多允許有多少原本應該可用的 Pod 暫時不可用。它描述的是「可以先少掉多少可用容量的上限」。
+- 所以這兩個值一個是在管「可以多多少」，另一個是在管「可以少多少」：
+- `maxSurge` 管額外增加的上限
+- `maxUnavailable` 管暫時不可用的上限
+- 這也就是為什麼你剛剛會覺得 `maxSurge` 比較像「衝到最多幾個 Pod」；那個方向是對的，只是更精準的說法不是「同時更新中的 Pod」數量，而是「更新期間允許超出目標副本數的額外 Pod」數量。
+- 這題最穩的面試版說法是：`maxSurge` 決定 rolling update 時最多能先多開多少新 Pod，以換取更平滑的交接；`maxUnavailable` 決定更新過程中最多可暫時少掉多少可用 Pod，用來限制服務可用性的下降幅度。
+
+### 3 個副本從 v1 更新到 v2 的實際例子
+
+- 假設現在 Deployment 的 `replicas: 3`，目前正在跑 3 個 v1 Pod。
+- 更新策略假設是：
+
+```yaml
+strategy:
+	type: RollingUpdate
+	rollingUpdate:
+		maxSurge: 1
+		maxUnavailable: 1
+```
+
+- 這組設定的意思可以先白話講成：
+- 更新時，最多允許暫時多出 1 個 Pod
+- 更新時，最多允許暫時少掉 1 個可用 Pod
+
+- 如果從 v1 更新到 v2，一個常見的交接節奏可以這樣理解：
+
+1. 一開始有 3 個 v1 Pod 在跑，可用 Pod 數是 3。
+2. 因為 `maxSurge: 1`，controller 可以先多建立 1 個 v2 Pod，所以總 Pod 數暫時變成 4。
+3. 等這個新的 v2 Pod Ready 之後，就可以開始減掉 1 個舊的 v1 Pod。
+4. 此時總 Pod 數回到 3，但裡面的組成變成 2 個 v1 + 1 個 v2。
+5. 接著再重複同樣節奏：先補新的 v2，再降一個舊的 v1，直到最後變成 3 個 v2。
+
+- 這裡 `maxUnavailable: 1` 的作用，不是說 controller 一定要先讓 1 個 Pod 掛掉，而是說更新過程中，最多容忍有 1 個本來應該可用的 Pod 暫時不可用；不能讓可用容量掉得更多。
+- 所以在 `replicas: 3` 的情境下，這組設定可白話理解成：更新時總 Pod 數最多可到 4，但可用 Pod 數不應低到少於 2 太多。
+- 這也說明兩個參數是一起工作的：`maxSurge` 讓你能先加新 Pod，`maxUnavailable` 則限制你不能把可用容量掉得太兇。
+
 ## Flashcards
 
 ### 第一批卡片
@@ -141,8 +204,8 @@
 
 - `kubectl rollout status`、Deployment conditions、rolling update strategy 各自回答什麼問題？ #DevOps #card
 	- `rollout status` 看這次 rollout 有沒有完成
-	- conditions 看 Deployment 目前有哪些狀態訊號
-	- strategy 看新舊 Pod 應該怎麼交接
+	- conditions 看 Deployment 目前有哪些狀態訊號，不只 rollout，也含可用性
+	- strategy 看新舊 Pod 應該怎麼交接，不直接解釋這次為什麼成功
 
 - Deployment conditions 最常先看哪兩個？ #DevOps #card
 	- `Available` 看可用副本是否到位
@@ -212,3 +275,9 @@
 	- 因為那兩種入口會把 strategy、conditions 等資訊一起攤開
 	- 它們不是不能看，而是對這題來說第一眼不夠貼題
 	- 先用 `kubectl rollout status` 確認結果，再決定要不要往更細的層次下鑽
+
+- `maxSurge` 和 `maxUnavailable` 最小差別是什麼？ #DevOps #card
+	- `maxSurge` 限制的是更新時最多可額外多出多少 Pod
+	- `maxUnavailable` 限制的是更新時最多可暫時少掉多少可用 Pod
+	- 一個在管「可以多多少」，一個在管「可以少多少」
+	- 例如 `replicas: 3`、`maxSurge: 1`、`maxUnavailable: 1` 時，總 Pod 數最多暫時到 4，並用先補新、再降舊的方式逐步交接
