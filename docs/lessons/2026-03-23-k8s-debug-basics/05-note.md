@@ -44,4 +44,11 @@
 - 比較典型的用法是：同一組 Pods 同時暴露多個協定或入口，例如 `http:80 -> targetPort 8000`、`metrics:9090 -> targetPort 9090`；或同一個應用同時提供對外流量與監控端點。
 - 若真的要讓不同 port 對應不同的 Pod 群，通常會拆成不同的 Services，因為 selector、責任邊界與 debug 路徑會更清楚；單一 Service 硬承接多組後端，複雜度通常會明顯上升。
 
+### Secret invalid UTF-8 為什麼會造成 CreateContainerError
+
+- 這個案例的根因可直接對回 [PROGRESS.md](PROGRESS.md)：當時錯誤使用了 Secret 的 `data` 欄位，但放進去的值不是合法的 base64 字串。
+- Kubernetes 的 Secret 若寫在 `data` 底下，值必須先是 base64；若直接把普通明文或帶有非 base64 內容的字串塞進去，就會在解碼或注入階段出問題。
+- WeaMind 後來的修正是改用 `.privatedocs/secrets/secret.yaml` 裡的 `stringData`，讓 Kubernetes 代為處理編碼，避免手動 base64 與 UTF-8 錯誤。
+- 所以這個錯誤不是 app 啟動後才掛掉，而是在 container 建立與注入環境變數的前置階段就卡住，這也是它更像 CreateContainerError 而不是 CrashLoopBackOff 的原因。
+
 ## Flashcards
