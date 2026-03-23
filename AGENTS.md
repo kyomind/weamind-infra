@@ -130,3 +130,8 @@ weamind-infra/
 - 深化學習計畫：`.privatedocs/五週版學習計畫.md`
 - 環境變數範本：`.env.example`
 - 參考配置：`reference/` 目錄
+
+## AGENTS.md as the project main prompt
+
+- Treat `AGENTS.md` as the project's sole main prompt.
+- When main instruction-related changes are needed, edit `AGENTS.md` directly.
