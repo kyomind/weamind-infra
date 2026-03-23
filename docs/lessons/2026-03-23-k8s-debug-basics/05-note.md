@@ -52,3 +52,48 @@
 - 所以這個錯誤不是 app 啟動後才掛掉，而是在 container 建立與注入環境變數的前置階段就卡住，這也是它更像 CreateContainerError 而不是 CrashLoopBackOff 的原因。
 
 ## Flashcards
+
+- Ingress backend 裡的 `service.port.number: 80` 代表什麼？ #DevOps #card
+	- 它指定的是這條 Ingress 規則要把流量交給哪個 Service port
+	- 在 WeaMind 裡就是把命中 `k8s.kyomind.tw` + `/` 的請求交給 `weamind-line-bot:80`
+	- 它不是 Pod port，也不是單純外部 client 原始打進來的 port
+
+- Service 的 `port` 與 `targetPort` 在 WeaMind 裡怎麼分工？ #DevOps #card
+	- `port: 80` 是 Service 自己在叢集內提供的入口
+	- `targetPort: 8000` 是 Service 最後把流量導到 Pod / container 的 port
+	- 所以路徑是 Traefik → `weamind-line-bot:80` → Pod:8000
+
+- 一個 Service 可以有多個 ports，但通常代表什麼？ #DevOps #card
+	- 通常仍是面向同一組被 selector 選到的 Pods
+	- 常見用途是同一組 Pods 同時暴露 http、metrics 或不同協定入口
+	- 若要對不同 Pod 群導流，通常拆成不同 Services 比較清楚
+
+- Pending 在 WeaMind 這個 repo 第一輪應先看什麼？ #DevOps #card
+	- 先看 `manifests/deployment.yaml` 裡的排程條件與資源設定
+	- WeaMind 目前的高價值入口是 `nodeSelector: nodepool=worker` 與 `resources.requests`
+	- 它代表 Pod 還沒真正被放上可執行的 node，不是 app 本身先壞掉
+
+- ImagePullBackOff 在 WeaMind 第一輪應先看哪裡？ #DevOps #card
+	- 先看 `manifests/deployment.yaml` 裡的 `containers.image` 與 `imagePullPolicy`
+	- WeaMind 例子是 `ghcr.io/kyomind/weamind:latest` 與 `Always`
+	- 這一層在問的是 image 拉不拉得下來，不是 app 啟動邏輯
+
+- 為什麼 `CreateContainerError (invalid UTF-8)` 比較像 Pod / Container 建立層問題？ #DevOps #card
+	- 因為錯誤發生在 container 建立與注入環境變數的前置階段
+	- WeaMind 的根因是 Secret 錯用 `data` 並放入非 base64 字串
+	- 後來改用 `stringData` 才修好，所以它不是 app 啟動後才掛掉
+
+- CrashLoopBackOff 在 WeaMind 第一輪應優先懷疑什麼？ #DevOps #card
+	- 先回 `manifests/deployment.yaml` 看 `command`、`envFrom`、probes 與依賴連線設定
+	- 它代表 container 已經起來，但 app 活不下來
+	- 這是比 CreateContainerError 更內層、也更接近 app 執行期的訊號
+
+- LB health check 未帶 Host header 導致 `/health` 回 404，為什麼應先由外到內排查？ #DevOps #card
+	- 因為最強的異常訊號先出現在外層入口與 routing 規則命中
+	- 在 WeaMind 裡第一輪應先查 LB health check、Host header 與 Ingress 規則
+	- 不是先證明 Pod 一定沒問題，而是先排掉更直接的外層異常訊號
+
+- 為什麼 `CreateContainerError` 與 LB health check 404 不該用同一條排查起點？ #DevOps #card
+	- 因為兩者最強的異常訊號出現在不同層
+	- `CreateContainerError` 先指向 Pod / Container 建立層
+	- LB health check 404 先指向 LB / Ingress 入口與 routing 層
