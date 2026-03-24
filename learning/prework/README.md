@@ -4,6 +4,12 @@
 
 `learning/prework/` 用來存放「每日外部預習 prework」。
 
+這份 README 是 `learning/` 底下的第二層規則檔。
+
+它有一個前提：你已經先讀過 `learning/README.md`，而且已經做完「今天是否需要 prework」的判斷。
+
+只有在已確認今天需要外部預習時，才應該打開這份 README。
+
 這些檔案不是給 GitHub Copilot 在 VS Code 內直接教學用的，而是給外部 ChatGPT / TradeGPT 類型的對話服務使用。
 
 目的是把每天的純知識預習先外包出去，減少在 VS Code 小視窗內閱讀長篇教學內容的負擔。
@@ -19,6 +25,10 @@
 
 ## 與 lesson 的先後順序
 
+本檔只負責 prework 規則，不負責決定今天該不該先做 prework。
+
+那個判斷屬於 `learning/README.md` 的責任。
+
 開始五週計畫中的一個新日期主題時，應先做這個判斷：
 
 1. 這一天是否需要外部純知識預習。
@@ -27,6 +37,29 @@
 4. 如果 AI 不確定需不需要外部預習，必須先問使用者，不可自行跳過。
 
 一句話原則：先判斷要不要外部預習，再決定建立 prework 或 lesson。
+
+因此這份 README 的正確使用時機不是「一開始就讀」，而是「已確定需要 prework 後才讀」。
+
+---
+
+## 這份 README 的責任邊界
+
+本檔負責：
+
+1. prework 的命名規則。
+2. prework 的段落骨架。
+3. 外部預習的交付形式。
+4. prework 與 lesson 的銜接方式。
+
+本檔不負責：
+
+1. learning 入口導覽。
+2. lesson 內部的 QA / command / report 規格。
+3. 今天是否真的需要外部預習的上層判斷。
+
+如果現在還在判斷是否要 prework，請回 `learning/README.md`。
+
+如果現在已確定要進 lesson，請改看 `learning/lessons/README.md`。
 
 ---
 
@@ -87,8 +120,8 @@
 
 在新的對話裡，如果要產生 prework，GitHub Copilot 應遵守這個流程：
 
-1. 先對照 `.privatedocs/五週版學習計畫.md`，確認今天日期、主題與學習範圍。
-2. 先判斷今天是否真的需要外部預習；只有答案是「需要」時，才建立 prework。
+1. 先確認上層流程判斷已完成，也就是今天已確定需要 prework。
+2. 再對照 `.privatedocs/五週版學習計畫.md`，確認今天日期、主題與學習範圍。
 3. 判斷今天有哪些內容屬於「純知識預習」，哪些內容應保留到 VS Code 內做專案對照。
 4. 在 `learning/prework/` 建立新檔，檔名依 `YYYY-MM-DD-slug.md`。
 5. 內容必須明確寫出：
@@ -97,8 +130,8 @@
    - 今天要建立的最小理解骨架
    - 建議教學順序
    - 學完後要產出的學習報告格式
-6. 若已判斷今天需要外部預習，預設應先停在 prework 階段，等使用者完成外部預習後，再建立或進入對應 lesson。
-7. prework 建立後，正式開始外部預習前，應再快速自檢一次，確認內容仍符合本檔的結構與輕量原則。
+6. prework 建立後，預設應先停在 prework 階段，等使用者完成外部預習後，再進入 `learning/lessons/`。
+7. 正式開始外部預習前，應再快速自檢一次，確認內容仍符合本檔的結構與輕量原則。
 8. 寫完後，若有必要，更新 `.privatedocs/ai-memories.md`，記錄新的 prework 已建立。
 
 ---

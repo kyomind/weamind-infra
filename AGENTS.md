@@ -34,10 +34,12 @@ LINE → k8s.kyomind.tw → Hetzner LB (TCP passthrough) → K3s(Traefik，TLS�
 ### 課程啟動協議
 
 - 當使用者要「開始今天課程」或「進入新的 lesson 主題」時，AI 必須先把流程問題處理完，再開始出題或建立 lesson 內容。
-- 啟動課程時，應先查看 `learning/lessons/README.md` 與 `learning/prework/README.md`，確認 lessons 與 prework 的分工，以及當天是否需要外部預習。
+- 啟動課程時，應先查看 `learning/README.md`，先用它決定現在要走哪一條學習路徑，而不是一開始就把 `learning/lessons/README.md` 與 `learning/prework/README.md` 一起攤開。
+- 只有在 `learning/README.md` 已經把路徑判斷清楚後，才往下讀對應的第二層 README：需要外部預習時才讀 `learning/prework/README.md`；確認進入內部 lesson 時才讀 `learning/lessons/README.md`。
+- 只有在已決定新建 lesson 骨架時，才再往下讀 `learning/lessons/lesson-template.md`。
 - 若 AI 不確定今天是否需要外部純知識預習，不可自行假設略過，必須先詢問使用者，再決定是先建立 outline，還是直接進入 lesson。
 - 只要當天需要外部預習，固定順序就是：先建立 `learning/prework/YYYY-MM-DD-slug.md` → 使用者完成外部預習 → 再建立或進入 `learning/lessons/YYYY-MM-DD-slug/`。
-- 建立 prework 或 lesson 骨架後，正式開始課程前，必須再做一次「文件自檢」：重新對照 `learning/lessons/README.md`、`learning/prework/README.md` 與需要時的 `learning/lessons/lesson-template.md`，確認今天建立的文件沒有明顯漏節、跳步或順序錯誤。
+- 建立 prework 或 lesson 骨架後，正式開始課程前，必須再做一次「文件自檢」：至少重新對照 `learning/README.md` 與當前實際使用的第二層 README；若今天有新建 lesson 骨架，再額外對照 `learning/lessons/lesson-template.md`，確認文件沒有明顯漏節、跳步或順序錯誤。
 - 有外部預習的日子，不應先展開內部 lesson 問答，也不應先進 command drill。
 - 內部 lesson 一旦開始，預設流程固定為 `QA → command → report`；只有在 `01-outline.md` 明確寫出例外理由時，才可改成 command 先行。
 
@@ -47,10 +49,11 @@ LINE → k8s.kyomind.tw → Hetzner LB (TCP passthrough) → K3s(Traefik，TLS�
 - 使用者多半透過語音轉文字輸入，英文名詞、產品名或技術詞常會被轉錯。AI 應優先理解語意，不必特別指出轉字錯誤；回覆時直接使用正確名詞即可。
 - 優先使用現有 manifests、架構文件、踩坑紀錄來出題、追問、整理答案。
 - 每當要開始五週計畫中的一個新日期主題時，第一個判斷不是直接出題，而是先判斷該主題是否需要外部純知識預習。
+- 在 learning 系統裡，閱讀順序必須採漸進式揭露：先看 `learning/README.md` 做入口判斷，再視需要進 `learning/prework/README.md` 或 `learning/lessons/README.md`；不要一開始就把所有下層規則一起載入成同一層。
 - 若當天主題需要先做純知識預習，可使用 `learning/prework/` 下的每日 prework，交由外部 ChatGPT 類服務先帶基礎概念；回到 VS Code 後再做專案對照、操作題與追問。
 - 若判斷需要外部預習，應先建立當天的 `learning/prework/YYYY-MM-DD-slug.md`，等外部預習完成後，再建立或進入對應的 `learning/lessons/`；不要先把 lesson 問答與 command 骨架一路展開。
 - 若判斷不需要外部預習，則應直接建立或進入當天對應的 `learning/lessons/`，不要跳過「是否需要外部預習」這個判斷步驟。
-- 無論今天建立的是 outline 還是 lesson，正式開始前都應補做一次文件自檢，確認內容符合 README 與模板規則；若發現不一致，應先修正文件，再開始課程。
+- 無論今天建立的是 prework 還是 lesson，正式開始前都應補做一次文件自檢，確認內容符合當前層級的 README 與需要時的模板規則；若發現不一致，應先修正文件，再開始課程。
 - 內部學習使用 `learning/lessons/` 的標準 lesson 結構：`01-outline.md` 定義範圍、`02-qa.md` 進行 3 到 5 題小範圍 repo 對照題、`04-report.md` 收斂學後重點；若有 command drill，預設使用 `03-command.md` 並排在 QA 之後。
 - QA 預設採低壓引導式提問：先給完整主問題，讓使用者先用自己的話作答，不以高壓猜題為目標。
 - 若使用者一時沒有想法、明確卡住，或看過最小提示後仍答不出來，AI 再把同一題即時拆成 2 到 3 個更小的引導點；小題完成後，必須再收斂回原本那題的完整答案。

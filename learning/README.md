@@ -2,56 +2,135 @@
 
 ## 用途
 
-`learning/` 是這個 repo 的公開學習區。
+`learning/` 是這個 repo 的公開學習系統入口。
 
-這裡放的是和 WeaMind Infra 學習流程直接相關的內容，而不是專案正式架構文件。
+這份 README 的責任不是把所有規則一次講完，而是先回答兩件事：
 
-一句話區分：
+1. 你現在要進入的是哪一種學習流程。
+2. 下一份應該往下讀的 README 是哪一份。
 
-- `docs/` 放正式專案文件。
-- `learning/` 放公開學習系統。
+一句話定位：
 
----
-
-## 目錄分工
-
-### `lessons/`
-
-存放 repo 內的正式 lesson。
-
-這裡的重點是：
-
-1. 專案對照。
-2. QA 與 command drill。
-3. Why、How、trade-off、debug sequence。
-4. lesson 結束後的收斂與複習。
-
-### `prework/`
-
-存放進入 lesson 前的外部預習材料。
-
-這裡的重點是：
-
-1. 每日課前預習。
-2. 純知識骨架建立。
-3. 外部 AI 使用的學習引導。
-4. 帶回 lesson 的問題與理解缺口。
+- `learning/README.md` 負責總導覽與分流。
+- `learning/lessons/README.md` 負責 lesson 內部規格。
+- `learning/prework/README.md` 負責 prework 規格。
 
 ---
 
-## 使用順序
+## 三層分工
 
-開始一個新主題時，預設順序如下：
+### `learning/README.md`
 
-1. 先判斷今天是否需要外部預習。
-2. 若需要，先建立或完成 `prework/`。
-3. 外部預習完成後，再進入 `lessons/`。
-4. lesson 內部預設流程仍是 QA → command → report。
+這是入口層。
+
+它負責：
+
+1. 定義 `learning/` 底下有哪些學習空間。
+2. 說明什麼情況應該走 `prework/`，什麼情況應該走 `lessons/`。
+3. 規定閱讀順序要先看這份，再決定往下讀哪一份子 README。
+
+它不負責：
+
+1. lesson 檔案骨架細節。
+2. prework 段落模板細節。
+3. QA / command / report 的完整欄位規則。
+
+### `learning/lessons/README.md`
+
+這是 lesson 規格層。
+
+它負責：
+
+1. 進入 repo 內 lesson 之後的標準流程。
+2. lesson 目錄結構與各檔案分工。
+3. QA、command、report、note 的寫法與邊界。
+
+### `learning/prework/README.md`
+
+這是 prework 規格層。
+
+它負責：
+
+1. 外部預習何時需要建立。
+2. prework 檔案怎麼命名與撰寫。
+3. 外部預習應交付什麼，回來後如何銜接 lesson。
 
 ---
 
-## 先看哪裡
+## 進入順序
 
-1. 要建立或進入正式 lesson：先看 `lessons/README.md`。
-2. 要建立或進入課前預習：先看 `prework/README.md`。
-3. 要建立新的 lesson 骨架：再看 `lessons/lesson-template.md`。
+只要是新的學習操作，一律先讀這份 `learning/README.md`，不要直接跳進 `lessons/README.md` 或 `prework/README.md`。
+
+標準順序如下：
+
+1. 先讀 `learning/README.md`。
+2. 先判斷現在要做的是：進入既有 lesson、建立新 lesson、還是建立 prework。
+3. 若是新主題，先判斷今天是否需要外部預習。
+4. 只有在已判斷「需要外部預習」時，才往下讀 `prework/README.md`。
+5. 只有在已判斷「直接進入 lesson」或「prework 已完成」時，才往下讀 `lessons/README.md`。
+6. 只有在確定要建立新的 lesson 骨架時，才再往下讀 `lessons/lesson-template.md`。
+
+一句話原則：先看入口 README，再依判斷結果逐層揭露下一份規則，不要一開始把三份 README 全部攤開。
+
+---
+
+## 兩條路徑
+
+### 路徑 A：先做 prework
+
+適用情況：
+
+1. 今天主題先缺通用概念骨架。
+2. 直接在 VS Code 內展開會太重。
+3. 需要先把純知識部分交給外部 AI 處理。
+
+路徑：
+
+1. 先看這份 `learning/README.md`。
+2. 確認今天需要 prework。
+3. 再進 `prework/README.md`。
+4. prework 完成後，再進 `lessons/README.md`。
+
+### 路徑 B：直接進 lesson
+
+適用情況：
+
+1. 今天主題已經有足夠骨架。
+2. 今天主要任務就是 repo 對照、QA 或 command drill。
+3. 不需要先做外部預習。
+
+路徑：
+
+1. 先看這份 `learning/README.md`。
+2. 確認今天不需要 prework。
+3. 直接進 `lessons/README.md`。
+
+---
+
+## 這份 README 應怎麼用
+
+### 當要開始一個新主題
+
+先用這份 README 做流程判斷，不要一開始就建 lesson 或 prework。
+
+### 當要建立新 lesson
+
+先用這份 README 確認今天是否應直接進 lesson，確認後才去看 `lessons/README.md`，最後才看 `lessons/lesson-template.md`。
+
+### 當要建立 prework
+
+先用這份 README 確認今天真的需要 prework，確認後才去看 `prework/README.md`。
+
+### 當使用者只說「繼續」
+
+這份 README 只負責提醒閱讀順序；正式進度錨點仍回到 `.privatedocs/五週版學習計畫.md`，再依當前情況進 lesson 或 prework。
+
+---
+
+## 子 README 的閱讀時機
+
+1. `lessons/README.md`：只有在已決定進入 lesson 流程時才讀。
+2. `prework/README.md`：只有在已決定需要外部預習時才讀。
+3. `lessons/lesson-template.md`：只有在已決定新建 lesson 骨架時才讀。
+
+如果還沒做完「今天是否需要 prework」這個判斷，就代表現在還不應往下讀子 README。

@@ -4,7 +4,16 @@
 
 `learning/lessons/` 用來存放 VS Code 內部學習記錄。
 
-開始新的 lesson 時，預設先看本檔，再看 `lesson-template.md`。
+這份 README 是 `learning/` 底下的第二層規則檔。
+
+它有一個前提：你已經先讀過 `learning/README.md`，而且已經完成「今天是否需要 prework」的判斷。
+
+只有在下面兩種情況，本檔才應被打開：
+
+1. 今天已判斷不需要 prework，現在要直接進 lesson。
+2. 今天的 prework 已完成，現在要進入 repo 內 lesson。
+
+若還沒完成這個判斷，應先回到 `learning/README.md`，而不是直接在這裡開始建 lesson。
 
 這裡只記錄兩種內容：
 
@@ -22,6 +31,10 @@
 
 ## 和 prework 的分工
 
+本檔只負責 lesson 內部規格，不負責決定今天要不要 prework。
+
+那個判斷屬於 `learning/README.md` 的責任。
+
 `learning/prework/` 負責：
 
 1. 外部 ChatGPT 類服務的每日預習大綱。
@@ -35,12 +48,30 @@
 3. 流量路徑、trade-off、debug 故事。
 4. 面試時要能講出來的專案特定說法。
 
-開始一個新日期主題時，先做這個判斷：
+因此這份 README 的預設前提是：
 
-1. 先判斷今天需不需要外部預習。
-2. 需要的話，先建立 `learning/prework/` 的 prework，再去外部 AI 預習。
-3. 不需要的話，直接建立或進入 `learning/lessons/`。
-4. 若 AI 不確定今天是否需要外部預習，必須先詢問使用者，不能自行假設略過。
+1. 上層流程判斷已完成。
+2. 現在已確定要進入 `learning/lessons/`。
+3. 接下來才輪到本檔定義 lesson 本身的結構與節奏。
+
+---
+
+## 和 lesson-template 的分工
+
+`lesson-template.md` 是骨架工具，不是第二份規則手冊。
+
+兩者分工應固定如下：
+
+1. `README.md` 負責規則、流程、判斷條件與欄位邊界。
+2. `lesson-template.md` 只負責快速建立檔案骨架與最小範例。
+
+因此：
+
+1. 若問題是「今天該不該建 `03-command.md`」、「QA 能不能先拆題」、「`05-note.md` 初始化能先放什麼」，應以本檔為準。
+2. 若問題是「今天新 lesson 要先開哪些檔案」、「每份檔案最小空殼長什麼樣」，才看 `lesson-template.md`。
+3. 模板裡若出現較長的規則段落，應優先檢查是否其實該搬回本檔，而不是讓 template 自己長成第二份 README。
+
+一句話原則：README 管規則，template 管骨架。
 
 ---
 
@@ -57,13 +88,36 @@
 
 建立新 lesson 時，建議直接對照 `lesson-template.md`，不要每次從零決定檔案結構。
 
+但順序仍應是：先看本檔，再看 `lesson-template.md`。
+
+---
+
+## 這份 README 的責任邊界
+
+本檔負責：
+
+1. lesson 的進入條件。
+2. lesson 目錄結構。
+3. lesson 內部固定流程。
+4. 每一份檔案的分工與寫法。
+
+本檔不負責：
+
+1. 判斷今天是否需要 prework。
+2. prework 的命名與段落規則。
+3. learning 整體入口導覽。
+
+如果問題是「現在應不應該先做 prework」，請回 `learning/README.md`。
+
+如果問題是「prework 該怎麼寫」，請看 `learning/prework/README.md`。
+
 ---
 
 ## 開始前檢查
 
 正式開始 lesson 前，建議至少確認：
 
-1. 今天是否已經判斷過要不要外部預習；若需要，應先完成 outline 與外部學習，再進入 lesson。
+1. 今天是否已先在 `learning/README.md` 完成流程判斷；若需要 prework，應先完成 prework，再進入 lesson。
 2. lesson 檔案結構是否符合本檔與 `lesson-template.md` 的骨架。
 3. 內部流程是否仍是 QA → command → report；若要例外，是否已在 `01-outline.md` 寫明原因。
 4. `03-command.md` 若存在，是否真的符合 command drill 的節奏，而不是單純指令清單。
@@ -258,6 +312,13 @@
 ## 預設流程
 
 lesson 的執行順序，預設採 QA → command → report 收斂。
+
+這個流程是 lesson 內部流程，不是 learning 全域入口流程。
+
+也就是說：
+
+1. 先由 `learning/README.md` 決定是否進 lesson。
+2. 一旦確定進入 lesson，才在這裡使用 QA → command → report。
 
 常見流程：
 
