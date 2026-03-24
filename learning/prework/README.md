@@ -4,6 +4,8 @@
 
 `learning/prework/` 用來存放「每日外部預習 prework」。
 
+補充：在少數情況下，這裡也可以承接 lesson 結束後才補建的輕量 homework；這類檔案仍放在 `learning/prework/`，但內文必須明確標示它是課後補強，不是正式課前預習。
+
 這份 README 是 `learning/` 底下的第二層規則檔。
 
 它有一個前提：你已經先讀過 `learning/README.md`，而且已經做完「今天是否需要 prework」的判斷。
@@ -40,6 +42,8 @@
 
 因此這份 README 的正確使用時機不是「一開始就讀」，而是「已確定需要 prework 後才讀」。
 
+補充情況：若今天一開始已判斷不需要 prework、直接進入 lesson，但 lesson 收尾後發現仍有一小塊通用知識值得交給外部 AI 補學，也可以回到本檔，建立一份放在 `learning/prework/` 的 homework 型補強檔。
+
 ---
 
 ## 這份 README 的責任邊界
@@ -50,6 +54,7 @@
 2. prework 的段落骨架。
 3. 外部預習的交付形式。
 4. prework 與 lesson 的銜接方式。
+5. lesson 後 homework 型補強檔應如何放在 `prework/` 中。
 
 本檔不負責：
 
@@ -81,6 +86,11 @@
 2. `slug` 使用英文小寫與連字號。
 3. `slug` 應描述「今天外部 AI 要教的核心主題」，不要取太泛。
 4. 一天原則上一份 prework；若真的拆成兩份，第二份應在 slug 上明確區分。
+
+若是 lesson 收尾後補建的 homework，也仍沿用同一套命名規則；建議在 slug 中加入 `followup`、`review` 或 `homework` 這類可辨識字樣，例如：
+
+- `2026-03-24-k8s-debug-tools-followup.md`
+- `2026-03-24-k8s-debug-tools-homework.md`
 
 ---
 
@@ -114,6 +124,8 @@
 
 那就不一定需要 prework，可以直接在 VS Code 內進行。
 
+另外，若今天雖然已直接在 VS Code 內完成 lesson，但在收尾時發現仍有一小塊通用骨架值得補齊，也可以新增一份 homework 型 prework。這種情況的重點不是「回頭重做今天 lesson」，而是把今天已碰到、但還沒完整展開的通用知識交給外部 AI 輕量補學。
+
 ---
 
 ## 新 prework 應如何產生
@@ -134,6 +146,8 @@
 7. 正式開始外部預習前，應再快速自檢一次，確認內容仍符合本檔的結構與輕量原則。
 8. 寫完後，若有必要，更新 `.privatedocs/ai-memories.md`，記錄新的 prework 已建立。
 
+若這份檔案其實是 lesson 收尾後補建的 homework，流程上可直接從「判斷有哪些內容屬於通用補強、適合交給外部 AI」開始，但仍應遵守同一套命名、輕量與輸出原則，並在檔案前言清楚寫明它是課後補強 homework。
+
 ---
 
 ## 每份 prework 建議結構
@@ -148,6 +162,8 @@
 6. 學完後請產出學習報告
 
 不是每份都要一字不差複製，但原則上要保留這個骨架。
+
+若是 homework 型補強檔，可在「這份 prework 要怎麼用」段落直接寫明：這不是正式課前預習，而是 lesson 後的輕量補強。
 
 ---
 
@@ -211,5 +227,6 @@ VS Code 內的 GitHub Copilot 負責：
 目前已建立的 prework：
 
 - `2026-03-09-ingress-basics.md`
+- `2026-03-24-k8s-debug-tools-followup.md`（lesson 收尾後補建的 homework 型補強範例）
 
 之後新增 prework 時，應先看這份 README，再參考既有範例，但不要機械複製內容；應根據當天主題調整最小骨架與教學順序。

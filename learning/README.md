@@ -107,6 +107,24 @@
 
 ---
 
+## lesson 收尾後的補強
+
+有些日子雖然一開始判斷不需要 prework，直接進入了 lesson，但在 lesson 結束或收尾時，仍可能發現有一小塊通用知識值得補學。
+
+這種情況可以補建一份輕量 homework。
+
+原則如下：
+
+1. 這不是新的第三條主流程，也不是獨立的新資料夾。
+2. homework 仍然放在 `learning/prework/`。
+3. 檔案內文必須明確寫出：這是一份 lesson 後的補強 homework，不是正式課前預習。
+4. 內容應聚焦在今天 lesson 已碰到、但還沒完整展開的通用骨架，不要回頭重寫整份 lesson。
+5. 若使用者之後真的完成這份 homework，可再視需要把學到的內容帶回 `learning/lessons/` 裡的 note、report 或後續 lesson。
+
+一句話原則：prework 預設是課前外部預習；但若 lesson 收尾後發現有必要補一小塊通用知識，可以用 `learning/prework/` 承接一份明確標示為 homework 的補強檔。
+
+---
+
 ## 這份 README 應怎麼用
 
 ### 當要開始一個新主題
@@ -120,6 +138,10 @@
 ### 當要建立 prework
 
 先用這份 README 確認今天真的需要 prework，確認後才去看 `prework/README.md`。
+
+### 當 lesson 結束後想補一份 homework
+
+先用這份 README 確認這不是新開主流程，而是 lesson 收尾後的補強；確認後仍去看 `prework/README.md`，並把檔案放在 `learning/prework/`，只是在說明中標示它是 homework。
 
 ### 當使用者只說「繼續」
 
