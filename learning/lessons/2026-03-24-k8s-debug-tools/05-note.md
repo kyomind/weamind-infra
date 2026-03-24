@@ -78,4 +78,17 @@
 - `Ready=True`：整個 Pod 被視為可接流量。
 - 之後 liveness probe 持續在背景檢查；若失敗，container 可能被重啟，Pod 的 ready 相關條件也可能重新掉回 False。
 
+### `kubectl exec` 到底是進 Pod 還是進 container
+
+- 使用者下 `kubectl exec` 時，是以 Pod 名稱作為入口；但真正執行命令的地方，仍然是 Pod 裡的某一個 container。
+- 如果 Pod 只有一個 container，通常不需要額外指定 container 名稱。
+- 如果 Pod 裡有多個 containers，應使用 `-c <container-name>` 明確指定，例如 `kubectl exec -it <pod-name> -c app -- /bin/sh`。
+- 所以最短的正確說法不是「進 Pod 本體」，而是「透過 Pod 這個資源入口，進到其中一個 container 執行命令」。
+
+### `exec` 最適合驗證什麼
+
+- `exec` 最適合做 Pod 內部最小驗證，例如：環境變數有沒有正確注入、DNS 解析是否正常、Pod 內能不能打到 Service、能不能連到 PostgreSQL / Redis、某個檔案是否存在。
+- 它回答的是「container 內部現在看到什麼」，不是「外部流量路徑是否完整正確」。
+- 所以即使 `exec` 成功，也通常只代表至少有一個 container 目前可執行命令，不代表應用邏輯、Ingress、Load Balancer 或 webhook routing 一定都正常。
+
 ## Flashcards
