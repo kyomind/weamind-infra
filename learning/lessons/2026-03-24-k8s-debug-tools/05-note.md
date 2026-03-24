@@ -91,4 +91,51 @@
 - 它回答的是「container 內部現在看到什麼」，不是「外部流量路徑是否完整正確」。
 - 所以即使 `exec` 成功，也通常只代表至少有一個 container 目前可執行命令，不代表應用邏輯、Ingress、Load Balancer 或 webhook routing 一定都正常。
 
+### `exec` 進去後工具不存在，要怎麼判讀
+
+- 在偏精簡的 production image 裡，`wget`、`nc`、`curl` 這類 debug 工具不一定存在。
+- 如果在 `exec` 進去後看到像 `/bin/sh: wget: not found` 或 exit code `127`，第一個判讀應是「這個 binary 不存在」，不是「Service / DB 連不通」。
+- 也就是說，先分清楚你現在失敗的是「命令執行前提」還是「網路連線本身」。
+- 若容器內沒有合適工具，可改用容器內現成的語言 runtime、專用 debug Pod，或其他已知存在的最小工具，不要把工具缺失誤判成系統異常。
+
 ## Flashcards
+
+- `kubectl describe pod` 比較像在拿哪一類證據？ #DevOps #card
+	- 它比較像在看 Kubernetes 對 Pod 的觀察
+	- 高價值欄位常是 state、conditions、restart count、events
+	- 適合先判讀 Pod lifecycle、排程與重啟訊號
+
+- 為什麼 Pending、ImagePullBackOff、CreateContainerError 第一輪常先看 `describe`？ #DevOps #card
+	- 因為它們多半還沒順利進到 app 穩定執行期
+	- 第一輪更需要 Kubernetes / runtime 事件證據
+	- 這時 logs 不一定有足夠內容
+
+- `kubectl logs --previous` 什麼時候特別有價值？ #DevOps #card
+	- 當 Pod 反覆重啟時
+	- 它看的是上一個已死 container 的最後輸出
+	- 很適合追 CrashLoopBackOff 前一輪真正的錯誤訊息
+
+- 為什麼外層 routing 問題不該先 `kubectl exec -it`？ #DevOps #card
+	- 因為 `exec` 拿到的是 Pod 內部視角
+	- 若 host / path 根本沒命中，先進 Pod 很可能只會看到 Pod 正常
+	- 這不能直接解釋外部為什麼回 404
+
+- `Conditions` 全部是 True，代表什麼？ #DevOps #card
+	- 代表這個 Pod 通過了 Kubernetes 目前追蹤的 lifecycle / readiness 條件
+	- 不代表 DNS、LB、Ingress、app 邏輯或 response 一定全都正確
+	- 它是 Pod 狀態快照，不是整條系統健康保證
+
+- readiness probe 和 liveness probe 最小差別是什麼？ #DevOps #card
+	- readiness 決定 Pod 能不能被視為可接流量
+	- liveness 決定 container 活不活、要不要被重啟
+	- readiness 更接近 `ContainersReady` / `Ready`，liveness 是執行期背景檢查
+
+- `kubectl exec` 是進 Pod 還是進 container？ #DevOps #card
+	- 它是以 Pod 名稱為入口
+	- 但真正執行命令的地方仍是某一個 container
+	- 多 container Pod 需要用 `-c <container-name>` 指定目標
+
+- 在 `exec` 之後看到 `wget: not found` 或 exit code 127，要怎麼判讀？ #DevOps #card
+	- 先判讀成 binary 不存在
+	- 不是直接判成 Service 或 DB 連不通
+	- 要先分清楚是工具缺失還是網路失敗
