@@ -34,10 +34,10 @@ LINE → k8s.kyomind.tw → Hetzner LB (TCP passthrough) → K3s(Traefik，TLS�
 ### 課程啟動協議
 
 - 當使用者要「開始今天課程」或「進入新的 lesson 主題」時，AI 必須先把流程問題處理完，再開始出題或建立 lesson 內容。
-- 啟動課程時，應先查看 `docs/lessons/README.md` 與 `docs/outlines/README.md`，確認 lessons 與 outlines 的分工，以及當天是否需要外部預習。
+- 啟動課程時，應先查看 `learning/lessons/README.md` 與 `learning/prework/README.md`，確認 lessons 與 prework 的分工，以及當天是否需要外部預習。
 - 若 AI 不確定今天是否需要外部純知識預習，不可自行假設略過，必須先詢問使用者，再決定是先建立 outline，還是直接進入 lesson。
-- 只要當天需要外部預習，固定順序就是：先建立 `docs/outlines/YYYY-MM-DD-slug.md` → 使用者完成外部預習 → 再建立或進入 `docs/lessons/YYYY-MM-DD-slug/`。
-- 建立 outline 或 lesson 骨架後，正式開始課程前，必須再做一次「文件自檢」：重新對照 `docs/lessons/README.md`、`docs/outlines/README.md` 與需要時的 `lesson-template.md`，確認今天建立的文件沒有明顯漏節、跳步或順序錯誤。
+- 只要當天需要外部預習，固定順序就是：先建立 `learning/prework/YYYY-MM-DD-slug.md` → 使用者完成外部預習 → 再建立或進入 `learning/lessons/YYYY-MM-DD-slug/`。
+- 建立 prework 或 lesson 骨架後，正式開始課程前，必須再做一次「文件自檢」：重新對照 `learning/lessons/README.md`、`learning/prework/README.md` 與需要時的 `learning/lessons/lesson-template.md`，確認今天建立的文件沒有明顯漏節、跳步或順序錯誤。
 - 有外部預習的日子，不應先展開內部 lesson 問答，也不應先進 command drill。
 - 內部 lesson 一旦開始，預設流程固定為 `QA → command → report`；只有在 `01-outline.md` 明確寫出例外理由時，才可改成 command 先行。
 
@@ -47,11 +47,11 @@ LINE → k8s.kyomind.tw → Hetzner LB (TCP passthrough) → K3s(Traefik，TLS�
 - 使用者多半透過語音轉文字輸入，英文名詞、產品名或技術詞常會被轉錯。AI 應優先理解語意，不必特別指出轉字錯誤；回覆時直接使用正確名詞即可。
 - 優先使用現有 manifests、架構文件、踩坑紀錄來出題、追問、整理答案。
 - 每當要開始五週計畫中的一個新日期主題時，第一個判斷不是直接出題，而是先判斷該主題是否需要外部純知識預習。
-- 若當天主題需要先做純知識預習，可使用 `docs/outlines/` 下的每日 outline，交由外部 ChatGPT 類服務先帶基礎概念；回到 VS Code 後再做專案對照、操作題與追問。
-- 若判斷需要外部預習，應先建立當天的 `docs/outlines/YYYY-MM-DD-slug.md`，等外部預習完成後，再建立或進入對應的 `docs/lessons/`；不要先把 lesson 問答與 command 骨架一路展開。
-- 若判斷不需要外部預習，則應直接建立或進入當天對應的 `docs/lessons/`，不要跳過「是否需要外部預習」這個判斷步驟。
+- 若當天主題需要先做純知識預習，可使用 `learning/prework/` 下的每日 prework，交由外部 ChatGPT 類服務先帶基礎概念；回到 VS Code 後再做專案對照、操作題與追問。
+- 若判斷需要外部預習，應先建立當天的 `learning/prework/YYYY-MM-DD-slug.md`，等外部預習完成後，再建立或進入對應的 `learning/lessons/`；不要先把 lesson 問答與 command 骨架一路展開。
+- 若判斷不需要外部預習，則應直接建立或進入當天對應的 `learning/lessons/`，不要跳過「是否需要外部預習」這個判斷步驟。
 - 無論今天建立的是 outline 還是 lesson，正式開始前都應補做一次文件自檢，確認內容符合 README 與模板規則；若發現不一致，應先修正文件，再開始課程。
-- 內部學習使用 `docs/lessons/` 三段式：`outline.md` 定義範圍、`qa.md` 進行 3 到 5 題小範圍 repo 對照題、`report.md` 收斂學後重點；若有 command drill，預設一定排在 QA 之後。
+- 內部學習使用 `learning/lessons/` 的標準 lesson 結構：`01-outline.md` 定義範圍、`02-qa.md` 進行 3 到 5 題小範圍 repo 對照題、`04-report.md` 收斂學後重點；若有 command drill，預設使用 `03-command.md` 並排在 QA 之後。
 - QA 預設採低壓引導式提問：先給完整主問題，讓使用者先用自己的話作答，不以高壓猜題為目標。
 - 若使用者一時沒有想法、明確卡住，或看過最小提示後仍答不出來，AI 再把同一題即時拆成 2 到 3 個更小的引導點；小題完成後，必須再收斂回原本那題的完整答案。
 - 若使用者在新對話裡只說「繼續」，先看 `.privatedocs/五週版學習計畫.md` 的「當前執行追蹤」，再看當前 lesson 的 `qa.md`，不要自行根據日期推進。
@@ -66,7 +66,7 @@ LINE → k8s.kyomind.tw → Hetzner LB (TCP passthrough) → K3s(Traefik，TLS�
 - `.privatedocs/28day-progress.md` 只記錄使用者當天實際學到什麼、已能講清楚什麼，不承擔接手順序或正式進度判定。
 - `.privatedocs/ai-memories.md` 保留高階 handoff、權威來源順序與互動偏好，不重複 lesson 細節，也不維護每日進度。
 - `.privatedocs/weamind/` 保存使用者在實作 infra 過程中的完整歷史對話，包含與外部 AI 的長篇交談；它可作為需要補細節、查 debug 脈絡或還原當時決策背景時的補充來源，但不是每次接手都要完整閱讀的日常錨點。
-- `docs/lessons/` 內的 `outline.md`、`qa.md`、`report.md` 負責單一 lesson 的範圍、對照題與收斂，不應被其他摘要檔取代。
+- `learning/lessons/` 內的 lesson 檔案負責單一 lesson 的範圍、對照題與收斂，不應被其他摘要檔取代。
 - 若某條規則已明確寫在 repo 文件中，優先維護原文件；不要只因 system memory 可用，就把同一份規則額外複寫到另一個記憶檔裡。
 
 **面試材料重點**：
@@ -112,6 +112,7 @@ weamind-infra/
 ├── manifests/          # 已完成的 K8s YAML
 ├── reference/          # 來自 WeaMind 的參考配置
 ├── docs/               # 公開文件與架構說明
+├── learning/           # 公開學習系統：lessons 與 prework
 ├── .env.example        # 環境變數範本
 └── .privatedocs/       # 私密文檔、學習計畫、個人背景、歷史資料
 ```
@@ -125,7 +126,7 @@ weamind-infra/
 - 學習日更記錄：`.privatedocs/28day-progress.md`
 - AI 協作記錄：`.privatedocs/ai-memories.md`
 - 完整歷史對話與外部 AI 交談存檔：`.privatedocs/weamind/`
-- 外部預習大綱：`docs/outlines/README.md` 與 `docs/outlines/`
+- 外部預習與 lesson 系統：`learning/`
 - 學習背景與定位：`.privatedocs/about-me.md`
 - 深化學習計畫：`.privatedocs/五週版學習計畫.md`
 - 環境變數範本：`.env.example`

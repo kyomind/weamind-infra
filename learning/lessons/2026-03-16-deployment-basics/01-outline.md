@@ -31,7 +31,7 @@
 
 ## 建議學習順序
 
-1. 先使用外部預習大綱 `docs/outlines/2026-03-16-deployment-basics.md`，把今天會用到的最小管理骨架補齊。
+1. 先使用外部預習 prework `learning/prework/2026-03-16-deployment-basics.md`，把今天會用到的最小管理骨架補齊。
 2. 回到 repo 後先看 `manifests/deployment.yaml`，只回答一件事：這份 YAML 想維持什麼東西一直存在。
 3. 先完整做完 `02-qa.md`，把 Deployment、ReplicaSet、Pod 的關係、`replicas: 2` 的價值，以及 Deployment 為什麼不是裸 Pod 這幾個主問題先講清楚。
 4. 接著進入 `03-command.md`，用 `kubectl get deploy/rs/pods` 與 rollout 相關指令，把剛剛的管理層級對回實際資源名稱與叢集狀態。

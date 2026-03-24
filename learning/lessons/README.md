@@ -2,7 +2,7 @@
 
 ## 用途
 
-`docs/lessons/` 用來存放 VS Code 內部學習記錄。
+`learning/lessons/` 用來存放 VS Code 內部學習記錄。
 
 開始新的 lesson 時，預設先看本檔，再看 `lesson-template.md`。
 
@@ -11,24 +11,24 @@
 1. GitHub Copilot 在 repo 內帶著使用者做的專案對照。
 2. 與 WeaMind 實際架構、YAML、流量路徑、debug sequence 直接相關的學習整理。
 
-純通用知識預習仍放在 `docs/outlines/`，這裡只放 repo 內對照與驗收。
+純通用知識預習仍放在 `learning/prework/`，這裡只放 repo 內對照與驗收。
 
 一句話區分：
 
-- outlines 是外部預習。
+- prework 是外部預習。
 - lessons 是內部對照與驗收。
 
 ---
 
-## 和 outlines 的分工
+## 和 prework 的分工
 
-`docs/outlines/` 負責：
+`learning/prework/` 負責：
 
 1. 外部 ChatGPT 類服務的每日預習大綱。
 2. 純知識骨架與白話理解。
 3. 不直接綁定 repo 實況的概念預習。
 
-`docs/lessons/` 負責：
+`learning/lessons/` 負責：
 
 1. WeaMind 專案內的實際對照。
 2. 為什麼這個 repo 這樣設計。
@@ -38,8 +38,8 @@
 開始一個新日期主題時，先做這個判斷：
 
 1. 先判斷今天需不需要外部預習。
-2. 需要的話，先建立 `docs/outlines/` 的 outline，再去外部 AI 預習。
-3. 不需要的話，直接建立或進入 `docs/lessons/`。
+2. 需要的話，先建立 `learning/prework/` 的 prework，再去外部 AI 預習。
+3. 不需要的話，直接建立或進入 `learning/lessons/`。
 4. 若 AI 不確定今天是否需要外部預習，必須先詢問使用者，不能自行假設略過。
 
 ---
@@ -75,7 +75,7 @@
 
 每個 lesson 都應使用獨立資料夾，格式如下：
 
-`docs/lessons/YYYY-MM-DD-slug/`
+`learning/lessons/YYYY-MM-DD-slug/`
 
 `slug` 使用英文小寫與連字號，描述今天在專案裡真正學到的主題，而不是抽象大分類。
 
@@ -98,11 +98,11 @@
 
 範例：
 
-- `docs/lessons/2026-03-10-weamind-traffic-path/01-outline.md`
-- `docs/lessons/2026-03-10-weamind-traffic-path/02-qa.md`
-- `docs/lessons/2026-03-10-weamind-traffic-path/03-command.md`
-- `docs/lessons/2026-03-10-weamind-traffic-path/04-report.md`
-- `docs/lessons/2026-03-10-weamind-traffic-path/05-note.md`
+- `learning/lessons/2026-03-10-weamind-traffic-path/01-outline.md`
+- `learning/lessons/2026-03-10-weamind-traffic-path/02-qa.md`
+- `learning/lessons/2026-03-10-weamind-traffic-path/03-command.md`
+- `learning/lessons/2026-03-10-weamind-traffic-path/04-report.md`
+- `learning/lessons/2026-03-10-weamind-traffic-path/05-note.md`
 
 ---
 
@@ -267,7 +267,7 @@ lesson 的執行順序，預設採 QA → command → report 收斂。
 4. 若當天有延伸問題、暫時結論或卡片素材，過程中同步整理進 `05-note.md`。
 5. lesson 結束後，把重點收斂進 `04-report.md`。
 
-若今天有外部預習，完整順序應是先完成 `docs/outlines/` 的外部預習，再進入上面這套 lesson 流程。
+若今天有外部預習，完整順序應是先完成 `learning/prework/` 的外部預習，再進入上面這套 lesson 流程。
 
 例外流程：
 
