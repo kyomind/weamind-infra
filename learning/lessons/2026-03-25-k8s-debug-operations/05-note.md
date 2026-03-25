@@ -49,6 +49,24 @@
 - K8s 真正多出來的，是外層還多了 `DNS`、`LB`、`Ingress`、`Service`、`Pod` lifecycle 這幾層需要先分流；也就是說，它主要增加的是「外層縮圈成本」，不是把 app 排錯邏輯整個改寫。
 - 因此一旦已知 `health=200`、`Pods Running/Ready`，而且請求也看起來有進到 app，後面的判斷就會愈來愈接近單機版常見的思路，而不是還要一直停留在 Kubernetes 外層元件。
 
+### `ingressClassName` 與 `Ingress Class` 怎麼理解
+
+- `spec.ingressClassName: traefik` 不是隨便寫了 `traefik` 這個字，controller 就靠字面猜到要接手；更精準地說，這個欄位是在指定「這份 `Ingress` 要交給哪一個 `IngressClass` 來處理」。
+- 也就是說，`ingressClassName` 比較像一個「指派對象名稱」或「歸屬類別名稱」，不是 OOP 那種 `class`。
+- 在實務上，cluster 內通常會有對應的 `IngressClass` 資源；`Ingress` 上寫的 `ingressClassName` 會去對這個名稱。對 WeaMind 這個專案來說，值寫成 `traefik`，代表這份規則要交給 `Traefik` 這條處理鏈。
+- 所以這裡的 `class`，若要用更直觀中文理解，可以先把它想成「處理類別」、「歸屬類別」或更白話的「這份 `Ingress` 要交給哪一路 controller 處理」。
+- 它不是動詞，也不是 Python / Java 那種 class；在這裡它比較接近名詞性的「分類 / 類別 / 歸屬」。
+- 值也不是只有少數幾種固定關鍵字。**更準確地說，它取決於 cluster 裡實際有哪些 `IngressClass`，以及哪些 `Ingress Controller` 被安裝並設定成會接手哪個 class。** 在你的環境裡看到 `traefik`，是因為這個 cluster 用的就是 `Traefik`。
+- 因此當你在 `kubectl describe ingress` 裡看到 `Ingress Class: traefik`，最穩的理解不是「這是某種抽象 class 名稱」，而是「這份 `Ingress` 規則目前是交給 `Traefik` 這條 controller 處理」。
+
+### controller 自己判斷是否接手這份 `Ingress`
+
+- 一個很好懂的直覺是：Kubernetes 本身不需要先理解 `traefik` 這個字串背後的品牌故事；它主要只是把這個值記在 `Ingress` 物件上。
+- 後續比較像是各個 `Ingress Controller` 自己來看：這份 `Ingress` 上標的 `ingressClassName` 是不是我負責的那個 class。
+- 若是 `Traefik` 看到 `ingressClassName=traefik`，它就知道這份規則屬於自己要處理的範圍；若是別的 controller 看到不是自己負責的 class，通常就不會接手。
+- 所以你的理解方向是對的：**不是 Kubernetes 中央大腦先幫你做品牌辨識，而是 controller 根據這份物件上的 class 歸屬，自己判斷要不要接。**
+- 只是再精準一點說，controller 通常不是單純只靠「看到這個字串像自己名字」就臨場猜測，而是它在叢集裡本來就有設定自己負責哪個 `IngressClass` / class 名稱，然後去比對是否匹配。
+
 ## Flashcards
 
 <!-- 等 lesson 過程中真的整理出卡片素材後再填。 -->
