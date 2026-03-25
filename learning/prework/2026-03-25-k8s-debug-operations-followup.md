@@ -56,3 +56,43 @@
 4. 我還模糊的地方。
 5. 今天最重要的 3 到 5 個補充觀念。
 6. 我回到 VS Code 後，可再和 GitHub Copilot 對照的 1 到 2 個問題。
+
+## 學習報告（已完成）
+
+### 今日補強主題與範圍
+
+- Debug 的「證據邊界」
+- 不同驗證方式，例如 `printenv`、DNS、TCP、client 連線、app `logs`，各自能證明什麼
+- 用症狀，例如 `404`、沒有 app `logs`，快速定位問題更像停在哪一層
+
+### 我今天補學到什麼
+
+- `printenv`、DNS、TCP、client 連線是不同驗證層級，不能互相替代
+- TCP 成功不等於應用成功；它只代表 transport / network 這一層大致可達
+- `404` 代表 request 至少已到某一層，而該層找不到資源
+- `logs` 可以拿來判斷 request 有沒有進到某一層
+
+### 我現在已能更清楚區分哪些證據邊界
+
+- 設定正確不等於網路可達
+- 網路可達不等於認證成功
+- 認證成功不等於 query / 應用請求成功
+- 有 HTTP response 不等於 request 已經進到 app
+
+### 我還模糊的地方
+
+- `client` error，例如 auth fail 或 timeout，要怎麼更快做第一輪判讀
+- `Ingress` 回的錯和 app 自己回的錯，能不能從 header、log pattern 或其他線索更快切開
+
+### 今天最重要的 5 個補充觀念
+
+1. 每個工具或驗證通常只證明一層，不應跨層過度解讀
+2. TCP success 只代表 transport layer 大致 OK，不等於應用邏輯成功
+3. `404` 是哪一層回的，就代表哪一層找不到資源或 route
+4. `logs` 很適合拿來判斷 request 有沒有進到該層
+5. debug 的本質是補齊缺的證據，而不是亂試一串指令
+
+### 回到 VS Code 後可再對照的問題
+
+1. 在 FastAPI + PostgreSQL 架構中，如果 TCP OK 但 query fail，常見原因有哪些？
+2. 在 Traefik + Ingress 中，哪些情況會回 `404`，但 request 不會進到 `Pod`？

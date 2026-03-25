@@ -74,6 +74,13 @@
 - 但這還不能直接推出 `PostgreSQL` 或 `Redis` 一定連得通，因為 `printenv` 沒有真的發起 TCP 連線，也沒有替 app 驗證認證、timeout 或 route 問題。
 - 所以如果未來 app 仍報資料庫或快取連線錯誤，正確收斂不是回去懷疑「環境變數根本沒進來」，而是往 app `logs` 或更具體的連線驗證去查。
 
+### homework 補強：`logs` 是判斷 request 到哪一層的重要證據
+
+- 這次 homework 幫這週的 debug 思路又補了一條很穩的判斷公式：**某一層有沒有 `logs`，常常可以拿來判斷 request 有沒有真的進到那一層。**
+- 例如如果 client 已經收到 HTTP `404`，但 app `logs` 完全沒有對應 request 紀錄，那第一輪就更像是 request 根本沒進 app，而是前面的 `Ingress` / routing 層就已經回了錯。
+- 這條規則的價值不在於它永遠百分之百機械成立，而在於它提供一個很強的第一輪判讀起點：**先用 `logs` 判斷 request 到哪裡，再決定下一步要往哪一層補證據。**
+- 同一份 homework 也把另外一條邊界釘得更清楚：`設定正確`、`網路可達`、`認證成功`、`應用查詢成功` 是四種不同結論，不應被壓成一句模糊的「連線正常」。
+
 ## Flashcards
 
 - 當 `https://k8s.kyomind.tw/health` 回 `200`，但 webhook Verify 回 `404`，第一輪更該優先懷疑什麼？ #DevOps #card
@@ -104,6 +111,16 @@
 	- 能證明 container 內部最終看到的設定值，例如 `POSTGRES_HOST`、`POSTGRES_PORT`、`REDIS_URL`
 	- 若這些值和 [manifests/configmap.yaml](manifests/configmap.yaml) 一致，就代表設定注入層大致正確
 	- 但這不能單獨證明 `PostgreSQL` 或 `Redis` 連線一定成功
+
+- 為什麼「有 app `logs` / 沒有 app `logs`」常能幫助判斷 request 停在哪一層？ #DevOps #card
+	- 因為某一層有沒有對應 `logs`，常常就是 request 有沒有真的進到那一層的第一輪證據
+	- 如果 client 已收到 HTTP `404`，但 app `logs` 完全沒有 request 紀錄，第一輪更像是 `Ingress` / routing 層先回了錯
+	- 它不是永遠百分之百的機械規則，但很適合作為第一輪縮圈起點
+
+- 為什麼不能把「設定正確」「網路可達」「認證成功」「應用查詢成功」都叫做連線正常？ #DevOps #card
+	- 因為它們其實是四種不同層級的結論
+	- `printenv` 只能回答設定值，TCP 測試只能回答 transport，真正 client 才能回答認證 / 協定，app 成功處理才算應用層成功
+	- 若把它們壓成一句「連線正常」，debug 很容易跨層誤判
 
 - 區分「外部流量路徑問題」和「Pod 到 VM 依賴問題」的真正分界點是什麼？ #DevOps #card
 	- 不是看 `Pod` 有沒有 `Running/Ready`
