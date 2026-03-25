@@ -76,4 +76,49 @@
 
 ## Flashcards
 
-<!-- 等 lesson 過程中真的整理出卡片素材後再填。 -->
+- 當 `https://k8s.kyomind.tw/health` 回 `200`，但 webhook Verify 回 `404`，第一輪更該優先懷疑什麼？ #DevOps #card
+	- 先優先懷疑外部 webhook `path` 和 app 真正存在的路由不一致
+	- 這比直接懷疑整條 `LB -> Ingress -> Service -> Pod` 都壞掉更合理
+	- 因為 `health=200` 已證明至少有一條請求成功走到 app
+
+- `kubectl describe ingress` 最適合回答什麼問題？ #DevOps #card
+	- 它最適合回答 cluster 端宣告的 `Host`、`Path`、backend `Service`、`Ingress Class` 長什麼樣
+	- 也就是先確認 Kubernetes 這邊預期怎麼路由
+	- 但它不能單獨證明外部呼叫端真的帶了正確的 `Host` 與 `path`
+
+- 為什麼 `Pods Running/Ready` 不能直接推出 webhook 一定正常？ #DevOps #card
+	- 因為它只能證明 `Pod` 目前活著、通過 readiness，不能保證外部 URL、`Ingress` 規則、app 路由全都正確
+	- `Running/Ready` 是 `Pod` lifecycle 的訊號，不是整條請求路徑的總驗證
+
+- 懷疑 `CrashLoopBackOff` 時，第一輪為什麼先看 `kubectl describe pod`？ #DevOps #card
+	- 因為它先給 Kubernetes 視角的狀態證據
+	- 可以先看 `State`、`Last State`、`Restart Count`、`Conditions`、`Events`
+	- 先知道它怎麼壞，再決定要不要往 app `logs` 深挖為什麼壞
+
+- `kubectl describe pod` 和 app `logs` 的差別是什麼？ #DevOps #card
+	- `kubectl describe pod` 回答的是 Kubernetes 目前怎麼看這個 `Pod`
+	- app `logs` 回答的是應用程式自己發生了什麼
+	- 前者偏「怎麼壞」，後者偏「為什麼壞」
+
+- `kubectl exec -it` 搭配 `printenv` 能證明什麼，不能證明什麼？ #DevOps #card
+	- 能證明 container 內部最終看到的設定值，例如 `POSTGRES_HOST`、`POSTGRES_PORT`、`REDIS_URL`
+	- 若這些值和 [manifests/configmap.yaml](manifests/configmap.yaml) 一致，就代表設定注入層大致正確
+	- 但這不能單獨證明 `PostgreSQL` 或 `Redis` 連線一定成功
+
+- 區分「外部流量路徑問題」和「Pod 到 VM 依賴問題」的真正分界點是什麼？ #DevOps #card
+	- 不是看 `Pod` 有沒有 `Running/Ready`
+	- 真正的分界點是：請求有沒有進到 app，以及 app `logs` 裡有沒有留下依賴錯誤證據
+	- 若連請求紀錄都沒有，更像外層 routing；若請求已進 app 但處理失敗，更像 app 或依賴問題
+
+- 當 `health=200`、`Pods Running/Ready`，但還不知道 webhook 有沒有進到 app 時，最小 debug sequence 是什麼？ #DevOps #card
+	- 先檢查 webhook `path` 是否和 app 真正暴露的路由一致
+	- 再看 app `logs`，確認請求有沒有進到應用，以及處理時有沒有錯誤
+	- 只有在請求已進 app 但 `logs` 仍不足時，才用 `kubectl exec -it` 做內部驗證
+
+- 一旦已確認請求進到 app，K8s 版排錯主線通常會怎麼收斂？ #DevOps #card
+	- 會逐漸靠近單機版常見順序：先看 `path` / 路由，再看 app `logs`，最後查設定與依賴
+	- K8s 真正多出來的，主要是外層 `DNS`、`LB`、`Ingress`、`Service`、`Pod lifecycle` 的縮圈成本
+
+- `Ingress Class: traefik` 在 `kubectl describe ingress` 裡最穩的理解是什麼？ #DevOps #card
+	- 它代表這份 `Ingress` 規則目前是交給 `Traefik` 這條 controller 處理
+	- 重點是「歸誰處理」，不是 Kubernetes 中央大腦去理解 `traefik` 這個字的品牌意義
