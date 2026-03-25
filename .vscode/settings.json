@@ -22,6 +22,7 @@
         "netcat",
         "nodepool",
         "nslookup",
+        "prework",
         "privatedocs",
         "psql",
         "Substack",
@@ -32,6 +33,8 @@
         "weamind"
     ],
     "chat.tools.terminal.autoApprove": {
-        "git -C /Users/kyo/Code/weamind-infra": true
+        "git -C /Users/kyo/Code/weamind-infra": true,
+        "git for-each-ref": true,
+        "git reflog": true
     },
 }

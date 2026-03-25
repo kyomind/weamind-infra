@@ -2,45 +2,76 @@
 
 ## 用途
 
-`docs/lessons/` 用來存放 VS Code 內部學習記錄。
+`learning/lessons/` 用來存放 VS Code 內部學習記錄。
 
-開始新的 lesson 時，預設先看本檔，再看 `lesson-template.md`。
+這份 README 是 `learning/` 底下的第二層規則檔。
+
+它有一個前提：你已經先讀過 `learning/README.md`，而且已經完成「今天是否需要 prework」的判斷。
+
+只有在下面兩種情況，本檔才應被打開：
+
+1. 今天已判斷不需要 prework，現在要直接進 lesson。
+2. 今天的 prework 已完成，現在要進入 repo 內 lesson。
+
+若還沒完成這個判斷，應先回到 `learning/README.md`，而不是直接在這裡開始建 lesson。
 
 這裡只記錄兩種內容：
 
 1. GitHub Copilot 在 repo 內帶著使用者做的專案對照。
 2. 與 WeaMind 實際架構、YAML、流量路徑、debug sequence 直接相關的學習整理。
 
-純通用知識預習仍放在 `docs/outlines/`，這裡只放 repo 內對照與驗收。
+純通用知識預習仍放在 `learning/prework/`，這裡只放 repo 內對照與驗收。
 
 一句話區分：
 
-- outlines 是外部預習。
+- prework 是外部預習。
 - lessons 是內部對照與驗收。
 
 ---
 
-## 和 outlines 的分工
+## 和 prework 的分工
 
-`docs/outlines/` 負責：
+本檔只負責 lesson 內部規格，不負責決定今天要不要 prework。
+
+那個判斷屬於 `learning/README.md` 的責任。
+
+`learning/prework/` 負責：
 
 1. 外部 ChatGPT 類服務的每日預習大綱。
 2. 純知識骨架與白話理解。
 3. 不直接綁定 repo 實況的概念預習。
 
-`docs/lessons/` 負責：
+`learning/lessons/` 負責：
 
 1. WeaMind 專案內的實際對照。
 2. 為什麼這個 repo 這樣設計。
 3. 流量路徑、trade-off、debug 故事。
 4. 面試時要能講出來的專案特定說法。
 
-開始一個新日期主題時，先做這個判斷：
+因此這份 README 的預設前提是：
 
-1. 先判斷今天需不需要外部預習。
-2. 需要的話，先建立 `docs/outlines/` 的 outline，再去外部 AI 預習。
-3. 不需要的話，直接建立或進入 `docs/lessons/`。
-4. 若 AI 不確定今天是否需要外部預習，必須先詢問使用者，不能自行假設略過。
+1. 上層流程判斷已完成。
+2. 現在已確定要進入 `learning/lessons/`。
+3. 接下來才輪到本檔定義 lesson 本身的結構與節奏。
+
+---
+
+## 和 lesson-template 的分工
+
+`lesson-template.md` 是骨架工具，不是第二份規則手冊。
+
+兩者分工應固定如下：
+
+1. `README.md` 負責規則、流程、判斷條件與欄位邊界。
+2. `lesson-template.md` 只負責快速建立檔案骨架與最小範例。
+
+因此：
+
+1. 若問題是「今天該不該建 `03-command.md`」、「QA 能不能先拆題」、「`05-note.md` 初始化能先放什麼」，應以本檔為準。
+2. 若問題是「今天新 lesson 要先開哪些檔案」、「每份檔案最小空殼長什麼樣」，才看 `lesson-template.md`。
+3. 模板裡若出現較長的規則段落，應優先檢查是否其實該搬回本檔，而不是讓 template 自己長成第二份 README。
+
+一句話原則：README 管規則，template 管骨架。
 
 ---
 
@@ -57,13 +88,36 @@
 
 建立新 lesson 時，建議直接對照 `lesson-template.md`，不要每次從零決定檔案結構。
 
+但順序仍應是：先看本檔，再看 `lesson-template.md`。
+
+---
+
+## 這份 README 的責任邊界
+
+本檔負責：
+
+1. lesson 的進入條件。
+2. lesson 目錄結構。
+3. lesson 內部固定流程。
+4. 每一份檔案的分工與寫法。
+
+本檔不負責：
+
+1. 判斷今天是否需要 prework。
+2. prework 的命名與段落規則。
+3. learning 整體入口導覽。
+
+如果問題是「現在應不應該先做 prework」，請回 `learning/README.md`。
+
+如果問題是「prework 該怎麼寫」，請看 `learning/prework/README.md`。
+
 ---
 
 ## 開始前檢查
 
 正式開始 lesson 前，建議至少確認：
 
-1. 今天是否已經判斷過要不要外部預習；若需要，應先完成 outline 與外部學習，再進入 lesson。
+1. 今天是否已先在 `learning/README.md` 完成流程判斷；若需要 prework，應先完成 prework，再進入 lesson。
 2. lesson 檔案結構是否符合本檔與 `lesson-template.md` 的骨架。
 3. 內部流程是否仍是 QA → command → report；若要例外，是否已在 `01-outline.md` 寫明原因。
 4. `03-command.md` 若存在，是否真的符合 command drill 的節奏，而不是單純指令清單。
@@ -75,7 +129,7 @@
 
 每個 lesson 都應使用獨立資料夾，格式如下：
 
-`docs/lessons/YYYY-MM-DD-slug/`
+`learning/lessons/YYYY-MM-DD-slug/`
 
 `slug` 使用英文小寫與連字號，描述今天在專案裡真正學到的主題，而不是抽象大分類。
 
@@ -98,11 +152,11 @@
 
 範例：
 
-- `docs/lessons/2026-03-10-weamind-traffic-path/01-outline.md`
-- `docs/lessons/2026-03-10-weamind-traffic-path/02-qa.md`
-- `docs/lessons/2026-03-10-weamind-traffic-path/03-command.md`
-- `docs/lessons/2026-03-10-weamind-traffic-path/04-report.md`
-- `docs/lessons/2026-03-10-weamind-traffic-path/05-note.md`
+- `learning/lessons/2026-03-10-weamind-traffic-path/01-outline.md`
+- `learning/lessons/2026-03-10-weamind-traffic-path/02-qa.md`
+- `learning/lessons/2026-03-10-weamind-traffic-path/03-command.md`
+- `learning/lessons/2026-03-10-weamind-traffic-path/04-report.md`
+- `learning/lessons/2026-03-10-weamind-traffic-path/05-note.md`
 
 ---
 
@@ -145,6 +199,8 @@
 2. 題內欄位用 `### 題目`、`### 對照檔案`、`### 使用者回答摘要` 這類 H3。
 3. 避免大量單行粗體欄位，讓整份 QA 更穩定、好掃讀。
 4. 題目應盡量小、具體、可直接對照 repo，不要把一題寫成一整個章節。
+5. 在 `### AI 修正與補充` 這個區塊裡，AI 應主動把「關鍵句」、「核心結論」或「關鍵詞」加粗，方便之後複習時快速掃到重點；但不要把整段幾乎每一句都加粗，避免失去層次。
+6. 若 AI 回答中出現 `kubectl` 指令、Pod 狀態、欄位名、資源名、環境變數名或其他技術術語，應優先使用 inline code 標示，例如 `events`、`CrashLoopBackOff`、`POSTGRES_HOST`、`kubectl logs --previous`，讓自然語言與術語更容易分開掃讀。
 
 提問風格原則：
 
@@ -198,6 +254,8 @@
 6. 若某輪真正有價值的是「原本怎麼誤判、後來怎麼修正」，可以在該輪補一小段「常見誤解 / 這輪釐清了什麼」，但不要把它寫成第二份 QA。
 7. 若 AI 為了驗證環境而代跑指令，應明確標示那只是輔助驗證，不等於使用者已完成 command drill。
 8. command drill 的最小完成條件，預設是使用者至少親手完成一輪最小操作、貼回輸出，並說出自己的選擇理由。
+9. 在 `### AI 判讀與修正` 這個區塊裡，AI 應主動把「關鍵句」、「關鍵詞」、「核心結論」或「判讀口訣」加粗，讓之後回看時能先掃到最有價值的判讀；但同樣不要把整段全面加粗。
+10. 若 AI 判讀中出現 `kubectl` 指令、狀態名、事件欄位、資源欄位、container / probe / env key 等技術術語，也應優先使用 inline code 標示，避免和一般敘述混在一起。
 
 ### `04-report.md`
 
@@ -249,15 +307,23 @@
 4. `學習注意事項` 與 `Notes` 內部都要用 H3 分組，不要把所有條列直接平鋪在 H2 底下。
 5. `學習注意事項` 用來放外部預習回帶重點、lesson 邊界、待驗證的 repo 對照點、今天暫不展開的點。
 6. 初始化 `05-note.md` 時，只有 `學習注意事項` 可以先回填外部預習內容；`Notes` 與 `Flashcards` 兩個 H2 區塊一開始必須留空，等 QA、command 或 lesson 過程中真的出現延伸問答、暫時結論與卡片素材後，再往裡面補。
-7. `Notes` 用來放 lesson 過程中的延伸提問、補充解釋與尚未進 `04-report.md` 的暫時結論；不要在初始化時就先把外部學習摘要或預設結論放進去。
-8. `Flashcards` 固定保留在檔案內，但初始化時必須留空；只有在 lesson 過程中真的整理出卡片後，才開始填寫。
-9. 每新增一批卡片，可以使用 H3 大致區分，比如 `### 第一批卡片`、`### 第二批卡片`
+7. 初始化時，`Notes` 與 `Flashcards` 可以只保留模板中的 HTML comment 這類特殊註記作為佔位；這種註記只是提示「這裡之後會長內容」，不算真正已回填內容。
+8. `Notes` 用來放 lesson 過程中的延伸提問、補充解釋與尚未進 `04-report.md` 的暫時結論；不要在初始化時就先把外部學習摘要、骨架提示或預設結論放進去。
+9. `Flashcards` 固定保留在檔案內，但初始化時必須留空；除了模板中的佔位註記外，不應先填入真正卡片。只有在 lesson 過程中真的整理出卡片後，才開始填寫。
+10. 每新增一批卡片，可以使用 H3 大致區分，比如 `### 第一批卡片`、`### 第二批卡片`
 
 ---
 
 ## 預設流程
 
 lesson 的執行順序，預設採 QA → command → report 收斂。
+
+這個流程是 lesson 內部流程，不是 learning 全域入口流程。
+
+也就是說：
+
+1. 先由 `learning/README.md` 決定是否進 lesson。
+2. 一旦確定進入 lesson，才在這裡使用 QA → command → report。
 
 常見流程：
 
@@ -267,7 +333,7 @@ lesson 的執行順序，預設採 QA → command → report 收斂。
 4. 若當天有延伸問題、暫時結論或卡片素材，過程中同步整理進 `05-note.md`。
 5. lesson 結束後，把重點收斂進 `04-report.md`。
 
-若今天有外部預習，完整順序應是先完成 `docs/outlines/` 的外部預習，再進入上面這套 lesson 流程。
+若今天有外部預習，完整順序應是先完成 `learning/prework/` 的外部預習，再進入上面這套 lesson 流程。
 
 例外流程：
 
