@@ -167,30 +167,47 @@ kubectl get ingress -n weamind
 ### 指令
 
 ```bash
-
+kubectl exec -it weamind-5985b7f7f6-t2qpm -n weamind -- /bin/sh
+printenv | grep POSTGRES
+printenv | grep REDIS
 ```
 
 ### 關鍵輸出
 
 ```bash
-
+# printenv | grep POSTGRES
+POSTGRES_PASSWORD=<略>
+POSTGRES_HOST=10.0.0.2
+POSTGRES_USER=wea_bot
+POSTGRES_PORT=5433
+POSTGRES_DB=weamind
+# printenv | grep REDIS
+REDIS_URL=redis://10.0.0.2:6379/0
 ```
 
 ### 使用者選擇理由
 
-- 待回答
+- 使用者先選 `kubectl exec -it <pod-name> -n weamind -- /bin/sh`。
+- 理由是這一輪要做的是最小內部驗證，而若要確認環境變數是否真的被正確注入、值是否正確，就必須進到 container 內部看 `printenv` 或其他最小驗證結果。
+- 使用者也能正確排除另外兩個選項：`kubectl describe service` 與 `kubectl get ingress` 都無法直接驗證 container 內部看到的 `PostgreSQL` / `Redis` 相關設定是否正確。
 
 ### AI 判讀與修正
 
-- 待補
+- **這個選擇是對的。** 因為這一輪題目要驗證的是 `Pod` / container 內部視角，而不是 `Service` 或 `Ingress` 這種外層資源描述。
+- **你這裡抓到的核心很準：如果你要驗證的不只是設定有沒有宣告，而是它在 container 內部最終呈現的值對不對，那就必須用 `kubectl exec -it` 進去看。** 這也是為什麼 `kubectl describe service` 和 `kubectl get ingress` 在這一輪價值很低，它們回答的是外層資源長什麼樣，不是 app 進程實際看到什麼。
+- 這次實際輸出已經讓這一輪可以正式收斂：`POSTGRES_HOST=10.0.0.2`、`POSTGRES_PORT=5433`、`POSTGRES_DB=weamind`、`POSTGRES_USER=wea_bot`、`REDIS_URL=redis://10.0.0.2:6379/0`，都和 [manifests/configmap.yaml](manifests/configmap.yaml) 一致；而 `POSTGRES_PASSWORD` 也確實存在，代表對應的敏感值有被注入進 container。
+- **這表示目前至少可以確認一件事：container 內部實際看到的 DB / Redis 設定值是正確的。** 所以如果之後 app 還是連不上 `PostgreSQL` 或 `Redis`，第一輪嫌疑就不該再放在「環境變數根本沒進來」或「host / port 明顯寫錯」這種層次。
+- 但這裡也要守住邊界：**`printenv` 只能證明設定值被正確注入，不能單獨證明網路連線一定成功。** 它不能直接回答 `10.0.0.2:5433` 或 `10.0.0.2:6379` 此刻是否真的可達，也不能替代 app 自己的連線錯誤訊息。
+- 所以若未來還懷疑依賴連線，下一步通常會是回到 app `logs` 看實際錯誤，或在 container 內做更進一步的最小連線驗證；但就今天這題而言，**你已經完成了「設定注入層」的最小驗證。**
+- **這一輪最短可講版可以收斂成：** 若我要驗證 `Pod` 內部到 `PostgreSQL` / `Redis` 的依賴設定是否真的進到 container，第一輪先用 `kubectl exec -it` 加 `printenv` 檢查最終值；這能證明設定注入正確，但不能單獨證明連線成功。
 
 ### 一句話收斂
 
-- 待補
+- `kubectl exec -it` 搭配 `printenv` 能驗證 container 內部最終收到的 `DB` / `Redis` 設定是否正確，但它只能證明設定注入，不等於已證明依賴連線成功。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
@@ -198,11 +215,14 @@ kubectl get ingress -n weamind
 
 ### 今天用哪些指令看懂了什麼
 
-- 待補
+- `kubectl describe ingress weamind -n weamind`：先確認 cluster 端宣告的 `Host`、`Path`、backend `Service` 與 `Ingress Class` 是否合理，回答的是外層 routing 規則長什麼樣。
+- `kubectl describe pod -n weamind weamind-5985b7f7f6-t2qpm`：先拿 Kubernetes 視角的 `Pod` 狀態基準，回答的是 `State`、`Restart Count`、`Conditions`、`Events` 目前看起來是否穩定。
+- `kubectl exec -it weamind-5985b7f7f6-t2qpm -n weamind -- /bin/sh` 加 `printenv`：拿 container 內部視角，回答的是 app 進程實際看到的 `POSTGRES_*` 與 `REDIS_URL` 是否正確注入。
 
 ### 練習後還不順手的地方
 
-- 待補
+- `kubectl exec` 這種內部驗證工具，很容易被誤用成萬用 debug 起手式；之後仍要持續練習先判斷「這題到底是在驗證外層 routing、Kubernetes 狀態，還是 container 內部設定」。
+- 即使今天已驗證設定注入正確，之後仍要繼續分清楚「設定正確」和「依賴真的可連」是兩個不同層次，避免把 `printenv` 的成功誤讀成連線成功。
 
 ### 補充
 

@@ -67,6 +67,13 @@
 - 所以你的理解方向是對的：**不是 Kubernetes 中央大腦先幫你做品牌辨識，而是 controller 根據這份物件上的 class 歸屬，自己判斷要不要接。**
 - 只是再精準一點說，controller 通常不是單純只靠「看到這個字串像自己名字」就臨場猜測，而是它在叢集裡本來就有設定自己負責哪個 `IngressClass` / class 名稱，然後去比對是否匹配。
 
+### `exec + printenv` 能證明什麼，不能證明什麼
+
+- 今天的 `Command 3` 很值得另外記一條邊界：`kubectl exec -it` 搭配 `printenv`，能驗證的是 container 內部最終收到的設定值，而不是依賴連線本身。
+- 當我們在 container 裡看到 `POSTGRES_HOST=10.0.0.2`、`POSTGRES_PORT=5433`、`REDIS_URL=redis://10.0.0.2:6379/0`，而且它們和 [manifests/configmap.yaml](manifests/configmap.yaml) 一致時，可以說「設定注入層」目前沒有明顯問題。
+- 但這還不能直接推出 `PostgreSQL` 或 `Redis` 一定連得通，因為 `printenv` 沒有真的發起 TCP 連線，也沒有替 app 驗證認證、timeout 或 route 問題。
+- 所以如果未來 app 仍報資料庫或快取連線錯誤，正確收斂不是回去懷疑「環境變數根本沒進來」，而是往 app `logs` 或更具體的連線驗證去查。
+
 ## Flashcards
 
 <!-- 等 lesson 過程中真的整理出卡片素材後再填。 -->

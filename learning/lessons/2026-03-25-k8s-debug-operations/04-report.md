@@ -6,7 +6,7 @@
 
 ## 狀態
 
-QA 已完成，等待 command drill 回填後做最後收束。
+QA 與 command drill 已完成，今日 lesson 可正式收束。
 
 ## QA 收斂了什麼
 
@@ -25,7 +25,9 @@ QA 已完成，等待 command drill 回填後做最後收束。
 
 ## 今日 command 練習收斂
 
-- 待 command drill 完成後回填。
+- 我已實際完成三種不同層次的最小指令練習，並能把每個工具回答的問題分開講清楚：`describe ingress` 回答 cluster 端 routing 規則長什麼樣，`describe pod` 回答 Kubernetes 目前怎麼看這個 `Pod`，`kubectl exec -it` 加 `printenv` 回答 container 內部最終收到哪些設定值。
+- 我已更清楚 `kubectl exec` 的邊界：它很適合驗證 `POSTGRES_HOST`、`POSTGRES_PORT`、`REDIS_URL` 這類值是否真的進到 container，也確實驗證出目前值和 [manifests/configmap.yaml](manifests/configmap.yaml) 一致；但這不等於已直接證明 `PostgreSQL` / `Redis` 網路連線一定成功。
+- 我也已把今天的 command drill 收成一條更穩定的 sequence：先用最貼近當前問題層級的工具拿第一輪證據，再決定是否往下一層 deeper dive，而不是一開始就 `exec` 進 Pod 把所有問題都混在一起查。
 
 ## 今日真正留下來的核心收穫
 
@@ -42,9 +44,9 @@ QA 已完成，等待 command drill 回填後做最後收束。
 
 ## 仍待補強什麼
 
-- 還需要透過 command drill 把今天的分層判斷轉成更穩定的實際操作手感。
+- 之後若碰到真實依賴故障，仍值得再補一輪「設定值正確但連線仍失敗」的實際判讀，讓 `設定注入` 與 `網路可達性` 的邊界更穩。
 - 之後若有真實異常 `Pod`，仍值得再練一次 `describe pod` 與 `logs --previous` 的實際輸出判讀。
 
 ## 下一步
 
-- 進入 `03-command.md`，從 `Command 1` 開始，把今天的 debug sequence 落到最小操作。
+- 先把今天 W3 Day 3 的收穫濃縮成短版答題稿；若明天走彈性日，就優先做輕量收斂，不開新主題。
