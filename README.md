@@ -12,7 +12,7 @@ WeaMind 的 Kubernetes 基礎設施 — 展示從單機 Docker 到 K8s 叢集的
 flowchart TD
     LINE[LINE Platform] -->|Webhook HTTPS| LB
 
-    subgraph Hetzner["Hetzner Private Network"]
+    subgraph Hetzner["Hetzner Cloud"]
         LB[Hetzner LB<br/>TCP 443 Passthrough]
 
         subgraph K3s["K3s Cluster (3 Nodes)"]
@@ -45,7 +45,7 @@ flowchart TD
 ```
 
 **架構特點**：
-- **混合架構**：應用層在 K8s，資料層保留在堡壘機（穩定性優先，避免 StatefulSet 複雜度）。
+- **混合架構**：應用層在 K8s，資料層保留在堡壘機；K3s 節點與堡壘機透過 Hetzner Private Network 互通（穩定性優先，避免 StatefulSet 複雜度）。
 - **雙環境並行**：K8s (`k8s.kyomind.tw`) 與單機 (`api.kyomind.tw`) 獨立運行，透過 LINE webhook URL 切換（秒級生效，無 DNS 傳播延遲）。
 
 ## Tech Stack

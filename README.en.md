@@ -12,7 +12,7 @@ Kubernetes infrastructure for [WeaMind](https://github.com/kyomind/weamind) — 
 flowchart TD
     LINE[LINE Platform] -->|Webhook HTTPS| LB
 
-    subgraph Hetzner["Hetzner Private Network"]
+    subgraph Hetzner["Hetzner Cloud"]
         LB[Hetzner LB<br/>TCP 443 Passthrough]
 
         subgraph K3s["K3s Cluster (3 Nodes)"]
@@ -45,7 +45,7 @@ flowchart TD
 ```
 
 **Architecture highlights**:
-- **Hybrid approach**: Application layer on K8s, data layer on the bastion VM (stability first, avoiding StatefulSet complexity)
+- **Hybrid approach**: Application layer on K8s, data layer on the bastion VM; K3s nodes and the bastion VM communicate over Hetzner Private Network (stability first, avoiding StatefulSet complexity)
 - **Dual-environment**: K8s (`k8s.kyomind.tw`) and single-server (`api.kyomind.tw`) run in parallel; traffic is switched by updating the LINE webhook URL (takes effect in seconds, no DNS propagation delay)
 
 ## Tech Stack
