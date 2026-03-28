@@ -16,6 +16,8 @@
 
 目的是把每天的純知識預習先外包出去，減少在 VS Code 小視窗內閱讀長篇教學內容的負擔。
 
+格式骨架請看 [prework-template.md](prework-template.md)；這份 README 只保留規則與流程。
+
 之後再把預習結果帶回 VS Code，由 GitHub Copilot 負責：
 
 1. 對照 WeaMind 專案實際檔案。
@@ -65,6 +67,8 @@
 如果現在還在判斷是否要 prework，請回 `learning/README.md`。
 
 如果現在已確定要進 lesson，請改看 `learning/lessons/README.md`。
+
+格式骨架則請改看 `prework-template.md`。
 
 ---
 
@@ -150,21 +154,6 @@
 
 ---
 
-## 每份 prework 建議結構
-
-每份 prework 建議包含以下段落：
-
-1. 標題
-2. 今日焦點
-3. 這份 prework 要怎麼用
-4. 今天一定要學會的最小骨架
-5. 建議教學順序
-6. 學完後請產出學習報告
-
-不是每份都要一字不差複製，但原則上要保留這個骨架。
-
-若是 homework 型補強檔，可在「這份 prework 要怎麼用」段落直接寫明：這不是正式課前預習，而是 lesson 後的輕量補強。
-
 ---
 
 ## 內容原則
@@ -228,5 +217,9 @@ VS Code 內的 GitHub Copilot 負責：
 
 - `2026-03-09-ingress-basics.md`
 - `2026-03-24-k8s-debug-tools-followup.md`（lesson 收尾後補建的 homework 型補強範例）
+
+模板：
+
+- `prework-template.md`
 
 之後新增 prework 時，應先看這份 README，再參考既有範例，但不要機械複製內容；應根據當天主題調整最小骨架與教學順序。
