@@ -13,7 +13,7 @@ flowchart TD
     LINE[LINE Platform] -->|LINE Webhook over HTTPS| LB
 
     subgraph Hetzner["Hetzner Cloud"]
-        LB[Hetzner Load Balancer<br/>(TCP 443 Passthrough)]
+        LB["Hetzner Load Balancer<br/>(TCP 443 Passthrough)"]
 
         subgraph K3s["K3s Cluster (3 Nodes)"]
             subgraph CP["Control Plane"]
@@ -21,7 +21,7 @@ flowchart TD
             end
 
             subgraph Workers["Worker Nodes × 2"]
-                Ingress[Traefik Ingress Controller<br/>(TLS Termination)]
+                Ingress["Traefik Ingress Controller<br/>(TLS Termination)"]
                 Pod1[WeaMind Pod]
                 Pod2[WeaMind Pod]
             end
