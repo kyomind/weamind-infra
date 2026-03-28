@@ -10,10 +10,10 @@ Kubernetes infrastructure for [WeaMind](https://github.com/kyomind/weamind) — 
 
 ```mermaid
 flowchart TD
-    LINE[LINE Platform] -->|Webhook HTTPS| LB
+    LINE[LINE Platform] -->|LINE Webhook over HTTPS| LB
 
     subgraph Hetzner["Hetzner Cloud"]
-        LB[Hetzner LB<br/>TCP 443 Passthrough]
+        LB[Hetzner Load Balancer<br/>TCP 443 Passthrough]
 
         subgraph K3s["K3s Cluster (3 Nodes)"]
             subgraph CP["Control Plane"]
@@ -21,7 +21,7 @@ flowchart TD
             end
 
             subgraph Workers["Worker Nodes × 2"]
-                Ingress[Traefik Ingress<br/>TLS Termination]
+                Ingress[Traefik Ingress Controller<br/>TLS Termination]
                 Pod1[line-bot Pod]
                 Pod2[line-bot Pod]
             end
