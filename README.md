@@ -63,7 +63,7 @@ flowchart TD
 3. **Traefik 設定**：確保內建 Ingress Controller 正確綁定私有網路。
 4. **cert-manager 安裝**：部署 cert-manager + ClusterIssuer (Cloudflare DNS-01)。
 5. **應用部署**：依序套用 `manifests/` 中的 YAML（Namespace → ConfigMap → Secret → Deployment → Service → Ingress）。
-6. **負載平衡器配置**：Hetzner LB 設定 TCP 443 轉發 + 健康檢查。
+6. **負載平衡器配置**：Hetzner Load Balancer 設定 TCP 443 轉發 + 健康檢查。
 7. **DNS 指向**：Cloudflare A record `k8s.kyomind.tw` 指向 LB 公網 IP。
 8. **流量切換**：修改 LINE Developers webhook URL 從 `api.kyomind.tw` 切換到 `k8s.kyomind.tw`。
 
@@ -81,7 +81,7 @@ PostgreSQL 與 Redis 透過內網連接 K8s 叢集。資料層穩定性優先，
 
 ### cert-manager + DNS-01
 
-Hetzner 託管憑證不支援 Cloudflare DNS，改用 cert-manager 搭配 DNS-01 驗證。LB 只做 TCP 443 passthrough，TLS 終止在 Traefik。
+Hetzner 託管憑證不支援 Cloudflare DNS，改用 cert-manager 搭配 DNS-01 驗證。Hetzner Load Balancer 只做 TCP 443 passthrough，TLS 終止在 Traefik。
 
 ### LINE Webhook URL 切換
 

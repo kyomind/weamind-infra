@@ -63,7 +63,7 @@ flowchart TD
 3. **Traefik configuration**: Ensure the built-in Ingress Controller binds to the private network
 4. **cert-manager installation**: Deploy cert-manager + ClusterIssuer (Cloudflare DNS-01)
 5. **Application deployment**: Apply YAMLs in `manifests/` in order — Namespace → ConfigMap → Secret → Deployment → Service → Ingress
-6. **Load balancer configuration**: Hetzner LB — TCP 443 forwarding + health check
+6. **Load balancer configuration**: Hetzner Load Balancer — TCP 443 forwarding + health check
 7. **DNS setup**: Cloudflare A record `k8s.kyomind.tw` pointing to the LB public IP
 8. **Traffic switch**: Update LINE Developers webhook URL from `api.kyomind.tw` to `k8s.kyomind.tw`
 
@@ -81,7 +81,7 @@ PostgreSQL and Redis connect to the K8s cluster over a private network. Keeping 
 
 ### cert-manager + DNS-01
 
-Hetzner's managed certificates don't support Cloudflare DNS, so cert-manager with DNS-01 validation is used instead. The LB handles TCP 443 passthrough only; TLS termination happens at Traefik.
+Hetzner's managed certificates don't support Cloudflare DNS, so cert-manager with DNS-01 validation is used instead. The Hetzner Load Balancer handles TCP 443 passthrough only; TLS termination happens at Traefik.
 
 ### LINE Webhook URL switching
 
