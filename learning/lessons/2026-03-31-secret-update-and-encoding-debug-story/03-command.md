@@ -82,43 +82,65 @@ LINE_CHANNEL_SECRET:        32 bytes
 
 ### 要驗證的問題
 
-- 你已經確認 Secret 物件存在於叢集裡，但 app 表面上仍沒變。此時你第一步想先確認：`line-bot` 這個 Deployment 到底是用什麼方式把 Secret 注入 Pod，判斷它是否屬於「Pod 建立時一次性注入」的型態。哪個指令最適合先看這件事？
+- 你已經確認 Secret 物件存在於叢集裡，但 app 表面上仍沒變。此時你第一步想先確認：`weamind` 這個 Deployment 到底是用什麼方式把 Secret 注入 Pod，判斷它是否屬於「Pod 建立時一次性注入」的型態。哪個指令最適合先看這件事？
 
 ### 三個可選指令
 
 ```bash
-kubectl get deployment line-bot -n weamind -o yaml
-kubectl describe deployment line-bot -n weamind
+kubectl get deployment weamind -n weamind -o yaml
+kubectl describe deployment weamind -n weamind
 kubectl describe pod -n weamind <pod-name>
 ```
 
 ### 指令
 
 ```bash
-
+kubectl get deployment weamind -n weamind -o yaml
 ```
 
 ### 關鍵輸出
 
 ```bash
+spec:
+	template:
+		metadata:
+			annotations:
+				kubectl.kubernetes.io/restartedAt: "2026-01-15T23:13:38+08:00"
+		spec:
+			containers:
+			- envFrom:
+				- configMapRef:
+						name: weamind-config
+				- secretRef:
+						name: weamind-secret
+				name: app
 
+status:
+	availableReplicas: 2
+	readyReplicas: 2
+	updatedReplicas: 2
 ```
 
 ### 使用者選擇理由
 
--
+- 一開始有在 `describe` 和 `get -o yaml` 之間猶豫，因為這題想看的是比較細的 Secret 注入方式，而不是單純摘要資訊。
+- 實際看到完整 YAML 後，會比較容易直接對到 `envFrom`、`secretRef` 和 Pod template 這幾個欄位，所以這次改用 `get deployment ... -o yaml`。
 
 ### AI 判讀與修正
 
--
+- 這輪已經把題目核心看到了：`weamind` 的 Secret 注入方式是在 Deployment 的 `spec.template.spec.containers[].envFrom[].secretRef` 裡定義，指向 `weamind-secret`。
+- 這個位置很重要，因為它說明設定是寫在 Pod template 裡。也就是說，當 Deployment 之後建立新的 Pod 時，新的 container 才會依照這份 template 把 Secret 轉成環境變數帶進去；這不是 Secret 物件更新後就會即時回寫到既有 Pod 的模型。
+- 你這次改用 `get -o yaml` 是對的，因為題目要的是「注入結構」而不是摘要。`describe deployment` 仍然有用，但它更適合看事件、目前副本數、條件與概況；要看 `envFrom` / `secretRef` 這種欄位層級，YAML 視角更直接。
+- 補一個很值得保留的觀察：輸出裡也看得到 `kubectl.kubernetes.io/restartedAt` 這種 annotation。它本身不是 Secret 注入機制，但它提醒你這個 Deployment 曾被 `rollout restart` 過，正好能接到下一題要談的「什麼時候 restart 才合理」。
+- 另外，`availableReplicas: 2`、`readyReplicas: 2`、`updatedReplicas: 2` 也說明目前工作負載處於穩定狀態。這表示此刻我們不是在處理 Deployment 壞掉，而是在判斷「設定更新是否已透過新 Pod 生效」這種更細的問題。
 
 ### 一句話收斂
 
--
+- 要看 Secret 是怎麼注入 Pod 的，最直接的是 `get deployment weamind -o yaml`，因為它能直接看到 Pod template 裡的 `envFrom + secretRef`，也因此能判斷這是新 Pod 建立時才套用的設定。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
@@ -131,8 +153,8 @@ kubectl describe pod -n weamind <pod-name>
 ### 三個可選指令
 
 ```bash
-kubectl rollout restart deployment/line-bot -n weamind
-kubectl rollout status deployment/line-bot -n weamind
+kubectl rollout restart deployment/weamind -n weamind
+kubectl rollout status deployment/weamind -n weamind
 kubectl get rs -n weamind
 ```
 
