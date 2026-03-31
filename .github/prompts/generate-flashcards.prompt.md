@@ -66,6 +66,8 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 5. 每張卡片只放一個概念，背面保留最小必要上下文。
 6. 保留仍然可用的舊卡片，只更新真正值得精修或補齊的地方。
 7. 卡片要偏向「可重講的穩定理解」，而不是對話過程中的臨時修補。
+8. 卡片預設整理在 `05-note.md` 的 `## Flashcards`，不另外建立專屬卡片檔。
+9. 優先保留三個月後仍值得複習的高含金量內容，不要把所有糾正細節都拆成卡片。
 
 ## 何時停止
 
@@ -145,9 +147,19 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 1. `Flashcards` 區塊內直接放 bullet list Markdown
 2. 每張卡片只放一個概念
 3. 第一行是卡片正面，結尾加分類標籤與 `#card`
-4. 第二行起用縮排 bullet 作為卡片背面
-5. 背面保留最小必要上下文，讓單張卡片獨立看也能理解
-6. 不另外用 H3 分組卡片批次
+4. 分類標籤預設依內容選 `#DevOps` 或 `#English`；若未來需要其他分類，再依實際內容補充
+5. 第二行起用縮排 bullet 作為卡片背面
+6. 背面保留最小必要上下文，讓單張卡片獨立看也能理解
+7. 背面預設控制在最多 5 行內，只有真的必要時才略微放寬
+8. `Flashcards` 區塊內直接放卡片條列，不另外用 H3 分組卡片批次
+
+格式範例：
+
+```md
+- liveness probe 失敗會發生什麼？ #DevOps #card
+	- Pod 會被 `kubelet` 重啟
+	- 它處理的是「容器是否還活著」，不是「是否已準備接流量」
+```
 
 ### 步驟 5：確認整體一致性
 
@@ -182,3 +194,4 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 4. 每張卡片都能獨立成立，且一眼看出它在回答什麼
 5. 沒有把同一個觀念用近義說法重複做成多張卡
 6. 更新後的 `05-note.md` 仍符合 `learning/lessons/README.md` 的卡片格式
+7. 卡片集中在 `05-note.md`，沒有額外分出第二份卡片檔
