@@ -143,11 +143,17 @@ If extra questions appear during QA:
 
 Purpose: record command drill in a review-friendly way, preserving what was being tested, what mattered in the output, and what conclusion was reached.
 
+Terminology:
+
+1. `command drill` is the name of the whole lesson stage recorded in `03-command.md`.
+2. `command loop` is one small closed round inside that drill.
+3. When speaking to the user, prefer `command drill` for the stage and `first round`, `second round`, and so on for individual loops.
+
 It should usually include:
 
 1. today's command goal
 2. the path or problem being verified
-3. each command loop as a small closed unit: question, command, key output, AI reading, one-line takeaway, status
+3. each command loop as a small closed unit inside the overall command drill: question, command, key output, AI reading, one-line takeaway, status
 4. a final consolidation of what the commands helped clarify
 
 Default rhythm:

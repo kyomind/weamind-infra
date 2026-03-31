@@ -132,6 +132,12 @@ If the user raises extra questions during command drill:
 - if they are independent, higher-branching, or would hurt the reviewability of the command record, move the detailed treatment to `05-note.md`
 - leave only the minimum conclusion needed to complete that command loop inside `03-command.md`
 
+Terminology note:
+
+- `command drill` is the whole lesson stage recorded in `03-command.md`
+- `command loop` is one small closed round inside that drill
+- when speaking to the user, prefer `command drill` for the stage and `第一輪`、`第二輪` 這類說法 for individual rounds
+
 ### Scope Discipline
 
 - Lessons should stay small, repo-backed, and reviewable
