@@ -150,8 +150,9 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 4. 分類標籤預設依內容選 `#DevOps` 或 `#English`；若未來需要其他分類，再依實際內容補充
 5. 第二行起用縮排 bullet 作為卡片背面
 6. 背面保留最小必要上下文，讓單張卡片獨立看也能理解
-7. 背面預設控制在最多 5 行內，只有真的必要時才略微放寬
-8. `Flashcards` 區塊內直接放卡片條列，不另外用 H3 分組卡片批次
+7. 背面一律寫成短版重點句或片語，句尾不要加句點
+8. 背面預設控制在最多 5 行內，只有真的必要時才略微放寬
+9. `Flashcards` 區塊內直接放卡片條列，不另外用 H3 分組卡片批次
 
 格式範例：
 
