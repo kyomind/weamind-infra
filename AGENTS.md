@@ -111,32 +111,9 @@ Use the standard lesson structure under `learning/lessons/`:
 - `04-report.md` is the lesson-level conclusion page
 - `05-note.md` holds extensions, temporary conclusions, and flashcards
 
-### QA Style
+For detailed lesson-file responsibilities, QA style, command drill structure, terminology, and note boundaries, treat `learning/lessons/README.md` as the source of truth.
 
-- Ask one full main question first
-- Let the user answer in their own words before narrowing the path
-- If the user is clearly stuck, split the same question into 2 or 3 smaller prompts
-- After the smaller prompts, always collapse back into the full answer
-
-### Handling Extra Questions
-
-If the user raises extra questions during QA:
-
-- keep them inside `02-qa.md` only if they are necessary to finish the current question
-- if they are independent, higher-branching, or would make QA hard to review later, move the detailed treatment to `05-note.md`
-- leave only the minimum conclusion needed for the current QA item inside `02-qa.md`
-
-If the user raises extra questions during command drill:
-
-- keep them inside `03-command.md` only if they are necessary to complete that command loop
-- if they are independent, higher-branching, or would hurt the reviewability of the command record, move the detailed treatment to `05-note.md`
-- leave only the minimum conclusion needed to complete that command loop inside `03-command.md`
-
-Terminology note:
-
-- `command drill` is the whole lesson stage recorded in `03-command.md`
-- `command loop` is one small closed round inside that drill
-- when speaking to the user, prefer `command drill` for the stage and `第一輪`、`第二輪` 這類說法 for individual rounds
+AGENTS.md should stay at the workflow and collaboration-rule level, not duplicate lower-level formatting details that already live in the lessons README.
 
 ### Scope Discipline
 
