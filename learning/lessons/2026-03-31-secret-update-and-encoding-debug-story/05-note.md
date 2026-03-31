@@ -21,7 +21,24 @@
 
 ## Notes
 
-<!-- lesson 進行中再補充延伸問答與暫時結論 -->
+### Secret 不是只是 YAML
+
+- 使用者在 Q4 提出一個關鍵卡點：直覺上容易把 Secret 當作「YAML 裡的一段內容」，但更準確的理解是，YAML 只是宣告方式；真正的 Secret 是 `kubectl apply` 後存在 Kubernetes API server 裡的一個資源物件。
+- 因此排查時要分開看兩件事：本地 YAML 是否已修改，以及叢集裡的 Secret 資源是否已更新成功。前者是編輯狀態，後者才是工作負載真正會引用到的狀態。
+
+### 第一層怎麼確認 Secret 已更新到叢集
+
+- 第一動作通常是先 `kubectl apply -f` 將 Secret YAML 套用到叢集。
+- 套用後不能只憑終端成功訊息就結束，還要再看叢集裡的 Secret 物件。
+- `kubectl describe secret` 適合先確認物件是否存在、名稱是否正確、基本 metadata 是否合理。
+- `kubectl get secret -o yaml` 或 `kubectl get secret -o jsonpath=...` 更適合進一步對照目前叢集裡的內容是否已是預期值。
+- 這一步的重點不是背哪個指令，而是建立「先確認資源已更新，再談 Pod 是否吃到新值」的排查順序。
+
+### 進 Pod 看 env 的位置
+
+- `kubectl exec` 進 Pod 看環境變數可以作為第二層或第三層的驗證手段，但不應該拿來取代第一層。
+- 因為若 Secret 根本還沒正確更新到叢集，直接進 Pod 看 env 只會看到舊值，卻無法分辨是「資源沒更新」還是「Pod 沒重建」。
+- 所以較穩的順序是：先看 Secret 物件，再看 Pod 是否為舊 Pod，最後才在需要時進 Pod 驗證實際環境變數。
 
 ## Flashcards
 

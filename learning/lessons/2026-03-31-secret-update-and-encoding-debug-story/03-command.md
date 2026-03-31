@@ -4,6 +4,7 @@
 
 1. 把「Secret 資源已更新」和「Pod 已吃到新值」拆成可觀察的兩件事。
 2. 把 `rollout restart` 放回正確使用情境，而不是把它當萬用修復鍵。
+3. 先建立一個最小觀念：Secret 不是只是本地 YAML 片段，而是叢集中的獨立資源物件。
 
 ## 這次要驗證的路徑或問題
 
@@ -24,43 +25,56 @@
 
 ### 要驗證的問題
 
-- Secret 值若有更新，第一步應如何確認更新真的進到 K8s 資源，而不是只停留在本地 YAML。
+- Secret 值若有更新，第一步應如何確認更新真的進到 K8s 資源，而不是只停留在本地 YAML；也就是先看懂 Secret 是叢集中的物件，而不只是檔案內容。
 
 ### 三個可選指令
 
 ```bash
-kubectl get secret weamind-secret -n weamind -o yaml
 kubectl describe secret weamind-secret -n weamind
+kubectl get secret weamind-secret -n weamind -o yaml
 kubectl get secret weamind-secret -n weamind -o jsonpath='{.data}'
 ```
 
 ### 指令
 
 ```bash
-
+kubectl describe secret weamind-secret -n weamind
 ```
 
 ### 關鍵輸出
 
 ```bash
+Name:         weamind-secret
+Namespace:    weamind
+Type:         Opaque
 
+Data
+====
+POSTGRES_PASSWORD:          32 bytes
+LINE_CHANNEL_ACCESS_TOKEN:  172 bytes
+LINE_CHANNEL_SECRET:        32 bytes
 ```
 
 ### 使用者選擇理由
 
--
+- 先建立最小觀念：Secret 是叢集中的獨立資源物件，不只是本地 YAML 內容。
+- 想先確認 `weamind-secret` 是否真的存在於 `weamind` namespace，以及它大致包含哪些 key。
 
 ### AI 判讀與修正
 
--
+- 這輪輸出已經回答了一個很重要的第一層問題：`weamind-secret` 確實是叢集裡存在的一個 Secret 物件，而不是只有本地檔案裡寫了一段 YAML。
+- 你現在至少已能從輸出讀出四件事：它的名稱是 `weamind-secret`、它在 `weamind` namespace、型別是 `Opaque`，而且目前叢集裡這個物件有三個 data key。
+- 這也正好補上你剛剛的盲點：既然 Secret 是叢集中的資源物件，就合理會有 `kubectl describe secret ...` 這種第一輪觀察入口。
+- 但這輪輸出也有邊界。`describe secret` 很適合先確認物件存在、namespace 正確、key 數量與大致結構是否合理；它不能直接證明這些值是不是你剛剛最新 apply 的內容，也不會直接把敏感值明文顯示出來。
+- 所以下一步若要回答「它到底有沒有更新成我預期的值」，就要進到更精細的觀察，例如 `kubectl get secret ... -o yaml` 或 `-o jsonpath=...`，必要時再對特定 key 做有意識的比對，而不是停在 `describe` 就以為內容已驗證完成。
 
 ### 一句話收斂
 
--
+- `describe secret` 先建立資源物件觀念：它能證明 Secret 已存在於叢集並顯示基本結構，但還不能單靠它確認值內容是否已更新正確。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
@@ -68,14 +82,14 @@ kubectl get secret weamind-secret -n weamind -o jsonpath='{.data}'
 
 ### 要驗證的問題
 
-- 既有 Pod 為什麼可能還在吃舊值，以及 Deployment 目前的注入方式是否會自動反映 Secret 更新。
+- 你已經確認 Secret 物件存在於叢集裡，但 app 表面上仍沒變。此時你第一步想先確認：`line-bot` 這個 Deployment 到底是用什麼方式把 Secret 注入 Pod，判斷它是否屬於「Pod 建立時一次性注入」的型態。哪個指令最適合先看這件事？
 
 ### 三個可選指令
 
 ```bash
 kubectl get deployment line-bot -n weamind -o yaml
+kubectl describe deployment line-bot -n weamind
 kubectl describe pod -n weamind <pod-name>
-kubectl get pods -n weamind -o wide
 ```
 
 ### 指令
@@ -166,3 +180,4 @@ kubectl get rs -n weamind
 ### 補充
 
 - 若今天未實跑 cluster 指令，需明確標記為「支援性設計」，不可當成已完成的使用者操作紀錄。
+- 今天第一個 command drill 的重點不是背 Secret 指令，而是建立「先看資源物件，再看 Pod 狀態」的排查順序。

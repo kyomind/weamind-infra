@@ -36,7 +36,7 @@
 
 今天建立 `03-command.md`。
 
-原因：這個主題很適合用最小 command loop 釐清「資源已更新」和「Pod 已吃到新值」不是同一件事，也適合順手把 `rollout restart` 放回正確位置。但流程仍維持 `QA -> command -> report`，先把概念骨架講清楚再進觀察。
+原因：這個主題很適合用最小 command drill 釐清「資源已更新」和「Pod 已吃到新值」不是同一件事，也適合順手把 `rollout restart` 放回正確位置。但流程仍維持 `QA -> command -> report`，先把概念骨架講清楚再進觀察。
 
 ## 文件分工
 
