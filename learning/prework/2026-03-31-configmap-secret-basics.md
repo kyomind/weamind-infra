@@ -49,23 +49,43 @@
 
 ## 學習報告
 
+### 今日主題與學習範圍
+
+- 主題：ConfigMap / Secret 基礎
+- 範圍：ConfigMap vs Secret 的責任差異、敏感資料判斷邏輯、Secret 的 `data` vs `stringData`、`env` / `envFrom` / `valueFrom` 的語意與使用方式
+
 ### 今日學到什麼
 
-- 待填
+- Kubernetes 用 ConfigMap / Secret 將設定從 image 中抽離。
+- ConfigMap 與 Secret 的差別不在用途，而在安全等級。
+- 判斷資料該放哪裡，不是看是不是 DB，而是看洩漏後的風險。
+- Secret 的 `stringData` 是為了人類操作方便，最終仍會轉成 `data`。
+- Pod 透過 `env`、`envFrom` 等方式，將 ConfigMap / Secret 注入為環境變數。
 
 ### 已能白話講清楚什麼
 
-- 待填
+- ConfigMap 是可以公開的設定，通常可進 Git。
+- Secret 是敏感資料，洩漏後可能直接造成風險。
+- `DB_HOST` 不一定算敏感資訊，因為它只是位置資訊，不是存取憑證。
+- `stringData` 是給人寫的，`data` 是實際儲存時使用的形式。
+- `env` 是一個一個設定，`envFrom` 是整包匯入。
+- `envFrom` 是整包匯入，`env + valueFrom` 是精準選取。
 
 ### 目前還卡住什麼
 
-- 待填
+- Secret 是否真的安全，例如 etcd encryption、RBAC 等保護邊界到底到哪裡。
+- Secret 更新後，既有 Pod 是否會自動拿到新值。
+- `envFrom` 大量注入時，若 key 撞名會怎麼處理。
 
 ### 今日最重要的觀念
 
-- 待填
+- ConfigMap / Secret 的本質是設定外部化。
+- 兩者差別是安全等級，不是用途。
+- 判斷依據是洩漏後能不能被利用。
+- `stringData` 是寫入用，`data` 是儲存用。
+- `env` 是逐一注入，`envFrom` 是整批注入。
 
 ### 帶回 VS Code 的問題
 
-1. 待填
-2. 待填
+1. 我這個 Deployment 裡的環境變數，有哪些應該從 ConfigMap 來？哪些應該從 Secret 來？理由是什麼？
+2. 我現在用的是 `env` 還是 `envFrom`？如果改成另一種方式，會有什麼 trade-off？
