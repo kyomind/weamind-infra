@@ -101,6 +101,14 @@ Once inside a lesson, the default flow is:
 
 Only allow `command` before `QA` if `01-outline.md` explicitly explains why that exception is better for that lesson.
 
+When a lesson is already in progress and the user says only "continue" or "繼續", treat that as continuing the current interactive lesson turn, not as permission to auto-complete the remaining lesson files.
+
+In that situation:
+
+1. first identify whether the lesson is currently in `QA`, `command`, or `report`
+2. if it is in `QA` or `command`, continue with the next single interaction step and wait for the user's answer or command output
+3. only move into `report` consolidation after the interactive part is finished, or when the user explicitly asks for consolidation
+
 ## Lesson Execution Rules
 
 Use the standard lesson structure under `learning/lessons/`:
