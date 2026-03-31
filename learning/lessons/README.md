@@ -1,302 +1,425 @@
 # Lessons README
 
-## Purpose
+## 用途
 
-`learning/lessons/` stores the internal learning records created inside VS Code.
+`learning/lessons/` 用來存放 VS Code 內部學習記錄。
 
-This is the second-layer rule file under `learning/`, and it assumes two things are already true:
+這份 README 是 `learning/` 底下的第二層規則檔。
 
-1. `learning/README.md` has been read first.
-2. The prework decision for today has already been made.
+它有一個前提：你已經先讀過 `learning/README.md`，而且已經完成「今天是否需要 prework」的判斷。
 
-Only open this file when one of these is true:
+只有在下面兩種情況，本檔才應被打開：
 
-1. Today does not need prework, so the work can go straight into a lesson.
-2. Today's prework is already finished, and the work is now moving into repo-backed learning.
+1. 今天已判斷不需要 prework，現在要直接進 lesson。
+2. 今天的 prework 已完成，現在要進入 repo 內 lesson。
 
-If that decision has not been made yet, go back to `learning/README.md` first.
+若還沒完成這個判斷，應先回到 `learning/README.md`，而不是直接在這裡開始建 lesson。
 
-## Boundary With Prework
+這裡只記錄兩種內容：
 
-This file defines lesson rules. It does not decide whether prework is needed; that decision belongs to `learning/README.md`.
+1. GitHub Copilot 在 repo 內帶著使用者做的專案對照。
+2. 與 WeaMind 實際架構、YAML、流量路徑、debug sequence 直接相關的學習整理。
 
-`learning/prework/` is for:
+純通用知識預習仍放在 `learning/prework/`，這裡只放 repo 內對照與驗收。
 
-1. external AI prework
-2. pure concept scaffolding
-3. understanding that is not yet tightly tied to repo reality
+一句話區分：
 
-`learning/lessons/` is for:
+- prework 是外部預習。
+- lessons 是內部對照與驗收。
 
-1. direct comparison against WeaMind manifests, docs, and incidents
-2. why the repo is designed this way
-3. traffic paths, trade-offs, and debug stories
-4. project-specific explanations the user should be able to give in interviews
+---
 
-## Boundary With lesson-template
+## 和 prework 的分工
 
-`lesson-template.md` is a skeleton tool, not a second rules document.
+本檔只負責 lesson 內部規格，不負責決定今天要不要 prework。
 
-Use the split below consistently:
+那個判斷屬於 `learning/README.md` 的責任。
 
-1. `README.md` defines rules, boundaries, and workflow.
-2. `lesson-template.md` provides the file skeleton and minimal examples.
+`learning/prework/` 負責：
 
-If the question is about structure or behavior, use this README.
-If the question is about the starting file skeleton, use the template.
+1. 外部 ChatGPT 類服務的每日預習大綱。
+2. 純知識骨架與白話理解。
+3. 不直接綁定 repo 實況的概念預習。
 
-## When To Create a Lesson
+`learning/lessons/` 負責：
 
-Create a lesson when:
+1. WeaMind 專案內的實際對照。
+2. 為什麼這個 repo 這樣設計。
+3. 流量路徑、trade-off、debug 故事。
+4. 面試時要能講出來的專案特定說法。
 
-1. meaningful project-specific learning happened inside VS Code
-2. general concepts were mapped onto real YAML, docs, architecture, or operations
-3. the session produced reviewable why, trade-off, or debug material
-4. prework is either unnecessary or already complete
+因此這份 README 的預設前提是：
 
-If the day only contained pure concept prework and no repo-backed work, a lesson is usually unnecessary.
+1. 上層流程判斷已完成。
+2. 現在已確定要進入 `learning/lessons/`。
+3. 接下來才輪到本檔定義 lesson 本身的結構與節奏。
 
-## Start Check
+---
 
-Before starting a lesson, confirm at least these points:
+## 和 lesson-template 的分工
 
-1. `learning/README.md` was used to decide the path, and prework was completed if required
-2. the lesson file structure matches this README and `lesson-template.md`
-3. the internal flow is still `QA -> command -> report`, unless `01-outline.md` clearly explains an exception
-4. if `03-command.md` exists, it is a real command drill document rather than a raw command list
-5. `04-report.md` is left open for later consolidation rather than prefilled with answers
+`lesson-template.md` 是骨架工具，不是第二份規則手冊。
 
-## Standard Structure
+兩者分工應固定如下：
 
-Each lesson uses its own folder:
+1. `README.md` 負責規則、流程、判斷條件與欄位邊界。
+2. `lesson-template.md` 只負責快速建立檔案骨架與最小範例。
+
+因此：
+
+1. 若問題是「今天該不該建 `03-command.md`」、「QA 能不能先拆題」、「`05-note.md` 初始化能先放什麼」，應以本檔為準。
+2. 若問題是「今天新 lesson 要先開哪些檔案」、「每份檔案最小空殼長什麼樣」，才看 `lesson-template.md`。
+3. 模板裡若出現較長的規則段落，應優先檢查是否其實該搬回本檔，而不是讓 template 自己長成第二份 README。
+
+一句話原則：README 管規則，template 管骨架。
+
+---
+
+## 何時應新增 lesson
+
+遇到下面情況，就應新增一份 lesson：
+
+1. 今天在 VS Code 內有完成一段專案特定的學習。
+2. 已把通用概念對到實際 YAML、架構或操作。
+3. 有形成一段值得回顧的 why、trade-off 或 debug sequence。
+4. 已經判斷今天不需要外部預習，或外部預習已完成，現在要進入 repo 內對照。
+
+如果今天只有純知識預習、沒有碰 repo，通常不需要在這裡新增 lesson。
+
+建立新 lesson 時，建議直接對照 `lesson-template.md`，不要每次從零決定檔案結構。
+
+但順序仍應是：先看本檔，再看 `lesson-template.md`。
+
+---
+
+## 這份 README 的責任邊界
+
+本檔負責：
+
+1. lesson 的進入條件。
+2. lesson 目錄結構。
+3. lesson 內部固定流程。
+4. 每一份檔案的分工與寫法。
+
+本檔不負責：
+
+1. 判斷今天是否需要 prework。
+2. prework 的命名與段落規則。
+3. learning 整體入口導覽。
+
+如果問題是「現在應不應該先做 prework」，請回 `learning/README.md`。
+
+如果問題是「prework 該怎麼寫」，請看 `learning/prework/README.md`。
+
+---
+
+## 開始前檢查
+
+正式開始 lesson 前，建議至少確認：
+
+1. 今天是否已先在 `learning/README.md` 完成流程判斷；若需要 prework，應先完成 prework，再進入 lesson。
+2. lesson 檔案結構是否符合本檔與 `lesson-template.md` 的骨架。
+3. 內部流程是否仍是 QA → command → report；若要例外，是否已在 `01-outline.md` 寫明原因。
+4. `03-command.md` 若存在，是否真的符合 command drill 的節奏，而不是單純指令清單。
+5. `04-report.md` 是否保留回填空間，而不是一開始就預寫完整答案。
+
+---
+
+## 標準結構
+
+每個 lesson 都應使用獨立資料夾，格式如下：
 
 `learning/lessons/YYYY-MM-DD-slug/`
 
-Use lowercase English and hyphens for the slug. The slug should describe the actual topic learned that day, not a vague category.
+`slug` 使用英文小寫與連字號，描述今天在專案裡真正學到的主題，而不是抽象大分類。
 
-Default files:
+範例：
+
+- `2026-03-10-weamind-traffic-path`
+- `2026-03-11-pod-to-vm-and-endpoints`
+- `2026-03-12-ingress-debug-sequence`
+
+每份 lesson 預設建立這四份檔案：
 
 1. `01-outline.md`
 2. `02-qa.md`
 3. `04-report.md`
 4. `05-note.md`
 
-Optional file:
+若當天主題需要搭配 `kubectl` 或其他實作指令練習，再另外加：
 
 5. `03-command.md`
 
-`03-command.md` should exist only when the lesson needs command drill or hands-on verification.
+範例：
 
-## File Responsibilities
+- `learning/lessons/2026-03-10-weamind-traffic-path/01-outline.md`
+- `learning/lessons/2026-03-10-weamind-traffic-path/02-qa.md`
+- `learning/lessons/2026-03-10-weamind-traffic-path/03-command.md`
+- `learning/lessons/2026-03-10-weamind-traffic-path/04-report.md`
+- `learning/lessons/2026-03-10-weamind-traffic-path/05-note.md`
+
+---
+
+## 檔案分工
 
 ### `01-outline.md`
 
-Purpose: define the topic, scope, and sequence of the lesson.
+用途：規劃今天 lesson 的主題、範圍與執行順序。
 
-It should usually include:
+建議包含：
 
-1. today's topic
-2. the concrete project questions to solve
-3. repo files to compare
-4. suggested learning order
-5. the why / how questions worth pressing on
-6. completion criteria
+1. 今日主題。
+2. 這次要解的專案問題。
+3. 要對照的 repo 檔案。
+4. 建議學習順序。
+5. 要追問的 Why / How 題。
+6. 這份 lesson 的完成標準。
 
-Default assumption: write the sequence as `QA -> command -> report`.
+補充原則：
 
-Only make command-first flow an exception when the lesson clearly benefits from observation before explanation, and state that reason explicitly.
+1. 預設把流程寫成「先 QA，再 command，最後回 report 收斂」。
+2. 若當天主題非常明確適合先做操作觀察，再回頭用 QA 收斂，才標示成例外。
+3. 重點是交代今天要先解哪些問題，以及 command drill 要驗證哪條路徑，不需要把流程寫得過細。
 
 ### `02-qa.md`
 
-Purpose: record repo-backed questions, the user's answer summary, and AI corrections.
+用途：記錄今天的專案對照題、使用者回答摘要與 AI 修正。
 
-Default scope:
+建議包含：
 
-1. 3 to 5 focused questions
-2. a repo file or observation target for each question
-3. user answer summary
-4. AI correction or refinement
-5. a clear status for each question
+1. 3 到 5 題小範圍題目。
+2. 每題對應的 repo 檔案或操作目標。
+3. 使用者回答摘要。
+4. AI 修正或補充。
+5. 每題狀態，例如：未開始、進行中、已完成。
 
-Formatting expectations:
+格式建議：
 
-1. use `## Q1`, `## Q2`, and so on
-2. use H3 sections such as `### Question`, `### Reference Files`, `### User Answer Summary`, `### AI Corrections and Additions`
-3. keep questions small and directly comparable against the repo
-4. highlight key conclusions or key terms inside AI corrections, but do not turn the whole section into bold text
-5. use inline code for technical terms such as commands, resource names, states, fields, and env keys
+1. 每題用 `## Q1`、`## Q2` 這種層級。
+2. 題內欄位用 `### 題目`、`### 對照檔案`、`### 使用者回答摘要` 這類 H3。
+3. 避免大量單行粗體欄位，讓整份 QA 更穩定、好掃讀。
+4. 題目應盡量小、具體、可直接對照 repo，不要把一題寫成一整個章節。
+5. 在 `### AI 修正與補充` 這個區塊裡，AI 應主動把「關鍵句」、「核心結論」或「關鍵詞」加粗，方便之後複習時快速掃到重點；但不要把整段幾乎每一句都加粗，避免失去層次。
+6. 若 AI 回答中出現 `kubectl` 指令、Pod 狀態、欄位名、資源名、環境變數名或其他技術術語，應優先使用 inline code 標示，例如 `events`、`CrashLoopBackOff`、`POSTGRES_HOST`、`kubectl logs --previous`，讓自然語言與術語更容易分開掃讀。
 
-QA style:
+提問風格原則：
 
-1. start with one full question
-2. let the user answer in their own words first
-3. if the user is stuck, split that same question into 2 or 3 smaller prompts
-4. after smaller prompts, always collapse back into the full answer
+1. QA 預設採低壓引導式提問，不以高壓猜題為目標。
+2. 先給完整主問題，讓使用者先用自己的話回答；回答不需要一開始就很完整。
+3. 若使用者一時沒有想法，或看過最小提示後仍卡住，再把同一題拆成 2 到 3 個更小的引導點。
+4. 引導點做完後，必須再收斂回原本那題的完整答案，不要讓整份 lesson 只剩零碎小題。
+5. QA 因為範圍通常比 command drill 大，可以保留一定程度的引導，幫助使用者先抓到題目邊界；但不要在主問題剛拋出時就把答案路徑鋪好。
+6. 若 QA 過程中出現額外追問，但它不屬於當前主問題的最小完成範圍，且獨立性較高或偏延伸補充，應優先整理進 `05-note.md`；`02-qa.md` 只保留完成該題所需的最小結論，避免 QA 膨脹成第二份 note。
 
-If extra questions appear during QA:
+拆題原則：
 
-1. keep them in `02-qa.md` only if they are necessary to finish the current question
-2. if they are independent, higher-branching, or would make QA harder to review later, move the detailed treatment into `05-note.md`
-3. leave only the minimum conclusion needed to complete the current QA item inside `02-qa.md`
+1. 只有在使用者明確表示題目太難、沒有想法，或看提示後仍答不出來時，才改走拆題流程。
+2. AI 將大題拆成 2 到 3 個更小的判斷題，不另開新 Q 編號。
+3. 每個小題盡量設計成 2 到 3 個選項的選擇題。
+4. 小題全部完成後，再把答案收斂回原本那一題的完整結論。
+5. 若要留下最小痕跡，建議只在 `題目` 與 `對照檔案` 之間加一個 `### 拆題`，列出小題題目即可。
+6. 建立 lesson 骨架時，不要先把每一題都預先拆好；`### 拆題` 預設是過程中視需要再補。
 
 ### `03-command.md`
 
-Purpose: record command drill in a review-friendly way, preserving what was being tested, what mattered in the output, and what conclusion was reached.
+用途：記錄指令練習，但重點是讓之後複習時能快速看懂「當時在驗證什麼、看到了什麼、因此能下什麼結論」，不是把整段互動逐字存檔。
 
-It should usually include:
+建議包含：
 
-1. today's command goal
-2. the path or problem being verified
-3. each command item as a small closed unit, typically rendered as `Command 1`, `Command 2`, and so on: question, command, key output, AI reading, one-line takeaway, status
-4. a final consolidation of what the commands helped clarify
+1. 今日指令練習目標。
+2. 這次要驗證的路徑或問題。
+3. 每一輪 command 的最小閉環：問題、指令、關鍵輸出、AI 判讀、一句話收斂、狀態。
+4. 最後收斂：今天用哪些指令看懂了什麼。
+5. 哪些地方還不順手。
 
-Default rhythm:
+操作節奏：
 
-1. present one concrete situation
-2. usually offer 3 candidate commands
-3. let the user choose and run one in the real environment
-4. use the output to refine the reasoning and collapse the loop into a reusable conclusion
+1. AI 先給一個明確情境，說清楚這一輪要驗證什麼。
+2. 預設直接給 3 個可選指令，讓使用者先做判斷；只有在題目非常單純或明顯不適合時，才不使用三選一。
+3. 使用者先選一個指令，直接到真實環境執行，然後把看到的輸出與自己的選擇理由一起回覆。
+4. AI 根據輸出與使用者理由，協助判讀、修正，最後收斂成一句可複習的結論。
 
-Formatting expectation for candidate commands:
+引導原則：
 
-1. when presenting candidate commands inside `03-command.md`, render the options as a fenced code block so the user can scan them as terminal input directly
-2. keep any short explanation outside the code block so the command block stays clean and easy to review
+1. command drill 本身已經透過情境與三選一提供了基本引導，因此 AI 不應再額外加上「建議先走哪條最省力路線」或過度縮小判斷空間。
+2. 若使用者先選了不夠精準但仍合理的指令，應優先保留這個試錯與修正過程，因為這本身就是 command drill 的一部分。
+3. command drill 的收斂重點是判讀與修正，不是預先替使用者排除所有錯誤選項。
+4. 若 command drill 過程中出現額外追問，但它不屬於當輪最小閉環的必要部分，且獨立性較高或偏延伸補充，應優先整理進 `05-note.md`；`03-command.md` 只保留完成當輪判讀所需的最小結論。
 
-Command drill principles:
+補充原則：
 
-1. the point is interpretation and correction, not memorizing commands
-2. keep the record compact and reviewable
-3. keep only the key output when raw output is long
-4. if the valuable part is the correction of an initial wrong guess, preserve that briefly
-5. if AI runs commands for verification, mark them as support work rather than completed user drill
-
-If extra questions appear during command drill:
-
-1. keep them in `03-command.md` only if they are necessary to complete that command item
-2. if they are independent, higher-branching, or would damage reviewability, move the detailed treatment into `05-note.md`
-3. leave only the minimum conclusion needed to complete that command item inside `03-command.md`
+1. `03-command.md` 的練習預設應由使用者親手操作，不應只由 AI 代跑後就記成已完成。
+2. `03-command.md` 預設應以「一輪觀察、一個閉環」來寫；若某個結論需要兩個指令一起看，可併成同一輪，但不要把整天過程混成一大段流水帳。
+3. 每一輪若需要保留當時的情境、三個選項或 AI 給的最小提示，應直接放進該輪 command 區塊內，不另外插一層獨立的互動題區塊。
+4. `03-command.md` 裡的指令與輸出都統一使用 `bash` code block，不再混用 `text` 或其他標記。
+5. `03-command.md` 的首要目標是降低複習阻力，因此只保留關鍵輸出與必要上下文；若原始輸出很長，預設只摘錄最有判讀價值的 3 到 8 行。
+6. 若某輪真正有價值的是「原本怎麼誤判、後來怎麼修正」，可以在該輪補一小段「常見誤解 / 這輪釐清了什麼」，但不要把它寫成第二份 QA。
+7. 若 AI 為了驗證環境而代跑指令，應明確標示那只是輔助驗證，不等於使用者已完成 command drill。
+8. command drill 的最小完成條件，預設是使用者至少親手完成一輪最小操作、貼回輸出，並說出自己的選擇理由。
+9. 在 `### AI 判讀與修正` 這個區塊裡，AI 應主動把「關鍵句」、「關鍵詞」、「核心結論」或「判讀口訣」加粗，讓之後回看時能先掃到最有價值的判讀；但同樣不要把整段全面加粗。
+10. 若 AI 判讀中出現 `kubectl` 指令、狀態名、事件欄位、資源欄位、container / probe / env key 等技術術語，也應優先使用 inline code 標示，避免和一般敘述混在一起。
 
 ### `04-report.md`
 
-Purpose: consolidate what the lesson actually produced. This is the lesson-level conclusion page for `02-qa.md` and `03-command.md` when command drill exists.
+用途：在 lesson 結束後收斂今天真正學到的內容，是 `02-qa.md` 與 `03-command.md`（若有）的 lesson-level 結論頁。
 
-Recommended order:
+建議包含（順序固定，跟執行流程一致）：
 
-1. today's topic
-2. status
-3. what QA clarified
-4. what the user was originally stuck on
-5. command drill consolidation, if command drill happened
-6. the core takeaway that should remain after the lesson
-7. what the user can now explain clearly
-8. what still needs reinforcement
-9. next step
+1. 今日主題。
+2. 狀態。
+3. QA 收斂了什麼（不重述 QA 題目細節，只留理解結論）。
+4. 使用者原本卡住什麼。
+5. 今日 command 練習收斂（**optional**，若當天有做 command drill 才補；用能力收斂語句，不是操作記錄）。
+6. 今日真正留下來的核心收穫。
+7. 學完後已能講清楚什麼。
+8. 仍待補強什麼。
+9. 下一步。
 
-Principles:
+補充原則：
 
-1. fill this mainly at the end of the lesson
-2. it can be updated during the lesson if conclusions are already stable
-3. do not prefill it with standard answers before the lesson happens
-4. do not restate full QA details; keep only the lesson-level understanding
-5. omit the command section entirely if there was no command drill
+1. `04-report.md` 預設在 lesson 結束後集中回填。
+2. 若對話過程中已出現穩定結論，也可以邊做邊補，但不應在 lesson 一開始就預寫標準答案。
+3. 最終仍應在 lesson 收尾時重新整理一次，避免 report 只剩零散過程筆記。
+4. report 不應重述 QA 的題目細節；QA 收斂段落只保留「做完 QA 之後理解到什麼」。
+5. 「今日 command 練習收斂」是 optional section：沒有 command drill 時，直接略去這節，不要留「無」或「N/A」。
+6. QA 在前，command 在後，不要對調。
 
 ### `05-note.md`
 
-Purpose: hold extensions, temporary conclusions, and flashcards.
+用途：承接 lesson 中途冒出的延伸問答、補充說明、暫時結論與卡片整理。
 
-Fixed structure:
+固定結構：
 
 1. `## 學習注意事項`
 2. `## Notes`
 3. `## Flashcards`
 
-Use `05-note.md` for:
+適合放的內容：
 
-1. extra user questions and AI answers
-2. stable but not yet fully consolidated conclusions
-3. valuable explanations that do not belong inside one QA item or one command item
-4. final flashcards
+1. 使用者的延伸提問與 AI 的補充回答。
+2. 目前已知但尚未正式收斂進 `04-report.md` 的暫時結論。
+3. 不適合塞進單一 Q/A 題目，但之後複習會有價值的補充說明。
+4. 最後保留的卡片整理內容。
 
-Rules:
+補充原則：
 
-1. create `05-note.md` by default with every lesson
-2. use H3 grouping inside both `學習注意事項` and `Notes`
-3. let `學習注意事項` hold lesson boundaries, repo reference files with observation targets, and items not expanded today
-4. during initialization, only `學習注意事項` may be prefilled
-5. keep `Notes` and `Flashcards` empty at initialization, except for placeholder comments
-6. if extra QA or command questions do not belong in the main lesson flow, expand them here instead
+1. `05-note.md` 預設應在建立 lesson 時一起建立，不再視為 optional。
+2. 原因不是每次一開始就一定有大量 note，而是它很適合承接中途延伸問題、暫時結論與最後的卡片整理，先建好骨架比較穩定。
+3. 一件事情記一則，不要把 `05-note.md` 寫成第二份 lesson 摘要。
+4. `學習注意事項` 與 `Notes` 內部都要用 H3 分組，不要把所有條列直接平鋪在 H2 底下。
+5. `學習注意事項` 用來放外部預習回帶重點、lesson 邊界、待驗證的 repo 對照點、今天暫不展開的點。
+6. 初始化 `05-note.md` 時，只有 `學習注意事項` 可以先回填外部預習內容；`Notes` 與 `Flashcards` 兩個 H2 區塊一開始必須留空，等 QA、command 或 lesson 過程中真的出現延伸問答、暫時結論與卡片素材後，再往裡面補。
+7. 初始化時，`Notes` 與 `Flashcards` 可以只保留模板中的 HTML comment 這類特殊註記作為佔位；這種註記只是提示「這裡之後會長內容」，不算真正已回填內容。
+8. `Notes` 用來放 lesson 過程中的延伸提問、補充解釋與尚未進 `04-report.md` 的暫時結論；不要在初始化時就先把外部學習摘要、骨架提示或預設結論放進去。
+9. 若某段內容原本來自 QA 中途的額外追問，而且它不影響當前主題的最小驗收，預設應把詳細展開放進 `Notes`，不要把 `02-qa.md` 撐成過長的追問紀錄。
+10. 若某段內容原本來自 command drill 中途的額外追問，而且它不影響當輪操作的最小閉環，預設也應把詳細展開放進 `Notes`，不要把 `03-command.md` 撐成第二份 QA 或第二份 note。
+11. `Flashcards` 固定保留在檔案內，但初始化時必須留空；除了模板中的佔位註記外，不應先填入真正卡片。只有在 lesson 過程中真的整理出卡片後，才開始填寫。
+12. `Flashcards` 的詳細生成規則、格式細節與精修原則，交由 `.github/prompts/generate-flashcards.prompt.md` 維護；本檔只保留 lesson 結構本身需要知道的最小規則。
 
-Flashcards are part of the fixed lesson structure, but detailed flashcard-generation rules are maintained outside this README.
+---
 
-If flashcards need to be generated or refined, use:
+## 預設流程
 
-1. `.github/prompts/generate-flashcards.prompt.md`
+lesson 的執行順序，預設採 QA → command → report 收斂。
 
-This README defines lesson structure. The dedicated prompt defines flashcard extraction and refinement strategy.
+這個流程是 lesson 內部流程，不是 learning 全域入口流程。
 
-## Default Flow
+也就是說：
 
-The default lesson flow is:
+1. 先由 `learning/README.md` 決定是否進 lesson。
+2. 一旦確定進入 lesson，才在這裡使用 QA → command → report。
 
-`QA -> command -> report`
+常見流程：
 
-This is an internal lesson flow, not the global `learning/` entry flow.
+1. 先用 `01-outline.md` 定義今天的主題與範圍。
+2. 預設先做 `02-qa.md`，把最小觀念骨架對清楚。
+3. 若當天有操作練習，再進入 `03-command.md`，用實際操作把剛剛的骨架對回系統輸出。
+4. 若當天有延伸問題、暫時結論或卡片素材，過程中同步整理進 `05-note.md`。
+5. lesson 結束後，把重點收斂進 `04-report.md`。
 
-Typical sequence:
+若今天有外部預習，完整順序應是先完成 `learning/prework/` 的外部預習，再進入上面這套 lesson 流程。
 
-1. use `01-outline.md` to define scope
-2. use `02-qa.md` to align the conceptual and repo-backed skeleton
-3. if needed, use `03-command.md` to test the skeleton against real output
-4. move extensions and temporary conclusions into `05-note.md` during the process
-5. finish by consolidating the lesson into `04-report.md`
+例外流程：
 
-If the day required prework, the order is still external prework first, then this internal lesson flow.
+1. 只有在當天主題很明確適合先做操作觀察時，才改成 command 先行。
+2. 若要採用例外流程，必須在 `01-outline.md` 明確說明原因。
 
-## Content Principles
+一句話原則：預設先 QA 再 command；若要例外，必須在 outline 寫清楚理由。
 
-### 1. Prefer project-specific knowledge
+另一句話原則：有外部預習時，一定是外部先、內部後；進入內部後，預設一定是 QA 先、command 後。
 
-If a point applies to almost any Kubernetes project equally, it may belong better in prework or general notes than in a lesson.
+---
 
-### 2. Favor why and real paths
+## Flashcards
 
-Lessons should mainly answer:
+`05-note.md` 內的 `## Flashcards` 是 lesson 內固定保留的區塊，但詳細卡片規則不再放在本檔展開。
 
-1. how WeaMind actually works
-2. why it is designed this way
-3. how to debug it when it breaks
+若要生成、精修或補齊卡片，請改用：
 
-### 3. Keep command records review-friendly
+- `.github/prompts/generate-flashcards.prompt.md`
 
-`03-command.md` should make it easy to see:
+一句話原則：本檔負責 lesson 結構與檔案分工；卡片的提取、格式與精修策略交給專用 prompt。
 
-1. what each loop was testing
-2. which output mattered most
-3. what conclusion the loop produced
+---
 
-### 4. Do not turn lessons into textbooks
+## 內容原則
 
-Each lesson should stay focused enough that later review is fast and practical.
+### 原則 1：只記專案特定知識
 
-### 5. Do not prewrite the report
+如果一段內容放到任何 Kubernetes 專案都成立，那多半比較適合留在外部預習或一般筆記，不一定要放這裡。
 
-`04-report.md` should reflect what the lesson actually produced, not an ideal answer written in advance.
+### 原則 2：重點是 Why 與實際路徑
 
-## Maintenance
+lesson 應優先回答：
 
-After adding or completing a lesson:
+1. WeaMind 實際怎麼走。
+2. 為什麼這樣設計。
+3. 出問題時怎麼查。
 
-1. update `.privatedocs/28day-progress.md` when it helps record what the user actually learned
-2. update `.privatedocs/ai-memories.md` only for high-level handoff context
-3. treat `.privatedocs/五週版學習計畫.md` as the formal progress anchor
+### 原則 3：command 記錄以複習友善為優先
 
-## Handoff in a New Conversation
+尤其是 `03-command.md`，應優先追求：
 
-If the user says only "continue" in a new conversation:
+1. 一眼看出每輪在驗證什麼。
+2. 一眼看出哪個輸出最關鍵。
+3. 一眼看出這輪最後收斂的結論。
 
-1. read `.privatedocs/五週版學習計畫.md` first
-2. then read the current lesson's `02-qa.md`
-3. use `01-outline.md` only when scope needs to be checked
-4. use `04-report.md` when already-learned content needs to be summarized
+若一份 command 記錄需要重新讀完整段對話才看得懂，就代表格式還不夠成熟。
 
-One-line rule: progress comes from the main plan, but execution resumes from `02-qa.md`.
+### 原則 4：不要把 lessons 寫成完整教科書
+
+每份 lesson 應聚焦單一主題，讓之後複習時能快速抓到當天的重點與脈絡。
+
+### 原則 5：report 不預先寫答案
+
+`04-report.md` 不應在學習前就填入完整內容。
+
+正確做法是：
+
+1. 先用 `01-outline.md` 引導對話與學習。
+2. 對話結束後，再把這次真正學到的重點寫進 `04-report.md`。
+3. `04-report.md` 應反映這次互動實際發生了什麼，而不是先寫好標準答案。
+
+---
+
+## 維護方式
+
+每次新增或完成一份 lesson 後：
+
+1. 視需要更新 `.privatedocs/28day-progress.md`，記錄這次實際學到什麼。
+2. 視需要更新 `.privatedocs/ai-memories.md`，只保留 AI 接手需要的高階摘要。
+3. 正式進度仍以 `.privatedocs/五週版學習計畫.md` 的「當前執行追蹤」區為準。
+
+---
+
+## 新對話如何接手
+
+如果使用者在新對話裡只說「繼續」，不要直接按日期往後推。
+
+接手原則：
+
+1. 先看 `.privatedocs/五週版學習計畫.md` 的「當前執行追蹤」。
+2. 再看當前 lesson 的 `02-qa.md`，確認是否還有未完成的小題。
+3. 需要補範圍時再看 `01-outline.md`；要收斂已學內容時再看 `04-report.md`。
+
+一句話原則：進度先看主計畫，執行先看 `02-qa.md`。
