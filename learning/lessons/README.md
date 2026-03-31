@@ -216,7 +216,7 @@ Rules:
 
 1. create `05-note.md` by default with every lesson
 2. use H3 grouping inside both `學習注意事項` and `Notes`
-3. let `學習注意事項` hold prework carryover, lesson boundaries, repo checkpoints, and items not expanded today
+3. let `學習注意事項` hold lesson boundaries, repo reference files with observation targets, and items not expanded today
 4. during initialization, only `學習注意事項` may be prefilled
 5. keep `Notes` and `Flashcards` empty at initialization, except for placeholder comments
 6. if extra QA or command questions do not belong in the main lesson flow, expand them here instead

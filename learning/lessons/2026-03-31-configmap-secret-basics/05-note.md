@@ -2,17 +2,13 @@
 
 ## 學習注意事項
 
-### 外部預習回帶重點
-
-- 待補
-
 ### 今天進 lesson 前先記住的邊界
 
 - 今天的 lesson 要等同日 prework 完成後再正式開始。
 - Day 1 先專注在 ConfigMap / Secret 的責任分工、`envFrom` / `valueFrom`、`data` / `stringData`。
 - 今天先不把 W4 Day 2 的 Secret 更新影響與 UTF-8 / base64 踩坑提前展開。
 
-### 待驗證的 repo 對照點
+### Repo 對照文件與觀察點
 
 - `manifests/configmap.yaml` 目前哪些 key 屬於非敏感部署設定。
 - `.privatedocs/secrets/secret.yaml` 為什麼採用 `stringData`。
