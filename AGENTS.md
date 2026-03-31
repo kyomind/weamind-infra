@@ -169,16 +169,6 @@ System memory is allowed, but it is auxiliary memory, not the formal source of t
 
 If a stable rule already belongs in repo documentation, update the repo file rather than duplicating it into another memory file.
 
-## Interview Priorities
-
-Be ready to help the user explain:
-
-- why K3s was chosen instead of kubeadm, EKS, or GKE
-- why the database stayed on a VM instead of moving into Kubernetes
-- how traffic flows from LINE to Pods and then to PostgreSQL/Redis on the VM
-- how to debug failures layer by layer from DNS to LB to Ingress to Service to Pod
-- what each design decision trades off, not just what it is
-
 ## Critical Configuration
 
 ### Environment Variable Guidelines
@@ -215,21 +205,17 @@ command: [uvicorn, app.main:app, --host, "0.0.0.0", --port, "8000",
 
 ## Reference Files
 
-Use these as the primary repo references:
+Use these as the primary references when you need repo-grounded context:
 
 - `docs/WeaMind Infra核心架構.md`
 - `docs/WeaMind-README.md`
 - `PROGRESS.md`
 - `.env.example`
 - `learning/`
-- `.privatedocs/about-me.md`
 - `.privatedocs/五週版學習計畫.md`
 - `.privatedocs/28day-progress.md`
 - `.privatedocs/ai-memories.md`
 - `.privatedocs/weamind/`
 - `reference/`
 
-## AGENTS.md as the Main Prompt
-
-- Treat `AGENTS.md` as the project's sole main prompt
-- When main instruction-related changes are needed, edit `AGENTS.md` directly
+Treat `AGENTS.md` as the project's main prompt and update it directly when stable instruction-level changes are needed.
