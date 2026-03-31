@@ -4,9 +4,7 @@
 
 `learning/lessons/` stores the internal learning records created inside VS Code.
 
-This README is the second-layer rule file under `learning/`.
-
-It assumes two things are already true:
+This is the second-layer rule file under `learning/`, and it assumes two things are already true:
 
 1. `learning/README.md` has been read first.
 2. The prework decision for today has already been made.
@@ -18,16 +16,9 @@ Only open this file when one of these is true:
 
 If that decision has not been made yet, go back to `learning/README.md` first.
 
-In short:
-
-- prework is for external concept building
-- lessons are for repo-backed comparison, questioning, and consolidation
-
 ## Boundary With Prework
 
-This file defines lesson rules. It does not decide whether prework is needed.
-
-That decision belongs to `learning/README.md`.
+This file defines lesson rules. It does not decide whether prework is needed; that decision belongs to `learning/README.md`.
 
 `learning/prework/` is for:
 
@@ -150,9 +141,7 @@ If extra questions appear during QA:
 
 ### `03-command.md`
 
-Purpose: record command drill in a review-friendly way.
-
-The goal is not to preserve the whole interaction transcript. The goal is to preserve what was being tested, what mattered in the output, and what conclusion was reached.
+Purpose: record command drill in a review-friendly way, preserving what was being tested, what mattered in the output, and what conclusion was reached.
 
 It should usually include:
 
@@ -184,9 +173,7 @@ If extra questions appear during command drill:
 
 ### `04-report.md`
 
-Purpose: consolidate what the lesson actually produced.
-
-This is the lesson-level conclusion page for `02-qa.md` and `03-command.md` when command drill exists.
+Purpose: consolidate what the lesson actually produced. This is the lesson-level conclusion page for `02-qa.md` and `03-command.md` when command drill exists.
 
 Recommended order:
 
@@ -240,7 +227,7 @@ If flashcards need to be generated or refined, use:
 
 1. `.github/prompts/generate-flashcards.prompt.md`
 
-This README defines the lesson structure. The dedicated prompt defines flashcard extraction and refinement strategy.
+This README defines lesson structure. The dedicated prompt defines flashcard extraction and refinement strategy.
 
 ## Default Flow
 
