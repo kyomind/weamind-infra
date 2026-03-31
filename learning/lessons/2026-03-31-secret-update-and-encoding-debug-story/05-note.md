@@ -43,38 +43,38 @@
 ## Flashcards
 
 - WeaMind 為什麼 Secret 更新後，既有 Pod 不一定會自動拿到新值？ #DevOps #card
-	- 因為目前是用 `envFrom + secretRef` 把 Secret 在新 Pod 建立時注入成環境變數。
-	- Secret 資源物件更新，不等於已存在 container 的 environment 會被即時回寫。
+	- 因為目前是用 `envFrom + secretRef` 把 Secret 在新 Pod 建立時注入成環境變數
+	- Secret 資源物件更新，不等於已存在 container 的 environment 會被即時回寫
 
 - 排查 Secret 更新沒生效時，第一輪判斷順序是什麼？ #DevOps #card
-	- 先確認叢集裡的 Secret 資源是否真的已更新。
-	- 再看 Deployment 如何引用它，確認是否屬於新 Pod 建立時才套用的模型。
-	- 最後才判斷 Pod 是否仍是舊 Pod，以及是否需要 `rollout restart`。
+	- 先確認叢集裡的 Secret 資源是否真的已更新
+	- 再看 Deployment 如何引用它，確認是否屬於新 Pod 建立時才套用的模型
+	- 最後才判斷 Pod 是否仍是舊 Pod，以及是否需要 `rollout restart`
 
 - `kubectl describe secret` 在這條 debug sequence 裡回答什麼？ #DevOps #card
-	- 它先回答「Secret 這個資源物件是否真的存在於叢集、namespace 是否正確、key 結構是否合理」。
-	- 它適合第一眼建立資源物件觀念，但不能單靠它確認敏感值內容已更新成預期值。
+	- 它先回答「Secret 這個資源物件是否真的存在於叢集、namespace 是否正確、key 結構是否合理」
+	- 它適合第一眼建立資源物件觀念，但不能單靠它確認敏感值內容已更新成預期值
 
 - 為什麼 `kubectl get deployment -o yaml` 比 `describe deployment` 更適合看這題的 Secret 注入方式？ #DevOps #card
-	- 因為這題要看的是 Pod template 裡的 `envFrom + secretRef` 結構，而不是摘要資訊。
-	- YAML 視角能更直接看到設定寫在哪一層，從而判斷它是新 Pod 建立時才套用的模型。
+	- 因為這題要看的是 Pod template 裡的 `envFrom + secretRef` 結構，而不是摘要資訊
+	- YAML 視角能更直接看到設定寫在哪一層，從而判斷它是新 Pod 建立時才套用的模型
 
 - `kubectl get rs` 在這堂課裡的價值與邊界是什麼？ #DevOps #card
-	- 它是看 Deployment 底下版本切換與 Pod 重建痕跡的第一眼入口。
-	- 但它只能提供痕跡，不能單靠自己證明這次 Secret 更新已經觸發新的 rollout。
+	- 它是看 Deployment 底下版本切換與 Pod 重建痕跡的第一眼入口
+	- 但它只能提供痕跡，不能單靠自己證明這次 Secret 更新已經觸發新的 rollout
 
 - 什麼前提下，`kubectl rollout restart` 才是合理的下一步？ #DevOps #card
-	- 前提是你已先確認 Secret 資源本身有更新，而且目前設定是透過新 Pod 建立時重新注入環境變數。
-	- 如果太早 restart，會把「資源根本沒更新成功」和「只是 Pod 還沒重建」混成同一類問題。
+	- 前提是你已先確認 Secret 資源本身有更新，而且目前設定是透過新 Pod 建立時重新注入環境變數
+	- 如果太早 restart，會把「資源根本沒更新成功」和「只是 Pod 還沒重建」混成同一類問題
 
 - `kubectl rollout status` 在操作手感上最容易被誤解的是什麼？ #DevOps #card
-	- 它不是單次快照查詢，而是偏 watch 的等待型指令。
-	- 所以它會占住前景，持續追蹤 rollout，直到成功或失敗有更明確的結果。
+	- 它不是單次快照查詢，而是偏 watch 的等待型指令
+	- 所以它會占住前景，持續追蹤 rollout，直到成功或失敗有更明確的結果
 
 - WeaMind 這次 `CreateContainerError (invalid UTF-8)` 的真正根因是什麼？ #DevOps #card
-	- 問題不是 app 邏輯，而是 Secret 錯用 `data` 欄位並放入不符合預期格式的內容。
-	- 解碼後得到不合法的 bytes，container runtime 在建立容器時無法把它當成正常字串環境變數處理。
+	- 問題不是 app 邏輯，而是 Secret 錯用 `data` 欄位並放入不符合預期格式的內容
+	- 解碼後得到不合法的 bytes，container runtime 在建立容器時無法把它當成正常字串環境變數處理
 
 - 這次踩坑後，repo 對 Secret 寫法收斂出的規則是什麼？ #DevOps #card
-	- 人工撰寫 Secret 一律用 `stringData`，直接寫明文，交給 Kubernetes 處理轉換。
-	- 只有在非常確定內容本來就是機器穩定產生的 base64 時，才直接使用 `data`。
+	- 人工撰寫 Secret 一律用 `stringData`，直接寫明文，交給 Kubernetes 處理轉換
+	- 只有在非常確定內容本來就是機器穩定產生的 base64 時，才直接使用 `data`
