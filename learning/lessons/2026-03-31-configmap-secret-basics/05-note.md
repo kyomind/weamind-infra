@@ -44,4 +44,47 @@
 
 ## Flashcards
 
-<!-- 初始化時保持空白；等 lesson 過程中真的整理出卡片素材後再填。 -->
+- WeaMind 這個 repo 怎麼分 `ConfigMap` 和 `Secret`？ #DevOps #card
+	- 關鍵不是看它像不像資料庫設定
+	- 關鍵是值洩漏後會不會直接形成授權、控制或冒用風險
+	- 一般部署設定放 `ConfigMap`，高風險憑證放 `Secret`
+
+- 為什麼 `POSTGRES_HOST`、`POSTGRES_PORT`、`POSTGRES_USER` 可以在 `ConfigMap`？ #DevOps #card
+	- 它們和資料庫連線有關，但通常不是最核心的授權憑證
+	- 它們比較偏位置資訊、識別資訊或一般連線設定
+	- 真正高風險的那段通常是密碼或 token
+
+- `REDIS_URL` 什麼情況下可以放 `ConfigMap`，什麼情況下該改放 `Secret`？ #DevOps #card
+	- 要看 URL 裡實際包了什麼，不是看名字像不像敏感值
+	- 像 `redis://host:6379/0` 這種沒有密碼的 URL，仍可視為一般設定
+	- 若 URL 內含密碼，例如 `redis://:password@host:6379/0`，就應改進 `Secret`
+
+- 為什麼 WeaMind 目前用 `envFrom` 是合理的？ #DevOps #card
+	- 因為這個 app 啟動時本來就需要整份 `ConfigMap` 與 `Secret` 裡的大部分 key
+	- 這種情境下整包匯入比較簡潔，也比較不容易漏設定
+	- 關鍵不是 `envFrom` 比較高級，而是這個 Pod 剛好真的需要整組設定
+
+- 什麼情況比較適合改用 `env + valueFrom`？ #DevOps #card
+	- 當 Pod 只需要部分 key，不想整包注入
+	- 當你要避免 key 撞名，或想把外部 key 映射成另一個變數名稱
+	- 當你想降低暴露面，或更明確表達某個 container 真正依賴哪些值
+
+- 新增環境變數時，應先判斷什麼？ #DevOps #card
+	- 先判斷它該進 `ConfigMap` 還是 `Secret`
+	- 再判斷它該跟現有設定一起用 `envFrom`，還是改用 `env + valueFrom`
+	- 資源分類和注入方式是兩層判斷，不應混成同一題
+
+- `stringData` 和 `data` 的實務差別是什麼？ #DevOps #card
+	- `stringData` 是給人手寫入的便利欄位，接受明文字串
+	- `data` 是 Secret 最終落地的標準表示法，內容要用 `base64` 表示
+	- 對人手維護來說，優先用 `stringData` 會更穩
+
+- 為什麼 WeaMind 會收斂出「人工撰寫一律使用 `stringData`」？ #DevOps #card
+	- 因為這個專案曾錯用 `data` 與格式，導致 `CreateContainerError (invalid UTF-8)`
+	- `stringData` 讓 Kubernetes 自動處理轉換，能減少手動 `base64`、換行與編碼錯誤
+	- 它不是比較安全，而是更適合人手維護
+
+- 為什麼 Kubernetes 還要有 `data`，不能全部只用 `stringData`？ #DevOps #card
+	- `stringData` 比較像人類友善的輸入介面，送進 API server 後仍會轉成 `data`
+	- `data` 用 `base64` 承載 bytes，不是為了加密，而是為了穩定表示與傳輸任意內容
+	- 兩者是分工關係：`stringData` 解決怎麼寫，`data` 解決怎麼存
