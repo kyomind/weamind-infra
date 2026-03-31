@@ -124,6 +124,8 @@
 <template example 03-command.md>
 # YYYY-MM-DD Lesson Title Command
 
+> 提示：候選指令建議直接放在 code block，讓使用者一眼就能看成可執行的終端機輸入。
+
 ## 今日指令練習目標
 
 1.

@@ -164,6 +164,11 @@ Default rhythm:
 3. let the user choose and run one in the real environment
 4. use the output to refine the reasoning and collapse the loop into a reusable conclusion
 
+Formatting expectation for candidate commands:
+
+1. when presenting candidate commands inside `03-command.md`, render the options as a fenced code block so the user can scan them as terminal input directly
+2. keep any short explanation outside the code block so the command block stays clean and easy to review
+
 Command drill principles:
 
 1. the point is interpretation and correction, not memorizing commands
