@@ -124,7 +124,7 @@
 <template example 03-command.md>
 # YYYY-MM-DD Lesson Title Command
 
-> 提示：候選指令建議直接放在 code block，讓使用者一眼就能看成可執行的終端機輸入。
+> 提示：候選指令應直接放在同一個 `bash` code block，讓使用者一眼就能看成可執行的終端機輸入。
 > 提示：AI 先給情境與三個可選指令即可，預設不要先替使用者推薦哪一個。
 
 ## 今日指令練習目標

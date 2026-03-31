@@ -109,6 +109,8 @@ In that situation:
 2. if it is in `QA` or `command`, continue with the next single interaction step and wait for the user's answer or command output
 3. only move into `report` consolidation after the interactive part is finished, or when the user explicitly asks for consolidation
 
+During command drill, when presenting three candidate commands, render them together in a single `bash` code block rather than as plain bullets or inline text.
+
 ## Lesson Execution Rules
 
 Use the standard lesson structure under `learning/lessons/`:
