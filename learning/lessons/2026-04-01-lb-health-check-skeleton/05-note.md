@@ -110,4 +110,13 @@
 - 換句話說：**就 WeaMind 目前以 LINE webhook 為主的情境來看，這比較像「不是最高優先的安全風險」，但仍是值得補的公開入口配置缺口。**
 - 另外因為這個專案使用的是 **DNS-01** 申請憑證，不需要保留外部 `80` 來做 ACME HTTP-01 驗證，所以從需求面看，後續其實更有理由考慮補上 redirect，甚至評估是否縮小外部 `80` 的用途。
 
+### 對 app repo 實際 paths 交叉檢查後，HTTP 缺口目前落在哪裡
+
+- 在 `WeaMind` app repo 中，目前主要對外路徑包含：`GET /`、`GET /health`、`POST /line/webhook`、`POST /users/locations`。
+- 外部 HTTP 實測顯示：`GET /` 會直接回 `200` 與 welcome JSON，表示 **這個公開根路徑目前也能被 HTTP 直接存取**。
+- `POST /line/webhook` 走 HTTP 時，缺少 `X-Line-Signature` 會直接回 `422`；這表示 **即使入口缺少 redirect，webhook 路徑本身仍有應用層的簽章要求**，不會因為單純打到 HTTP 就直接成功執行 webhook 邏輯。
+- `POST /users/locations` 走 HTTP 時，缺少 access token 會回 `403 Not authenticated`；這代表 **這條業務 API 也有應用層認證保護**。
+- 但這些保護和「是否允許未加密 HTTP 傳輸」是兩件不同的事。更準確地說：**目前 app 層有基本存取保護，但入口層仍允許外部 HTTP 直接命中這些 paths。**
+- 所以目前最值得擔心的，不是「有人一敲 HTTP 就能直接偽造成功 webhook」，而是 **原本應只透過 HTTPS 暴露的公開 API，現在仍可透過未加密 HTTP 被探測、呼叫或誤用**。
+
 ## Flashcards
