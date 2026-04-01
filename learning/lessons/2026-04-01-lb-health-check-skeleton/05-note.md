@@ -72,4 +72,12 @@
 - 相對地，**L4 routing** 只看連線層資訊，例如 IP、port、protocol。Hetzner LB 在這個專案的 `443 -> 443` passthrough 就比較接近這一層：它不需要理解 HTTP 內容，只是把 TCP 連線原樣轉進叢集。
 - 所以這條鏈路可以記成：**Hetzner LB 做的是偏 L4 的 TCP 轉送；Traefik 在 termination 之後做的是 L7 的 HTTP routing。**
 
+### L4 / L7 不是流程先後順序，Kubernetes 內部也有偏 L4 的轉送
+
+- 這裡一個很值得記住的點是：**L4 和 L7 是「依據哪一層資訊做判斷」的分類，不是流程時間順序。** 所以完全可能出現「前面先經過一個偏 L4 的轉送層，後面再進入一個偏 L7 的路由層」；WeaMind 現在就是這種結構。
+- 也就是說，不是一定要先 L7 再 L4，或先 L4 再 L7；真正要問的是：**這一跳轉送決策到底看的是 TCP / port，還是看的是 HTTP `Host` / `Path`。**
+- Kubernetes 叢集內部當然也有偏 **L4** 的層。最典型的就是 **Service**：`ClusterIP`、`NodePort`、`LoadBalancer` 這些機制，本質上主要是在把流量依 `IP + Port` 轉送到後端 endpoints，較接近 L4 / transport 層的負載分流。
+- 以你這次查到的 Traefik 路徑來說，`svclb-traefik` 把主機 `80/443` 導到 `traefik` Service 的 `ClusterIP`，而 `traefik` Service 再把流量轉到 backend endpoint，這一段就比較偏 **L4-style forwarding**。
+- 真正進入 **L7** 的時刻，是 Traefik 拿到已解密的 HTTP request 之後，開始根據 Ingress 規則判斷 `Host` / `Path` 要轉去哪個 Service。這也是為什麼在 Kubernetes 世界裡，通常會說：**Service 比較像 L4，Ingress controller 比較像 L7。**
+
 ## Flashcards
