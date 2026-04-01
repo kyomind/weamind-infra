@@ -90,6 +90,7 @@ At minimum:
 - compare the work against `learning/README.md`
 - compare it against the second-level README actually in use
 - if a new lesson skeleton was created, compare it against `learning/lessons/lesson-template.md`
+- if a new lesson skeleton was created, explicitly verify `05-note.md` initialization against `learning/lessons/README.md` rather than relying on memory; in particular, `Notes` and `Flashcards` should still be empty except for optional HTML comment placeholders
 
 Fix structural problems before continuing.
 

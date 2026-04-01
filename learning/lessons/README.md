@@ -122,6 +122,7 @@
 3. 內部流程是否仍是 QA → command → report；若要例外，是否已在 `01-outline.md` 寫明原因。
 4. `03-command.md` 若存在，是否真的符合 command drill 的節奏，而不是單純指令清單。
 5. `04-report.md` 是否保留回填空間，而不是一開始就預寫完整答案。
+6. 若這次是新建 lesson 骨架，`05-note.md` 是否仍符合初始化狀態：只有 `學習注意事項` 可以先有內容，`Notes` 與 `Flashcards` 必須保持空白，最多只留 HTML comment 這類特殊註記作為佔位。
 
 ---
 
