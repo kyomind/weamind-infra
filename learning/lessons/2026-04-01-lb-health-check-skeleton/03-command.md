@@ -5,12 +5,14 @@
 1. 把「Health Check 失敗」拆成 Host header 問題，而不是直接說 app 壞掉。
 2. 把「LB 後端只放 worker」對回 Deployment、node label 與 Pod 落點證據。
 3. 把「為什麼只有一個 Traefik endpoint，三個 node 還能成為入口」拆成 `Service`、`DaemonSet` 與 `Endpoints` 三層來看。
+4. 驗證 WeaMind 目前是否真的缺少 HTTP→HTTPS redirect，並把「TLS 已存在」和「HTTPS-only 已成立」拆開。
 
 ## 這次要驗證的路徑或問題
 
 1. host-based Ingress 規則下，沒有 Host header 的 `/health` 為什麼會回 `404`。
 2. `nodepool=worker`、Pod 排程位置與 LB 後端設計之間是怎麼連起來的。
 3. `svclb-traefik`、`traefik` Service 與實際 backend endpoint 之間如何分工，為什麼入口 node 數量不必等於 Traefik Pod 數量。
+4. 為什麼外網直接打 `http://k8s.kyomind.tw/...` 也能拿到回應，以及目前到底有沒有 HTTP→HTTPS redirect。
 
 ## 今天要看的資源
 
@@ -20,6 +22,7 @@
 4. Pods
 5. `kube-system/traefik` Service
 6. `svclb-traefik` DaemonSet
+7. 外部 `http://k8s.kyomind.tw/health` 與 `https://k8s.kyomind.tw/health` 的實際行為
 
 ---
 
@@ -183,6 +186,50 @@ subsets:
 ### 狀態
 
 - 已完成
+
+---
+
+## Command 4
+
+### 要驗證的問題
+
+- WeaMind 目前到底有沒有做 HTTP→HTTPS redirect，還是 HTTP 與 HTTPS 其實都能直接命中同一條 Ingress 規則？
+
+### 三個可選指令
+
+```bash
+curl -I http://k8s.kyomind.tw/health
+curl -I -L http://k8s.kyomind.tw/health
+kubectl get ingress weamind -n weamind -o yaml
+```
+
+### 指令
+
+```bash
+
+```
+
+### 關鍵輸出
+
+```bash
+
+```
+
+### 使用者選擇理由
+
+- 待回答
+
+### AI 判讀與修正
+
+- 待補
+
+### 一句話收斂
+
+- 待補
+
+### 狀態
+
+- 未開始
 
 ---
 

@@ -80,4 +80,34 @@
 - 以你這次查到的 Traefik 路徑來說，`svclb-traefik` 把主機 `80/443` 導到 `traefik` Service 的 `ClusterIP`，而 `traefik` Service 再把流量轉到 backend endpoint，這一段就比較偏 **L4-style forwarding**。
 - 真正進入 **L7** 的時刻，是 Traefik 拿到已解密的 HTTP request 之後，開始根據 Ingress 規則判斷 `Host` / `Path` 要轉去哪個 Service。這也是為什麼在 Kubernetes 世界裡，通常會說：**Service 比較像 L4，Ingress controller 比較像 L7。**
 
+### 為什麼 WeaMind 現在外網直接打 HTTP 也能拿到回應
+
+- 這裡要先把兩件事拆開：**「可以用 HTTP 打到」** 和 **「有沒有自動強制跳轉到 HTTPS」** 不是同一件事。現在 WeaMind 的現象看起來是：**HTTP 可以打到，而且目前沒有做 HTTP→HTTPS redirect**。
+- repo 證據也支持這件事：`PROGRESS.md` 明確記錄 Hetzner LB 先建了 **HTTP `80 -> 80`** 的 service，見 [PROGRESS.md](PROGRESS.md#L108)；而 [manifests/ingress.yaml](manifests/ingress.yaml#L1) 到 [manifests/ingress.yaml](manifests/ingress.yaml#L17) 只有宣告 `tls` 與一般 `rules`，**沒有看到任何 redirect middleware、redirect annotation，或強制只走 `websecure` 的設定**。
+- 這代表目前的 Traefik / Ingress 行為比較像是：**同一組 host/path 規則同時可被 HTTP 與 HTTPS 命中**；TLS 區塊只是讓 HTTPS 有可用憑證，**不等於自動把 HTTP 轉成 HTTPS**。
+- 所以從外網直接打 `http://k8s.kyomind.tw/health`，目前仍可能得到正常回應；瀏覽器顯示「不安全」，主要是在提醒你 **這條連線沒有加密**，不是在說這個 route 不存在。
+- 你前面一度猜「也許只有內網 HTTP 才能打」這個推論，現在看起來不成立。真正更準確的說法是：**內外網都可能打得到 HTTP，只是外網走 HTTP 時沒有 TLS 保護。**
+
+### WeaMind 目前沒有做 HTTP→HTTPS redirect，這是不是風險
+
+- 是，這可以視為目前配置上的一個 **安全性與一致性缺口**，至少和你單機版用 Nginx 強制導向 HTTPS 的習慣相比，K8s 這邊目前還沒補上同等行為。
+- 只要外部 `80` 還開著，而且 Ingress 沒有加 redirect 規則，使用者或探測器就可能直接用 HTTP 拿到內容。對 `/health` 這種低敏感路徑，風險相對小；但若把同樣模式擴大到其他路徑，就不會是理想的最終狀態。
+- 更精準地說，**TLS 已經存在，不代表 HTTPS-only 已經成立**。這兩件事需要分開確認：前者是「443 可用且有憑證」，後者是「80 來的請求會不會被強制導向 443」。WeaMind 目前 repo 證據看起來只完成了前者。
+- 因此這裡很值得留一個後續問題：**若要把 K8s 版 WeaMind 做到更接近正式公開服務，是否應在 Traefik / Ingress 層補上 HTTP→HTTPS redirect。** 這題目前適合放進後續 lesson 或 command drill，不在今天直接展開。
+
+### 外部實測：目前 HTTP 與 HTTPS 都能直接拿到 `/health` 回應
+
+- 這次直接從外部實測後，可以把前面的推論正式坐實：`http://k8s.kyomind.tw/health` 與 `https://k8s.kyomind.tw/health` 目前都能直接回 `200` 與 `{"status":"ok"}`。
+- 用 `curl -I` 打 `http` 與 `https` 都看到 `405 Method Not Allowed`，不是 redirect。這個現象不是 route 壞掉，而是因為 app 的 `/health` 目前 **不接受 `HEAD` 方法，只接受 `GET`**，所以 `curl -I` 會先撞到 method 問題。
+- 改用一般 `GET` 後，HTTP 與 HTTPS 都能正常拿到 `200`，而且 `curl -L http://k8s.kyomind.tw/health` 的最終 URL 仍然是 `http://k8s.kyomind.tw/health`，這表示 **目前確實沒有做 HTTP→HTTPS redirect**。
+- 這也代表目前外部 `80` 的流量不是只留給內網 health check 或某種特殊用途，而是真的可以從外網直接命中同一條 Ingress route。
+
+### 對 WeaMind 當前用途來說，這個缺口的風險大概在哪裡
+
+- 若只看 `/health` 這條路徑，本身回的是極少量狀態資訊，所以 **單一路徑風險不高**。
+- 若看主要用途是 LINE webhook，LINE 平台本身會使用 HTTPS webhook URL，所以 **正常產品流量理論上仍會走 HTTPS，不會主動降級成 HTTP**。
+- 但這不代表缺口不存在。因為只要 `80` 還開著且未 redirect，外部其他客戶端、人工測試、掃描器或誤用者，仍然可能直接用 HTTP 打到同一個 host/path。若未來更多 endpoint 暴露在同一組規則下，風險就不會只停在 `/health` 這種低敏感路徑。
+- 換句話說：**就 WeaMind 目前以 LINE webhook 為主的情境來看，這比較像「不是最高優先的安全風險」，但仍是值得補的公開入口配置缺口。**
+- 另外因為這個專案使用的是 **DNS-01** 申請憑證，不需要保留外部 `80` 來做 ACME HTTP-01 驗證，所以從需求面看，後續其實更有理由考慮補上 redirect，甚至評估是否縮小外部 `80` 的用途。
+
 ## Flashcards
