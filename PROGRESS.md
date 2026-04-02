@@ -143,3 +143,15 @@
 
 - [x] 更新 README.md：撰寫專案簡介、架構概覽、Tech Stack、架構特點、部署概述、決策邏輯
 - [x] PROGRESS.md 最終更新：補充實際完成時程
+
+---
+
+## Lesson Follow-up 與入口調整（2026-04-02）
+
+- [x] 以 lesson 內實作方式重新檢查 Hetzner LB health check 與 `443` passthrough 的邊界，確認目前 `http:80 -> 80` 與 `tcp:443 -> 443` 的分工仍成立
+- [x] 釐清並驗證 Hetzner LB health check advanced settings 與 listener/service 本身具備相當高的獨立性：將 health check 改成 `Destination=443` 並啟用 `TLS` 後，targets 仍維持 healthy
+- [x] 建立 Traefik `Middleware`：新增 `manifests/middleware-https-redirect.yaml`，以 `redirectScheme` 實作 `HTTP -> HTTPS redirect`
+- [x] 更新 `manifests/ingress.yaml`：透過 `traefik.ingress.kubernetes.io/router.middlewares` annotation 將 redirect middleware 掛到既有 Ingress
+- [x] 外部驗證 redirect 行為：`curl -i http://k8s.kyomind.tw/health` 回 `301`，`curl -iL http://k8s.kyomind.tw/health` 最終成功到 `https://k8s.kyomind.tw/health` 並回 `200`
+- [x] 驗證 HTTPS 路徑與 LB 健康狀態未受影響：`curl -i https://k8s.kyomind.tw/health` 仍回 `200`，Hetzner targets 持續 healthy
+- [x] 補齊 lesson 實作文件：新增 `06-implementation.md`、`07-implementation-note.md`，完整記錄 health check 與 redirect 的判讀、YAML 變更與設計邊界
