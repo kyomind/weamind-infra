@@ -119,4 +119,38 @@
 - 但這些保護和「是否允許未加密 HTTP 傳輸」是兩件不同的事。更準確地說：**目前 app 層有基本存取保護，但入口層仍允許外部 HTTP 直接命中這些 paths。**
 - 所以目前最值得擔心的，不是「有人一敲 HTTP 就能直接偽造成功 webhook」，而是 **原本應只透過 HTTPS 暴露的公開 API，現在仍可透過未加密 HTTP 被探測、呼叫或誤用**。
 
+### 為什麼這條 `curl http://127.0.0.1/...` 要在 node 上跑，而不是在 Pod 或本機跑
+
+- 這題的驗證目標不是 app Pod 本地有沒有回應，而是 **node 入口層能不能先命中 Traefik / Ingress**。所以 `127.0.0.1` 應該指向的是 **K3s node 自己**，不是本機 Mac，也不是 app Pod。
+- 在本機 Mac 上跑時，`127.0.0.1` 只會指回 Mac 自己，所以看不到 K3s 節點上的 `80/443` 入口；因此得到 `curl: (7) Couldn't connect to server` 是合理結果。
+- 在 app Pod 內跑也不適合，因為 Pod 內的 `127.0.0.1` 只會打到 Pod 自己，測到的是 container 本地網路，不是在測 node 入口與 Ingress 規則。
+- 所以這類 `curl -H 'Host: ...' http://127.0.0.1/...` 的題目，本質上是在測 **某台 K3s node 本機的 Traefik 入口行為**。
+
+### 為什麼 control-plane 上打 `127.0.0.1:80` 也能成功
+
+- 使用者刻意在 `weamind-001`（control-plane）上執行 `curl -H 'Host: k8s.kyomind.tw' http://127.0.0.1/health`，成功得到 `{"status":"ok"}`。這再次證明：**control-plane 本機目前也確實有可用的 Traefik 入口。**
+- 這不代表 Hetzner LB 會把外部流量送到 control-plane，而是代表 **在 node 本機這一層，`svclb-traefik` 已把 `80/443` 監聽起來，並能把流量導進 Traefik / Ingress**。
+- 所以要把兩件事分清楚：**control-plane 不是 Hetzner LB target**，但 **control-plane 仍可能在叢集內 runtime 狀態下具備本地入口能力**。
+- 這也是為什麼前面在談「LB 只選 worker」時，要避免把它講成「只有 worker 才有入口」。更穩的說法是：**worker 是外層 LB 的正式 target；而 node 本地入口能力在目前 K3s / `svclb-traefik` 配置下，control-plane 也可能同樣具備。**
+
+### 如果未來有兩種服務，都想對外用 `80/443`，會怎麼分
+
+- 目前 WeaMind 看起來像是「只有一個服務在用 `80/443`」，所以容易讓人誤以為是 app 自己獨占了這兩個 port；但更精準地說，**真正占住 node `80/443` 的不是 app Pod，而是入口層的 `svclb-traefik` / Traefik**。
+- 如果未來有第二種服務，正常做法**不是**讓第二個 app 也直接去綁 node 的 `80/443`，因為同一台 node 上同一個 port 不能被兩個不同入口元件同時獨立占用。
+- 更常見的做法是：**仍然只保留一個入口層（例如 Traefik）占住 `80/443`，再用不同的 `Host` 或 `Path` 規則把流量分到不同 backend Service。**
+- 例如可以是：`app1.example.com` 轉到 Service A，`app2.example.com` 轉到 Service B；或 `/api-a` 走 Service A、`/api-b` 走 Service B。這時共用 `80/443` 的是入口層，不是後面的 app Pod。
+- 若真的想讓兩個服務各自獨立擁有 `80/443`，通常就需要**不同的外部 IP / 不同的 Load Balancer / 不同的節點池 / 不同的 ingress nodes**，否則在同一組 node 上會出現 port conflict。
+- 所以這題可以先記一個最穩的口訣：**多服務共享 `80/443` 的關鍵不是讓多個 app 去搶 port，而是讓單一 ingress 入口先接流量，再做 L7 分流。**
+
+### `kubectl get ingress ... -o yaml` 這條指令到底在看什麼
+
+- 這條指令的價值不只是「把 Ingress 印出來」，而是讓你直接看到 **Traefik 到底是依什麼規則在分流**。
+- `spec.ingressClassName: traefik` 表示這份規則是交給 Traefik 接管；如果這裡不是 `traefik`，就代表這份 Ingress 不一定會被目前的 controller 實際處理。
+- `spec.rules[].host: k8s.kyomind.tw` 是最關鍵的欄位，因為它直接說明：**這是一條 host-based routing 規則**。也就是說，request 只有在 `Host` 命中 `k8s.kyomind.tw` 時，才會被這條規則接住。
+- `spec.rules[].http.paths[].backend.service.name: weamind-line-bot` 與 `port.number: 80` 則告訴你：**命中這條 host/path 規則後，流量接下來會被送到哪個 Service。**
+- `path: /` 加 `pathType: Prefix` 代表這個 host 底下，以 `/` 為前綴的路徑都會被這條規則處理，所以像 `/health` 這類路徑也包含在內。
+- `spec.tls.hosts` 與 `secretName: k8s-kyomind-tw-tls` 表示同一個 host 也綁了 TLS 憑證，所以 **這份 Ingress 不只定義 HTTP routing，也同時定義 HTTPS 要使用哪張憑證。**
+- `status.loadBalancer.ingress` 出現 `10.0.0.3`、`10.0.0.4`、`10.0.0.5`，則是在告訴你 **目前這份 Ingress 對外宣告的入口資訊包含哪些 IP**。這不等於 Hetzner LB 一定會把流量送到三台，但它能幫你把 Ingress 規則和實際入口能力對起來。
+- 所以最實用的記法是：**`kubectl get ingress -o yaml` 讓你一次看到 controller 是誰、host/path 怎麼匹配、後端 Service 是誰、TLS 憑證綁哪裡，以及它目前對外宣告了哪些入口 IP。**
+
 ## Flashcards
