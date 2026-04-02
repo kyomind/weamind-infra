@@ -3,6 +3,9 @@ kind: Ingress
 metadata:
   name: weamind
   namespace: weamind
+  annotations:
+    # Tell Traefik to apply the HTTPS redirect middleware before routing.
+    traefik.ingress.kubernetes.io/router.middlewares: weamind-https-redirect@kubernetescrd
 spec:
   tls:
     - hosts:
