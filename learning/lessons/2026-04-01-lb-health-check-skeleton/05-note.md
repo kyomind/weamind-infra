@@ -153,6 +153,52 @@
 - `status.loadBalancer.ingress` 出現 `10.0.0.3`、`10.0.0.4`、`10.0.0.5`，則是在告訴你 **目前這份 Ingress 對外宣告的入口資訊包含哪些 IP**。這不等於 Hetzner LB 一定會把流量送到三台，但它能幫你把 Ingress 規則和實際入口能力對起來。
 - 所以最實用的記法是：**`kubectl get ingress -o yaml` 讓你一次看到 controller 是誰、host/path 怎麼匹配、後端 Service 是誰、TLS 憑證綁哪裡，以及它目前對外宣告了哪些入口 IP。**
 
+### Hetzner LB 的 HTTP health check 到底在檢查什麼，和 Pod health 有什麼關係
+
+- 這次很容易混淆的一點是：**Hetzner LB 的 health check 不是直接去看 Kubernetes Pod 的 liveness/readiness probe。** 它檢查的是「LB 這個 target node，能不能對這條外部入口路徑回出符合條件的結果」。
+- 以 WeaMind 目前的 `http:80 -> 80` 來說，LB 送出的其實是一個 **真正的 HTTP request**：打 `80`、走 `/health`、帶 `Host: k8s.kyomind.tw`，然後期待收到 `200`。
+- 所以它驗證到的不是單一 Pod 自身健康，而是 **一小段端到端入口鏈路** 是否成立：`LB -> worker node:80 -> Traefik entrypoint -> Ingress host/path match -> weamind Service -> app Pod -> /health 回 200`。
+- 這也是為什麼當初沒帶正確 `Host` 時，即使 app 的 `/health` endpoint 沒壞，LB 仍然會看到 `404` 並把 target 判成 unhealthy。因為 **失敗點發生在 Ingress routing**，不是 Pod probe。
+- 因此更精準的說法是：**Hetzner LB 現在做的是入口層的合成健康檢查（synthetic end-to-end check），不是 Kubernetes 原生的 Pod health probe。**
+- 若要談 Pod 本身健康，應回頭看 Deployment / Pod 裡的 `readinessProbe`、`livenessProbe`；若要談外部使用者能不能真的經過入口打到服務，才看這個 LB health check。
+
+### Hetzner UI 顯示 source port 固定、destination port 可改，這代表什麼
+
+- 這次 UI 行為很關鍵：**Hetzner LB 的 service 是以 source port 為一個獨立 listener 來管理的。** 所以既有的 `80` listener 不能直接變成另一個 `443` listener；若要不同 source port，必須新建另一條 service。
+- 因為 WeaMind 已經有一條 `tcp:443 -> 443`，所以你也不能再另外建第二條 source port `443` 的 service。這表示 **同一個 LB 上，同一個對外 port 只能有一條 service 佔用。**
+- 更重要的是，當你把 `http:80 -> 80` 的 protocol 切成 `https` 時，UI 不是只在改 health check，而是在改 **整條 LB service 的協定語義**。這也是為什麼畫面立刻開始要求 `Add certificates`，並出現 `HTTP-Redirect (301)` 選項。
+- 也就是說，這個 `https` 不是「保留原本 passthrough 架構，只讓 health check 偷偷改走 HTTPS」；它比較像是在說：**讓 Hetzner LB 自己成為 HTTPS listener / TLS termination 點。**
+- `destination port` 可改，代表的是：**外部打進 LB 的某個 source port，可以被轉送到 target node 的另一個 port。** 例如理論上可做 `80 -> 443`，但那仍然是「外部入口是 80 這條 service」，不是在新增一條獨立的 `443` health check。
+- 因此這次最重要的修正是：**先前以為可以在不動整體架構下，把 LB health check 單獨切到 HTTPS，這個推論過度樂觀。** 依 Hetzner 目前 UI 行為看，health check 與 service protocol 綁得比我們原先想像更緊。
+- 對 WeaMind 而言，這代表後續若要補 `HTTP -> HTTPS redirect`，不能直接把現有 `80` service 改成 `https`，因為那會把 TLS termination 從 Traefik 拉回 Hetzner LB，和目前專案的 passthrough 設計衝突。
+
+### 為什麼現在不能直接動 Hetzner LB，這其實是在動整個入口邊界
+
+- 這次最需要拉高一層來看的，不是「某個欄位能不能改」，而是：**WeaMind 現在的 LB 設定其實已經承載了一整串過去收斂過的架構決策。**
+- 從歷史脈絡看，這條線不是隨機長成現在這樣。當初先遇到的是 **HTTP health check 不帶 Host 會失敗**，所以 `80` 這條 service 被固定成「用 HTTP 做入口存活檢查」；後來又遇到 **Hetzner Managed Certificate 不適合 Cloudflare DNS**，於是 TLS 方案改走 **cert-manager + DNS-01**；再往後還踩到 **同一個 source port 不能重複宣告**，所以最終才收斂成現在這種：`80` 留給 HTTP 與 health check，`443` 留給 TCP passthrough，TLS termination 放在 Traefik。
+- 也就是說，**目前的 LB 不是單純兩條 service 而已，而是一個已經和 K8s 內部責任邊界對齊的結果。** 它背後同時綁住了憑證生命週期、TLS 終止位置、LB 是否理解 HTTP、以及 Ingress 是否繼續作為唯一的 L7 路由入口。
+- 因此現在若直接去動 Hetzner LB，風險不只是「health check 可能紅掉」，而是 **你可能在沒有明說的情況下，把 TLS 邊界從 Traefik 拉回 LB，或把原本分離好的責任重新混在一起。**
+- 更麻煩的是，Hetzner 的限制讓這件事 **不太能用平行試跑的方式驗證**。因為 `443` source port 已經被既有 service 佔住，你不能再旁邊開另一條 `443` 來做對照；這代表任何改動都更像 **切換架構**，而不是 **局部微調**。
+- 所以「現在不能動」更準確的意思不是永遠不能碰，而是：**在還沒重新定義 TLS 終止點、redirect 策略、health check 存活條件之前，不應把 Hetzner LB 當成可以直接試改的局部設定。**
+- 若之後真的要動，前提也應該先變成一個新的設計題：究竟要維持 **LB 只做 L4、Traefik 做 TLS/L7**，還是要改成 **LB 也參與 HTTPS / redirect / certificate 管理**。這兩條路都能做，但不是同一個小修的延伸。
+
+### 為什麼不能把 TLS termination 再拉回 Hetzner LB
+
+- 這題可以再更直白一點：**不是我們不喜歡 Hetzner LB 做 termination，而是我們當初已經明確拒絕了它背後那整套前提。**
+- 對 WeaMind 來說，若要讓 Hetzner LB 正規地做 HTTPS termination，最順的搭配通常就是 **Hetzner Managed Certificate**；但這條路的硬限制是 **憑證管理會綁到 Hetzner DNS 生態**。
+- 而 WeaMind 的 DNS 明確留在 Cloudflare，這不是偶然，而是有意識的選擇。所以當初一旦拒絕「把網域託管搬去 Hetzner」，其實也就等於一起拒絕了「讓 Hetzner 成為我們主要 TLS 終止點」這條最自然的產品路徑。
+- 也因此，現在的架構不是退而求其次的臨時 workaround，而是 **在保留 Cloudflare DNS 這個前提下，刻意收斂出來的穩定方案**：`443` 只做 TCP passthrough，真正的 TLS termination 留在 Traefik，憑證生命週期交給 `cert-manager + DNS-01`。
+- 所以現在若又想把 termination 拉回 Hetzner LB，本質上不是優化同一條路，而是 **回頭推翻當初「DNS 不搬、憑證留在 K8s 內管理」這個核心決策。**
+
+### Redirect 在 WeaMind 現況裡是 nice-to-have，不是非做不可
+
+- 到目前為止，lesson 與外部實測都支持同一個判斷：**WeaMind 現在缺的是入口一致性，不是已知高危突破口。**
+- 原因是目前能被 HTTP 直接命中的，主要是首頁與 `/health` 這類低敏感路徑；而比較關鍵的入口像 webhook 或 user API，仍然有應用層簽章或 token 驗證，不會因為單純走 HTTP 就直接成功。
+- 所以這次研究 redirect 的價值，重點不只是「今天一定要把它做完」，而是 **把架構邊界、可行落點與 suspend 條件講清楚**。這對未來回頭補硬化時，會比硬做一個不乾淨的方案更有價值。
+- 更精準地說，這題目前的成功標準可以拆成兩層：
+- 第一層是 **技術上確認 Traefik / Middleware 能否優雅處理 redirect**。
+- 第二層才是 **若方案不扭曲既有 TLS 邊界，就落地；若需要回頭碰 Hetzner termination 或讓 health check 變脆弱，就暫時 suspend。**
+
 ## Flashcards
 
 - 為什麼 WeaMind 的 Hetzner LB 後端只放 worker？ #DevOps #card
