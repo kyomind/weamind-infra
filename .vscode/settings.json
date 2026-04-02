@@ -13,13 +13,18 @@
         "datname",
         "deepwiki",
         "dwhk",
+        "gbhjc",
+        "hgsgl",
         "httptools",
         "iface",
+        "ingressroute",
+        "ingressroutes",
         "IPVS",
         "isready",
         "kubeadm",
         "kubeconfig",
         "kubelet",
+        "kubernetescrd",
         "kyomind",
         "Logseq",
         "netcat",
@@ -35,7 +40,8 @@
         "Traefik",
         "uvloop",
         "wdptx",
-        "weamind"
+        "weamind",
+        "websecure"
     ],
     "chat.tools.terminal.autoApprove": {
         "git -C /Users/kyo/Code/weamind-infra": true,
