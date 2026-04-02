@@ -31,7 +31,8 @@
 3. 接著回到 `manifests/ingress.yaml` 與 `PROGRESS.md`，把 host-based routing 與 health check 404 的因果鏈接起來。
 4. 然後收斂 Hetzner LB、Traefik、Ingress、Service 之間的邊界，講清楚 TCP passthrough 與 TLS termination 的落點。
 5. QA 後用 `03-command.md` 做最小 command drill，驗證 host header 假設與 worker 排程證據。
-6. 最後回 `04-report.md`，收斂成可口述的短版答題骨架。
+6. 若今天直接動到真實叢集設定，額外用 `06-implementation.md` 記錄「要改什麼、怎麼改、改完看到什麼、目前結論是什麼」。
+7. 最後回 `04-report.md`，收斂成可口述的短版答題骨架。
 
 ## 今日 command 練習
 
@@ -46,6 +47,7 @@
 3. `03-command.md`：記錄今天的最小 command drill，重點放在 Host header 與 worker 排程證據。
 4. `04-report.md`：收斂今天真正學到的 LB / health check 骨架。
 5. `05-note.md`：記錄延伸補充、暫時結論與後續可接到 image pipeline / TLS lesson 的邊界。
+6. `06-implementation.md`：當 lesson 內需要真的修改 cluster 設定時，記錄每一輪實作的目標、操作、結果與判讀。
 
 ## 這次要追問的 Why / How 題
 
