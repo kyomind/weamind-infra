@@ -205,19 +205,38 @@ Hetzner health check UI check
 #### 實際輸出 / 操作結果
 
 ```bash
-Repo changes prepared
-- Added manifests/middleware-https-redirect.yaml
-- Updated manifests/ingress.yaml with Traefik middleware annotation
+kubectl apply -f manifests/middleware-https-redirect.yaml
+kubectl apply -f manifests/ingress.yaml
+- middleware.traefik.io/https-redirect created
+- ingress.networking.k8s.io/weamind configured
+
+curl -i http://k8s.kyomind.tw/health
+- HTTP/1.1 301 Moved Permanently
+- location: https://k8s.kyomind.tw/health
+
+curl -iL http://k8s.kyomind.tw/health
+- HTTP/1.1 301 Moved Permanently
+- location: https://k8s.kyomind.tw/health
+- HTTP/2 200
+- {"status":"ok"}
+
+curl -i https://k8s.kyomind.tw/health
+- HTTP/2 200
+- {"status":"ok"}
+
+Post-check observation
+- Hetzner targets still remained healthy after redirect was enabled
 ```
 
 #### AI 判讀與收斂
 
-- 這是目前最小、且不扭曲既有邊界的 redirect 實作：**redirect 發生在 Traefik，健康檢查仍已被獨立切到 HTTPS，Hetzner LB 不需要重新接手 TLS termination。**
+- 這輪已正式驗證成功：**HTTP 請求會先被 Traefik 回 `301` 到 HTTPS，而 HTTPS 路徑本身仍正常回 `200`。**
+- 這表示目前的最小實作已經成立：**redirect 發生在 Traefik，健康檢查仍已被獨立切到 HTTPS，Hetzner LB 不需要重新接手 TLS termination。**
+- 這也是目前最乾淨的結果，因為它同時保住了三件事：
+- 第一，**TLS termination 仍留在 Traefik**。
+- 第二，**Hetzner LB 的 health check 已可獨立走 HTTPS**。
+- 第三，**公開 HTTP 入口現在已具備自動導向 HTTPS 的一致性行為**。
 
 #### 目前狀態
 
-- 進行中
-
-#### 目前狀態
-
-- 進行中
+- 已完成

@@ -54,3 +54,42 @@
 - 這也解釋了為什麼這套 UI 會讓人誤判。因為在概念上，`http:80 -> 80` 這條 service 與它底下的 health check 設定都被包在同一個介面裡，看起來很像同一組不可分割的設定；但從實際行為看，**它們不是完全綁死的。**
 - 因此這次更成熟的結論應該是：**service listener 邊界與 health check 探測邏輯，要分開理解。** 前者仍然牽涉 LB 是否做 termination、source port 是否衝突；後者則可能有更高的獨立度，允許針對 target 探測做 HTTPS / destination port 這類細部調整。
 - 這個發現很重要，因為它把我們的策略從「不能碰 Hetzner LB」修正成更精準的版本：**不能隨便改 Hetzner 的 listener / termination 邊界，但可以在有回退方案的前提下，研究 health check 這個較獨立的子系統。**
+
+## 這次也證明了：最小 redirect 可以落在 Traefik，而不需要把 TLS 拉回 Hetzner
+
+- 在 health check 已成功獨立切到 `Destination=443` 與 `TLS=Enabled` 之後，我們再把 `HTTP -> HTTPS redirect` 放到 Traefik `Middleware`，並掛到既有 `Ingress` 上，結果外部實測成立：
+- `curl -i http://k8s.kyomind.tw/health` 回 `301 Moved Permanently`
+- `curl -iL http://k8s.kyomind.tw/health` 最後成功到 `https://k8s.kyomind.tw/health` 並回 `200`
+- `curl -i https://k8s.kyomind.tw/health` 直接回 `200`
+- 這個結果很重要，因為它表示 **WeaMind 不需要回頭改 Hetzner listener，也不需要把 TLS termination 拉回 LB，就能補上 HTTPS-only 的入口一致性。**
+- 也就是說，這次真正可行的優雅做法是：**Hetzner LB 保持既有入口角色，Traefik 負責 redirect 與 TLS termination，而 health check 另外獨立走 HTTPS 探測。**
+- 從架構角度看，這是一條比原先預期更乾淨的路，因為三個責任邊界沒有重新混在一起：LB 仍是外部入口與轉送層，Traefik 仍是 L7 / TLS 層，health check 則是可獨立調整的探測子系統。
+
+## 這次 YAML 到底改了什麼，為什麼要這樣改
+
+### 新增 `middleware-https-redirect.yaml`
+
+- 這份新檔案的角色很單純：**把 `HTTP -> HTTPS redirect` 這個行為，明確做成一個 Traefik `Middleware` 資源。**
+- `redirectScheme.scheme: https` 表示命中這個 middleware 的 HTTP request 應被導向 HTTPS。
+- `permanent: true` 表示這不是暫時跳轉，而是正式的永久導向；外部會看到 `301` 這類永久 redirect 行為。
+- 把 redirect 獨立成一個 `Middleware`，而不是直接把邏輯塞進別的地方，好處是責任清楚：**這份 YAML 只回答一個問題，就是「命中的 HTTP 請求要不要被導向 HTTPS」。**
+- 這也符合這次實作的原則：我們不回頭碰 Hetzner listener，也不把 TLS 拉回 LB，而是把 redirect 放在本來就負責 L7 行為的 Traefik 層。
+
+### 更新 `ingress.yaml`
+
+- 這次對 `Ingress` 的更新只有一個核心動作：加上 `traefik.ingress.kubernetes.io/router.middlewares: weamind-https-redirect@kubernetescrd` 這個 annotation。
+- 這行的意思不是改變後端 Service，也不是改變 TLS secret，而是：**告訴 Traefik，當這條 Ingress 規則被命中時，要先套用哪一個 middleware。**
+- `weamind-https-redirect@kubernetescrd` 這個值，對應到的就是剛新增那個 `weamind` namespace 裡的 `https-redirect` middleware。
+- 因此這次 `Ingress` 本身的 host/path/backend/tls 結構其實沒有被推翻；我們做的只是 **在既有入口規則前面，多掛上一層 redirect 行為**。
+- 這也是為什麼這次改動可以很小，但效果很完整：外部 HTTP 請求先被 Traefik 轉到 HTTPS，真正的 TLS termination 與後續 routing 仍沿用原本已成立的路徑。
+
+## Annotation 在這裡為什麼不是「只是給人看的註解」
+
+- 這題要先把兩種完全不同的東西拆開：**YAML / 程式碼裡的 comment** 跟 **Kubernetes resource 的 `metadata.annotations`** 不是同一種東西。
+- 像 `# some note` 這種 comment，真的只是給人看的，送進 Kubernetes API 之後根本不會被保存，也不會被 controller 看到。
+- 但 `annotations` 不一樣。它雖然也屬於 metadata，不像 `spec` 那樣直接描述「我要幾個 Pod」或「port 是多少」，但它會被 **完整保存到資源物件裡**，而且 controller 可以主動去讀它、依它改變行為。
+- 所以更精準的說法不是「annotation 本身天生會改變行為」，而是：**annotation 提供一種擴充入口，讓特定 controller 願意把它當成設定來解讀。**
+- 在 WeaMind 這個案例裡，真正讓行為改變的不是 annotation 這四個字本身，而是 **Traefik 這個 Ingress controller 會主動讀 `traefik.ingress.kubernetes.io/router.middlewares` 這個 key，並把它解讀成『這條 router 要先套用哪些 middleware』。**
+- 所以如果今天換成一個完全不認 Traefik annotation 的 controller，這行 metadata 可能就只會安靜地躺在物件裡，不產生任何效果。也就是說，**annotation 能不能影響行為，取決於有沒有對應的 controller 願意讀它。**
+- 這也可以順手和 `label` 對照理解：`label` 比較像穩定、通用、可被 selector 使用的分類欄位；`annotation` 比較像不參與 selector、但可承載 controller-specific 設定或補充資訊的擴充欄位。
+- 因此這次 `Ingress` 上那行 annotation 的本質，不是「寫給人看的備註」，而是 **寫給 Traefik controller 看的行為指令入口**。

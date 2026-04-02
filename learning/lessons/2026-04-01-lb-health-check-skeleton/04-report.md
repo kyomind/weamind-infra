@@ -6,7 +6,7 @@
 
 ## 狀態
 
-已完成 QA 與 command 收斂，已能作為這份 lesson 的正式結論頁。
+已完成 QA、command 與 implementation 收斂，已能作為這份 lesson 的正式結論頁。
 
 ## QA 收斂了什麼
 
@@ -27,12 +27,15 @@
 - 已用 `pods -o wide` 與 `deployment -o yaml` 的搭配，區分「當下觀察」與「長期排程約束」：Pod 確實跑在 worker，而 `nodeSelector.nodepool=worker` 才是讓這件事不是偶然的主證據。
 - 已用 `DaemonSet / Service / Endpoints` 三層看懂 Traefik：三個 node 都能成為入口，是因為 `svclb-traefik` 在每個 node 鋪入口；真正 backend endpoint 當下則可以只有一個。
 - 已釐清 WeaMind 目前沒有做 HTTP→HTTPS redirect，而且外部 HTTP 與 HTTPS 都能直接命中 `/health`；同時也釐清 `curl -I` 看到的 `405` 是因為 `/health` 不接受 `HEAD`，不是 redirect 證據。
+- 已把 Hetzner LB 的 health check 獨立切到 `443 + TLS` 並驗證 targets 仍維持 healthy，證明 health check advanced settings 在這個案例裡可與 listener 邊界分開理解。
+- 已用 Traefik `Middleware + Ingress annotation` 成功補上 `HTTP -> HTTPS redirect`，並外部驗證 `http://k8s.kyomind.tw/health` 會先回 `301`，跟隨後能成功到 `https://k8s.kyomind.tw/health` 並回 `200`。
 
 ## 今日真正留下來的核心收穫
 
 - LB / Ingress / Traefik / Service / Pod 必須分層看，不能把任何一層的成功或失敗直接簡化成「app 壞了」或「LB 壞了」。
 - WeaMind 這個專案最有價值的理解，不是背 Kubernetes 名詞，而是能用 repo 證據把設計取捨、incident 與 runtime 行為連成同一條解釋鏈。
 - `Host` header、node 入口能力、TLS termination、worker-only placement 這些看似分散的問題，其實都能回到同一條流量路徑來理解。
+- 這次還多收斂出一個很實用的工程判斷：**Hetzner 的 listener/service 邊界與 health check advanced settings，不應混成同一件事看。** 前者關乎 termination 邊界，後者在這個案例裡則可獨立調整。
 
 ## 學完後已能講清楚什麼
 
@@ -41,14 +44,15 @@
 - 為什麼 Hetzner LB 在 WeaMind 只做 TCP passthrough，而 TLS termination / HTTP routing 落在 Traefik。
 - 為什麼 control-plane 不是 Hetzner LB target，但在目前 K3s runtime 狀態下仍可能具備本地入口能力。
 - 為什麼 WeaMind 目前 HTTP 仍可從外部命中，以及這和「已經有 TLS」是不同層次的問題。
+- 為什麼 WeaMind 最後能在 **不把 TLS termination 拉回 Hetzner LB** 的前提下，同時做到 **HTTPS health check** 與 **HTTP→HTTPS redirect**。
 
 ## 仍需補強的地方
 
 - Traefik backend 為什麼目前落在 control-plane，以及若要把 ingress workload 更明確固定到 worker，應該怎麼驗證與調整。
-- WeaMind 若要補 HTTP→HTTPS redirect，應先如何處理目前的 health check 設計，尤其是 HTTP `/health` 與未來可能改成 HTTPS health check 的取捨。
 - `DNS-01 vs HTTP-01` 與 WeaMind 目前入口策略、redirect 設計之間的完整關係，留待 Week 5 的 certificate 主題展開。
+- Traefik annotation 與 controller-specific metadata 的一般化理解，之後可再補到 Kubernetes metadata / controller pattern 的更通用視角。
 
 ## 下一步
 
-- 若要延續這份 lesson 的工程 follow-up，優先驗證 Hetzner LB 是否能穩定改用 HTTPS `/health` 檢查，再決定是否補上 HTTP→HTTPS redirect。
+- 若要延續這份 lesson 的工程 follow-up，可補做一次 manifest 回看與 rollback 路徑整理，確保未來知道要回退哪兩個 YAML 與哪個 Hetzner health check 設定。
 - 若回到學習計畫主線，接續 W4 後續主題或在 Week 5 進入 `DNS-01 vs HTTP-01 與 WeaMind 的情況`。
