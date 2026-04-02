@@ -146,7 +146,7 @@
 
 ---
 
-## Lesson Follow-up 與入口調整（2026-04-02）
+## WeaMind K8s HTTP→HTTPS Redirect 實作（2026-04-02）
 
 - [x] 以 lesson 內實作方式重新檢查 Hetzner LB health check 與 `443` passthrough 的邊界，確認目前 `http:80 -> 80` 與 `tcp:443 -> 443` 的分工仍成立
 - [x] 釐清並驗證 Hetzner LB health check advanced settings 與 listener/service 本身具備相當高的獨立性：將 health check 改成 `Destination=443` 並啟用 `TLS` 後，targets 仍維持 healthy

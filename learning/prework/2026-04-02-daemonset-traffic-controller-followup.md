@@ -63,21 +63,34 @@
 
 ### 今日學到什麼
 
-- 待填
+- 理解 `DaemonSet` 的核心不是「很多 Pod」，而是「每個符合條件的 node 各跑一個」。
+- 理解 `Deployment` 比較像管理可伸縮的應用 replicas，而 `DaemonSet` 比較像鋪設節點層能力。
+- 理解 `Service` 是 cluster-wide 的流量抽象，能把流量轉發到實際的 backend Pod。
+- 理解在 WeaMind 中，`svclb-traefik` 與 `traefik` 分屬不同層級角色：前者偏入口鋪設，後者偏實際 L7 routing backend。
 
 ### 已能白話講清楚什麼
 
-- 待填
+- `DaemonSet` 就像在每台機器上放一個入口接待員，確保每個 node 都有某種固定能力。
+- `Deployment` 是實際處理業務的服務實例，例如 Traefik backend Pod。
+- 每個 node 都能接流量，是因為 `svclb-traefik` 這種 `DaemonSet` 型入口元件，而不是因為 backend 在每個 node 都各有一份。
+- 流量可以從一個 node 被轉發到另一個 node，是因為 `Service` 是 cluster-wide abstraction。
+- WeaMind 的最小流量路徑可以講成：`Hetzner LB -> 某 worker -> svclb-traefik -> traefik Service -> Traefik Pod -> Ingress routing -> app Service -> Pod`。
 
 ### 目前還卡住什麼
 
-- 待填
+- `svclb-traefik` 內部更底層到底是靠什麼機制把流量導入 `traefik` Service，例如 `hostPort`、iptables 或其他 K3s / ServiceLB 細節。
+- `traefik` Service 的型別與更細的 runtime 設定，還沒有完全釘穩。
+- kube-proxy 或 K3s 內部如何實現跨 node forwarding，之後還值得補。
 
 ### 今日最重要的觀念
 
-- 待填
+- `DaemonSet` = 每個符合條件的 node 各一個，偏 node-level 能力鋪設。
+- `Deployment` = 管理一組可伸縮 replicas，偏 app-level 工作負載。
+- `Service` = cluster-wide 流量轉發抽象，不會被單一 node 限制住。
+- 入口層（`DaemonSet`）與處理層（`Deployment` backend）是兩件不同的事。
+- 「每個 node 都是入口」不等於「每個 node 都有完整 backend Pod」。
 
 ### 帶回 VS Code 的問題
 
-1. `svclb-traefik` 這種 `DaemonSet` 型入口元件，和真正的 Traefik backend endpoint 應該如何一起描述，才不會把兩層責任混掉？
-2. 若未來想把 ingress 資料面更明確地固定到 worker，應優先查看哪些 Kubernetes 資源與欄位？
+1. `svclb-traefik` 這種 `DaemonSet` 型入口，實際是透過什麼方式把流量導入 `traefik` Service？是 `hostPort`、iptables，還是 K3s 的其他實作？
+2. `traefik` Service 的 selector 與 endpoints 是如何對應到 `traefik` Pod？如果 Traefik replicas 從 1 變 3，流量又會如何分配？
