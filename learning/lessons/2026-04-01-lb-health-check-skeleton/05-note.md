@@ -154,3 +154,54 @@
 - 所以最實用的記法是：**`kubectl get ingress -o yaml` 讓你一次看到 controller 是誰、host/path 怎麼匹配、後端 Service 是誰、TLS 憑證綁哪裡，以及它目前對外宣告了哪些入口 IP。**
 
 ## Flashcards
+
+- 為什麼 WeaMind 的 Hetzner LB 後端只放 worker？ #DevOps #card
+	- `nodeSelector.nodepool=worker` 把 app workload 固定在 worker
+	- LB target 也只選 worker，讓入口流量與 workload placement 對齊
+	- 目的是避免把 control-plane 拉進正常資料面路徑
+
+- 為什麼 LB health check 沒帶正確 `Host` 會看到 `404`？ #DevOps #card
+	- `Ingress.rules.host` 在 HTTP 層實際靠 `Host` header 匹配
+	- 沒命中時是 Traefik 在入口層先回 `404`
+	- 這不等於 app `/health` endpoint 壞掉
+
+- Hetzner LB 的 `Domain` 欄位和 `Host` header 是什麼關係？ #DevOps #card
+	- `Domain` 是 Hetzner UI 的產品命名
+	- 真正送出 HTTP request 時，效果等同帶上 `Host: <domain>`
+	- Traefik 不看 UI 名稱，只看 request 內的 `Host`
+
+- `cert-manager` 和 Traefik 在 TLS 流量裡怎麼分工？ #DevOps #card
+	- `cert-manager` 負責申請、續期、保存憑證到 Secret
+	- 真正做 TLS termination 與後續 HTTP routing 的是 Traefik
+	- Hetzner LB 在這個專案只做 TCP passthrough
+
+- 為什麼三個 node 都能成為入口，但 Traefik backend endpoint 只有一個？ #DevOps #card
+	- `svclb-traefik` DaemonSet 在每個 node 鋪 `80/443` 入口
+	- `traefik` Service 再把流量轉到 backend endpoint
+	- 入口 node 數量不必等於 Traefik backend Pod 數量
+
+- `curl -H 'Host: ...' http://127.0.0.1/health` 應該在哪裡執行？ #DevOps #card
+	- 要在 K3s node 上跑，因為這是在測 node 本機的 Traefik 入口
+	- 不是在測本機 Mac，也不是在測 app Pod 內部
+	- 若要最貼近 LB target 設計，優先在 worker node 上測
+
+- 為什麼 control-plane 上打 `127.0.0.1:80` 也可能成功？ #DevOps #card
+	- control-plane 雖非 Hetzner LB target，但目前 runtime 仍具本地入口能力
+	- `svclb-traefik` 已在 node 本機監聽 `80/443`
+	- 這證明「不是 LB target」不等於「完全沒有入口」
+
+- 如何用最小證據證明 WeaMind Pods 被固定在 worker？ #DevOps #card
+	- `pods -o wide` 看的是當下落點
+	- `deployment -o yaml` 的 `nodeSelector.nodepool=worker` 才是長期約束
+	- 現況與約束都對上，才算真正證明 workload placement
+
+- `curl -I` 和 `curl -L` 在 redirect 題目裡各自代表什麼？ #DevOps #card
+	- `-I` 送的是 `HEAD` request，只看 headers
+	- `-L` 只會在遇到 `301/302/307/308` 時追跳轉
+	- 若先拿到 `405`，不能直接拿來判定 redirect 是否存在
+
+- WeaMind 目前沒有 HTTP→HTTPS redirect，風險該怎麼看？ #DevOps #card
+	- 現在是入口層配置缺口，不是立即高危漏洞
+	- `/health` 與公開根路徑可被 HTTP 直接命中
+	- webhook 與 user API 仍有應用層簽章或認證保護
+	- 對 LINE webhook 為主的現況風險可控，但正式化後仍值得補 HTTPS-only
