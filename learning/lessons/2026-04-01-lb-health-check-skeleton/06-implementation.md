@@ -5,7 +5,7 @@
 - 這不是一般 `03-command.md` 的 command drill。
 - 這份檔案只用在今天這種比較少見的情況：**lesson 進行中需要真的改動 cluster 設定**。
 - 記錄重點不是完整逐字稿，而是每一輪都留下最小閉環：**這一輪想改什麼、實際做了什麼、看到什麼結果、目前怎麼判讀。**
-- 最終 lesson 收斂仍以 `04-report.md` 為主；延伸補充與卡片素材仍放 `05-note.md`。
+- 最終 lesson 收斂仍以 `04-report.md` 為主；lesson 一般補充與卡片素材放 `05-note.md`，實作專屬補充放 `07-implementation-note.md`。
 
 ## 今日實作主題
 
@@ -162,6 +162,15 @@ Hetzner health check UI check
 	- Domain
 	- Path
 	- TLS enable/disable toggle
+- User validated in UI, without saving yet:
+	- Destination can be changed from 80 to 443
+	- TLS can be enabled without immediate warning
+	- Domain / Path / Status codes remain visible after enabling TLS
+	- TLS help text says: "Use HTTPS for health check if TLS option is enabled."
+- User saved the health check change and observed for more than 5 minutes:
+	- http:80 -> 80 service remained healthy
+	- both worker targets remained healthy
+	- effective health check behavior appears to allow independent Destination=443 + TLS=Enabled
 ```
 
 #### AI 判讀與收斂
@@ -173,7 +182,41 @@ Hetzner health check UI check
 - 但是否要真的實作，仍要回到風險與收益判斷：目前沒有 redirect **不是高優先安全事故**，而是公開入口一致性的缺口；若能優雅落地就做，若需要扭曲現有架構，暫時 suspend 也是合理結論。
 - 這張畫面把 Round 3 的路線又往前推了一步：**health check 似乎比整條 LB service 更可獨立調整。**
 - 也就是說，先前「只要碰到 HTTPS 就等於碰到整條 LB service 協定」這個判斷，對 **service 本身** 仍成立；但對 **health check advanced settings** 可能還不夠精準，因為這裡額外出現了獨立 `TLS` 開關與可編輯 `Destination`。
-- 因此下一步最值得驗證的，不再只是 `301` 能不能接受，而是：**能不能在不改 service 協定的前提下，把 health check 保持為 HTTP path 檢查，並同時讓它接受 redirect，或甚至獨立改成對 `443` + TLS 做檢查。**
+- 目前最值得做的最小實驗，已經收斂成：**不改 LB service listener，只改 health check advanced settings，直接測試 `Destination=443` + `TLS=Enabled` 是否能讓 target 維持 healthy。**
+- 這個實驗若成功，代表我們可能可以把健康檢查獨立切到 HTTPS，而不必動 Hetzner 的 TLS termination 邊界；若失敗，也能立即回退到原本 `80` / HTTP 設定。
+- 這個實驗已成功，代表 **Hetzner 的 health check advanced settings 與 listener/service 行為之間，至少在這個案例中具有足夠的獨立性**，可讓我們把健康檢查切到 HTTPS，同時維持 `443` 仍由 Traefik 做 TLS termination。
+- 因此目前最合理的下一步，已從「是否 suspend」進入「可以嘗試最小 redirect 實作」：在 repo 中新增 Traefik `Middleware`，並把既有 `Ingress` 掛上 `redirectScheme`。
+
+### Round 4
+
+#### 這一輪要驗證什麼
+
+- 在不改 Hetzner LB listener 與 TLS termination 邊界的前提下，使用 Traefik `Middleware` 實作 `HTTP -> HTTPS redirect` 是否可行。
+
+#### 預計操作
+
+```bash
+# repo manifest changes
+# 1. 新增 Traefik Middleware: redirectScheme -> https
+# 2. 在既有 Ingress 上掛上 router.middlewares annotation
+# 3. kubectl apply 後驗證 http / https / health check 行為
+```
+
+#### 實際輸出 / 操作結果
+
+```bash
+Repo changes prepared
+- Added manifests/middleware-https-redirect.yaml
+- Updated manifests/ingress.yaml with Traefik middleware annotation
+```
+
+#### AI 判讀與收斂
+
+- 這是目前最小、且不扭曲既有邊界的 redirect 實作：**redirect 發生在 Traefik，健康檢查仍已被獨立切到 HTTPS，Hetzner LB 不需要重新接手 TLS termination。**
+
+#### 目前狀態
+
+- 進行中
 
 #### 目前狀態
 

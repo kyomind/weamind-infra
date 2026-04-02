@@ -32,7 +32,8 @@
 4. 然後收斂 Hetzner LB、Traefik、Ingress、Service 之間的邊界，講清楚 TCP passthrough 與 TLS termination 的落點。
 5. QA 後用 `03-command.md` 做最小 command drill，驗證 host header 假設與 worker 排程證據。
 6. 若今天直接動到真實叢集設定，額外用 `06-implementation.md` 記錄「要改什麼、怎麼改、改完看到什麼、目前結論是什麼」。
-7. 最後回 `04-report.md`，收斂成可口述的短版答題骨架。
+7. 若實作過程中累積了值得獨立複習的觀察，再用 `07-implementation-note.md` 承接實作專屬的補充 note。
+8. 最後回 `04-report.md`，收斂成可口述的短版答題骨架。
 
 ## 今日 command 練習
 
@@ -48,6 +49,7 @@
 4. `04-report.md`：收斂今天真正學到的 LB / health check 骨架。
 5. `05-note.md`：記錄延伸補充、暫時結論與後續可接到 image pipeline / TLS lesson 的邊界。
 6. `06-implementation.md`：當 lesson 內需要真的修改 cluster 設定時，記錄每一輪實作的目標、操作、結果與判讀。
+7. `07-implementation-note.md`：承接實作過程中值得保留、但不適合塞回 `05-note.md` 的實作專屬補充理解。
 
 ## 這次要追問的 Why / How 題
 
