@@ -145,7 +145,7 @@
 
 ### 當使用者只說「繼續」
 
-這份 README 只負責提醒閱讀順序；正式進度錨點仍回到 `.privatedocs/五週版學習計畫.md`，再依當前情況進 lesson 或 prework。
+這份 README 只負責提醒閱讀順序；正式進度錨點仍回到 `.privatedocs/六週版學習計畫.md`，再依當前情況進 lesson 或 prework。
 
 ---
 

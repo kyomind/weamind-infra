@@ -136,7 +136,7 @@ If the user asks to continue in a new conversation, do not advance by date alone
 
 Instead:
 
-1. read `.privatedocs/五週版學習計畫.md` and use the "Current Execution Tracking" section as the only formal progress anchor
+1. read `.privatedocs/六週版學習計畫.md` and use the "Current Execution Tracking" section as the only formal progress anchor
 2. read the current lesson's `02-qa.md`
 3. continue unfinished work before opening a new topic
 
@@ -146,7 +146,7 @@ Use the following source hierarchy.
 
 ### Formal Progress Anchor
 
-`.privatedocs/五週版學習計畫.md` is the only formal source for current progress and next-step sequencing.
+`.privatedocs/六週版學習計畫.md` is the only formal source for current progress and next-step sequencing.
 
 If anything conflicts with it, trust the "Current Execution Tracking" section in that file.
 
@@ -206,7 +206,7 @@ Use these as the primary references when you need repo-grounded context:
 - `PROGRESS.md`
 - `.env.example`
 - `learning/`
-- `.privatedocs/五週版學習計畫.md`
+- `.privatedocs/六週版學習計畫.md`
 - `.privatedocs/28day-progress.md`
 - `.privatedocs/ai-memories.md`
 - `.privatedocs/weamind/`
