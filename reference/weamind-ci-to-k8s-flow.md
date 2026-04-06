@@ -62,7 +62,7 @@ imagePullPolicy: Always
 ## 這份 reference 的用途
 
 - 幫助在 infra repo 內理解 app repo 的 CI / image publishing 證據
-- 讓 W4 的 CI/CD lesson 可以直接對照真實 workflow，而不是只看抽象說明
+- 讓 W5 的 CI/CD lesson 可以直接對照真實 workflow，而不是只看抽象說明
 - 後續若要學「K8s 到底什麼時候會真的拉到新 image」，可以直接從 Deployment 與 rollout 行為往下追
 
 ## 後續最值得補的題目
