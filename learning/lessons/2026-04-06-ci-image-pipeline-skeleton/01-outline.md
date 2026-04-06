@@ -31,22 +31,19 @@
 2. 再讀 reference/weamind-app-publish-ghcr.yml，確認 publish 是如何被觸發、何時會真的 push image。
 3. 接著讀 reference/weamind-ci-to-k8s-flow.md，把兩段 workflow 與 Deployment 引用方式接起來。
 4. 然後回到 manifests/deployment.yaml，回答 K8s 端實際引用哪個 image/tag，以及 imagePullPolicy 在這裡的真正含義。
-5. QA 後用 03-command.md 做最小 command drill，練習辨認目前有哪些證據支持「有 CI + publish，但沒有完整 CD」。
-6. 最後回 04-report.md，收斂成可口述的最小答題稿。
+5. 最後回 04-report.md，收斂成可口述的最小答題稿。
 
 ## 今日 command 練習
 
-今天建立 03-command.md。
-
-原因：這個主題很適合在 QA 後接一小段 command drill，練習用最少的檔案搜尋與欄位定位，快速證明 workflow 觸發條件、Deployment image 引用方式，以及目前缺少哪一段 deploy automation。流程維持 QA -> command -> report。
+- 今天不建立 command drill。
+- 原因：這個主題更偏 workflow 判讀、image version、repo 邊界與 deploy 流程理解，不是以 Kubernetes 指令手感為主的 lesson。今天維持 QA -> report 即可。
 
 ## 文件分工
 
 1. 01-outline.md：規劃今天主題、順序與邊界。
 2. 02-qa.md：記錄今天的 repo-backed 問題、使用者回答摘要與 AI 修正。
-3. 03-command.md：記錄今天的最小 command drill，重點放在 workflow 觸發鏈與 Deployment image 引用。
-4. 04-report.md：收斂今天真正學到的 CI / Image Pipeline 骨架。
-5. 05-note.md：記錄延伸補充、暫時結論與之後可接到 TLS / deploy automation 的邊界。
+3. 04-report.md：收斂今天真正學到的 CI / Image Pipeline 骨架。
+4. 05-note.md：記錄延伸補充、暫時結論與之後可接到 TLS / deploy automation 的邊界。
 
 ## 這次要追問的 Why / How 題
 
