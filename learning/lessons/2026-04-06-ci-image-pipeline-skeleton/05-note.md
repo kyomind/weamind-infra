@@ -59,4 +59,37 @@
 
 ## Flashcards
 
-<!-- 待 lesson 過程中補充 -->
+- WeaMind 的 CI 在做什麼，和 publish 有什麼關係？ #DevOps #card
+	- CI 分成 code quality/tests 與 Docker build validation 兩個 job
+	- 它先證明程式碼品質與 Docker build 路徑可成立
+	- 它是 publish 到 GHCR 前的品質閘門，不是部署本身
+
+- 為什麼 WeaMind 的 publish workflow 要綁 `workflow_run`，而不是直接綁 `push`？ #DevOps #card
+	- 它要等前一份 `CI` workflow 先跑完
+	- 只有 main 上的成功 push 才真的 build and push image
+	- 這是在把 PR 檢查和正式 image 發佈分層
+
+- `on.workflow_run` 已有限制，為什麼還要再寫 job-level `if`？ #DevOps #card
+	- `on` 決定 workflow 什麼時候被喚起
+	- `if` 決定被喚起後這個 job 要不要真的執行
+	- 它是第二道保護，用來排除 PR 檢查或失敗 CI 也誤發佈 image
+
+- `imagePullPolicy: Always` 在 WeaMind 這題裡真正保證什麼？ #DevOps #card
+	- 只保證 Pod 在建立或重建時會重新嘗試拉 image
+	- 不保證背景自動偵測 registry 新版本
+	- 不保證現有 Pods 會因 `latest` 更新而自動 rollout
+
+- 為什麼 WeaMind 現在只能說有 CI 與 image publishing，還不能說有完整 CD？ #DevOps #card
+	- app repo 已會做 CI 與 push image 到 GHCR
+	- 但從 registry 到 cluster 的最後一跳沒有自動化
+	- 沒有 `kubectl set image`、`rollout restart` 或 GitOps controller 證據
+
+- 為什麼 production 常保留 CI 和正式 deploy 之間的人工審核層？ #DevOps #card
+	- CI 證明 artifact 可用，不等於它現在就該進 production
+	- approval gate 是在控制 promotion，不是反自動化
+	- 自動開 PR 到 infra repo 再審核，是典型的受控式 CD
+
+- 為什麼 app repo 直接改叢集或直接 rollout，容易讓 infra 邊界變怪？ #DevOps #card
+	- 若不更新 infra Git state，就會出現 configuration drift
+	- 若直接寫 infra repo 但無 review，change management 邊界會變弱
+	- 較穩的順序是先更新 infra state，再讓叢集收斂到它
