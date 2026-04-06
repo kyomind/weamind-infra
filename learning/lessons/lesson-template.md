@@ -45,9 +45,9 @@
 
 ## 要對照的 repo 檔案
 
-1.
-2.
-3.
+1.`path/to/file.yaml`
+2.`path/to/another-file.md`
+3.`path/to/one-more-file.txt`
 
 ## 建議學習順序
 
