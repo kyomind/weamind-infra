@@ -84,4 +84,51 @@
 
 ## Flashcards
 
-<!-- 待互動後補卡片 -->
+- 在 WeaMind 裡，cert-manager 真正自動化的是什麼？ #DevOps #card
+	- 不只是拿到一次憑證
+	- 它處理申請、DNS-01 驗證、儲存與續期
+	- 它是憑證生命週期 controller，不是一次性工具
+
+- WeaMind 的 TLS 分工怎麼講最準？ #DevOps #card
+	- Hetzner LB 只做 TCP 443 passthrough
+	- Traefik 在 K3s 內做 TLS termination
+	- cert-manager 負責憑證生命週期
+	- Cloudflare 提供可被 API 寫入的 DNS
+
+- DNS-01 和 HTTP-01 的核心差異是什麼？ #DevOps #card
+	- DNS-01 驗證 DNS 控制權
+	- HTTP-01 驗證公開 HTTP 路徑控制權
+	- DNS-01 依賴 DNS API 控制面
+	- HTTP-01 依賴資料平面是否打通
+
+- 為什麼 WeaMind 偏向 DNS-01 而不是 HTTP-01？ #DevOps #card
+	- DNS 在 Cloudflare，不在 Hetzner
+	- 無法直接走 Hetzner Managed Certificate
+	- DNS-01 不必持續照顧公開 HTTP challenge 路徑
+	- 比 HTTP-01 更不會和 LB、Ingress、redirect 糾纏
+
+- 為什麼 WeaMind 不需要為 ACME 驗證特地保留外部 80？ #DevOps #card
+	- 因為憑證驗證走 DNS-01，不走公開 HTTP challenge
+	- ACME 驗證方法和正式流量策略是兩層不同問題
+	- 所以一般 HTTP 流量可更乾淨地 redirect 到 HTTPS
+
+- HTTP→HTTPS redirect 會讓 HTTP-01 一定失敗嗎？ #DevOps #card
+	- 不一定
+	- 關鍵是 `/.well-known/acme-challenge/` 有沒有被正確放行
+	- redirect 可以存在，但 challenge 路徑通常要保留例外
+
+- 為什麼單機版 HTTP-01 常比 K8s 版自然？ #DevOps #card
+	- 單機常只要照顧一條 nginx challenge 路徑
+	- K8s 版多了 LB、Ingress Controller、middleware 與 solver 路徑
+	- 所以 HTTP-01 在 K8s 的維護成本更高
+
+- TLS Secret 和一般業務 Secret 的差別是什麼？ #DevOps #card
+	- 兩者本質上都是 Kubernetes Secret
+	- TLS Secret 常見 type 是 `kubernetes.io/tls`
+	- 一般業務 Secret 常見 type 是 `Opaque`
+	- 前者給 Ingress/Traefik 用，後者給 Pod 當環境變數
+
+- DNS-01 的安全核心是什麼？ #DevOps #card
+	- TXT record 可公開查詢，不是敏感點
+	- 真正敏感的是能修改 DNS 的 API Token
+	- 安全性在於寫入權，不在於記錄內容保密
