@@ -52,25 +52,44 @@
 ### 今日主題與學習範圍
 
 - 主題：cert-manager 基礎、ACME 驗證、DNS-01 vs HTTP-01
-- 範圍：cert-manager 的角色、和 DNS provider 的互動方式、兩種 challenge 的本質差異、常見選型邏輯
+- 範圍：
+  - cert-manager 在 Kubernetes 中的角色
+  - ACME 為什麼需要驗證網域控制權
+  - HTTP-01 與 DNS-01 的本質差異
+  - cert-manager 如何透過 DNS provider 進行 DNS-01 驗證
 
 ### 今日學到什麼
 
-- 待填
+- cert-manager 不是單純拿憑證的工具，而是 Kubernetes 中負責憑證生命週期的 controller，涵蓋申請、驗證、儲存與續期。
+- ACME 驗證的目的，是確保申請憑證的人真的控制該網域，避免攻擊者偽裝成合法網站。
+- HTTP-01 與 DNS-01 的差異，在於驗證控制權的位置不同：HTTP-01 驗證你是否控制 HTTP 流量入口，DNS-01 驗證你是否控制 DNS，也就是網域本身。
+- 在 Kubernetes 中，HTTP-01 會依賴完整的流量路徑，例如 LB、Ingress、Service 到 Pod；DNS-01 可以避開這些層，直接透過 DNS provider API 處理。
+- DNS-01 的實作本質，是新增 `_acme-challenge` 的 TXT 記錄，等待 propagation 完成後通過驗證。
+- DNS record 本身通常是公開可查的，但安全性不在於內容保密，而在於誰擁有 DNS 修改權。
 
 ### 已能白話講清楚什麼
 
-- 待填
+- cert-manager 是 Kubernetes 裡持續運作的憑證管理 controller，而不是像 certbot 一樣的一次性工具。
+- ACME 在驗證的是你是否真的控制該網域，否則 TLS 的身份驗證會失去意義。
+- HTTP-01 是走網站流量路徑驗證，DNS-01 是走 DNS 控制權驗證。
+- DNS-01 不需要碰 Ingress 或 routing，因此在 Kubernetes 中通常更解耦。
+- DNS 是公開的，但真正敏感的是能修改 DNS 的 API Token，而不是 TXT 記錄本身。
 
 ### 目前還卡住什麼
 
-- 待填
+- DNS propagation 的實際延遲與 cert-manager retry 機制。
+- 不同 DNS provider 的 API 權限細節。
+- cert-manager CRD，例如 Issuer、ClusterIssuer、Certificate 之間的關係。
 
 ### 今日最重要的觀念
 
-- 待填
+- cert-manager 是 Kubernetes 中的憑證生命週期 controller。
+- TLS 不只有加密，也包含身份驗證。
+- ACME 的本質是驗證網域控制權。
+- HTTP-01 vs DNS-01 的核心差異，是驗證位置不同：流量入口 vs DNS。
+- DNS record 是公開的，但 DNS 修改權才是安全核心。
 
 ### 帶回 VS Code 的問題
 
 1. 在 WeaMind 這種 Cloudflare DNS + Hetzner LB + Traefik 的架構下，為什麼 DNS-01 比 HTTP-01 更不容易和正式流量路徑糾纏在一起？
-2. WeaMind 目前把 TLS 終止放在 Traefik，而不是 Hetzner LB，這個決策和 cert-manager / DNS-01 的選型是怎麼互相配合的？
+2. cert-manager 在目前 repo 中，是如何取得 Cloudflare API 權限來新增 TXT record 的？這個權限範圍是否最小化？
