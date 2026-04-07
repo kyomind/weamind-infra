@@ -59,6 +59,30 @@
 - 這個例子剛好說明：**HTTP→HTTPS redirect 和 HTTP-01 並非絕對衝突，真正關鍵是 challenge 路徑有沒有被正確放行。**
 - ⭐️也因為如此，當系統從單機進入 K8s，多出 LB、Ingress Controller、middleware 與 solver ingress 後，**HTTP-01 的維護成本就比單機版高得多。**
 
+### 為什麼單機版用 HTTP-01 新開服務時，常常還是得先暫時拿掉 HTTPS
+
+- 這裡真正的卡點，通常**不是 HTTP-01 驗證本身**，而是 nginx 啟動時會先讀 443 `ssl` server block。
+- 如果這個 block 一開始就引用正式憑證檔，例如 `fullchain.pem` 和 `privkey.pem`，但第一次申請前這些檔案還不存在，**nginx 就可能直接啟動失敗**。
+- 所以你以前每次新開服務時，先暫時註解掉 HTTPS 區塊，通常不是因為 ACME 規則要求這樣做，而是因為**第一次 bootstrap 時，nginx 還沒有可用的正式憑證檔可讀**。
+- 也就是說：
+	- HTTP-01 不一定要求你先關掉 redirect
+	- 但你的 nginx 完整 HTTPS 設定，常常會要求你先有憑證檔
+	- 因此在單機版初次上線時，先暫時拿掉 HTTPS 區塊往往是最簡單的 bootstrap 做法
+
+### 如果單機版改用 DNS-01，第一次就能直接上完整 HTTPS 設定嗎
+
+- **原則上可以，前提是你能在 nginx 啟動前，先用 DNS-01 把正式憑證申請下來。**
+- 這就是 DNS-01 和 HTTP-01 在單機 bootstrap 上一個很實用的差別：DNS-01 不需要依賴 nginx 的公開 HTTP challenge 路徑，所以你可以在服務真正啟動前，先完成網域驗證與憑證申請。
+- 若第一次申請已完成、憑證檔也已落地，那 nginx 第一次啟動時就能直接吃完整 HTTPS 設定，不必再先註解掉 443 `ssl` 區塊。
+- 但這裡也有一個很重要的代價：**如果你用的是手動 DNS-01**，那第一次雖然可行，之後每次續約通常也還要再手動加 TXT record，除非你改成有 DNS API plugin 或 hook 的自動化做法。
+- 所以更精準地說：
+	- DNS-01 可以幫你避開「第一次沒有憑證，nginx 起不來」這個 bootstrap 問題
+	- 但若沒有搭配 DNS provider API 自動化，續約維護成本可能反而很高
+
+### 一句話比較
+
+- **單機版用 HTTP-01 時，常見痛點是第一次啟動前還沒有憑證檔，導致 nginx 不能直接吃完整 HTTPS 設定；改成 DNS-01 時，理論上可先拿到憑證再啟動 nginx，但若 TXT 記錄仍靠手動維護，續約成本會變高。**
+
 ### TLS Secret 和一般業務 Secret 在本質上是不是同一種東西
 
 - 是，**它們本質上都還是 Kubernetes Secret 物件**，都屬於叢集裡的 Secret resource。
@@ -81,6 +105,18 @@
 ### 一句話比較
 
 - **兩者本質上都是 Kubernetes Secret；差別不在是不是 Secret，而在它的 type、內容格式、建立方式，以及最後是被 Ingress/Traefik 還是被應用 Pod 消費。**
+
+### 單機版要自動化時，HTTP-01 一定比較適合嗎
+
+- 不一定。**如果你只是想要最省事、最少設定的自動續約，HTTP-01 常是單機版的預設解。**
+- 但如果 DNS provider 有 API，而且你願意裝對應的 plugin，**DNS-01 在單機也可以全自動化**，不必每次手動加 TXT record。
+- 以 certbot 來說，這通常是透過像 `certbot-dns-cloudflare` 這類 DNS plugin 完成；certbot 會在申請與續約時自動呼叫 DNS API，建立與刪除 `_acme-challenge` TXT record。
+- 所以在單機版，真正的分界不是「能不能自動化」，而是 **你想把自動化成本放在 HTTP challenge path，還是放在 DNS provider API + plugin 設定**。
+- 若你還需要 wildcard certificate，DNS-01 幾乎就是必選，因為 HTTP-01 本來就不適合這個用途。
+
+### 一句話收斂
+
+- **單機環境下，HTTP-01 常是最省事的預設；但只要 DNS provider 有 API、certbot 也裝得上對應 plugin，DNS-01 一樣可以做到全自動，而且更適合 wildcard 與無需照顧公開 HTTP challenge 路徑的場景。**
 
 ## Flashcards
 
@@ -132,3 +168,9 @@
 	- TXT record 可公開查詢，不是敏感點
 	- 真正敏感的是能修改 DNS 的 API Token
 	- 安全性在於寫入權，不在於記錄內容保密
+
+- 單機版做憑證自動化時，DNS-01 一定比 HTTP-01 差嗎？ #DevOps #card
+	- 不一定
+	- HTTP-01 通常更省事，是單機版常見預設
+	- DNS-01 只要有 DNS API plugin 與 token，也可以全自動化
+	- 若要 wildcard，DNS-01 幾乎是必選
