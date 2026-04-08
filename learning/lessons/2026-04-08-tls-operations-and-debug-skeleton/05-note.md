@@ -86,4 +86,50 @@
 
 ## Flashcards
 
-<!-- 待補 -->
+- Ingress `spec.tls.secretName` 在 WeaMind 裡真正代表什麼？ #DevOps #card
+	- 它只是在宣告 Traefik 處理這個 host 的 HTTPS 時應讀哪個 TLS Secret
+	- 它不是建立 Secret 的地方
+	- Secret 名稱是先在 `Certificate.spec.secretName` 宣告，再由 cert-manager 建立並維護
+
+- WeaMind 的 TLS 分工最短版該怎麼講？ #DevOps #card
+	- Hetzner LB 只做 `443` TCP passthrough
+	- Traefik 在叢集內做 TLS termination 與 HTTP routing
+	- cert-manager 負責憑證生命週期，不在即時請求路徑上
+	- Ingress `tls` 區塊負責把 host 和 TLS Secret 綁起來
+
+- `Certificate` 和 TLS Secret 的差別是什麼？ #DevOps #card
+	- `Certificate` 是 cert-manager 的主資源，表達想要什麼憑證與輸出到哪個 Secret
+	- TLS Secret 是最終輸出物，真的保存 `tls.crt` 和 `tls.key`
+	- 前者偏期望狀態與結果狀態，後者偏實際 payload
+
+- `Certificate`、`CertificateRequest`、`Order`、`Challenge` 各自站在哪一層？ #DevOps #card
+	- `Certificate` 是憑證需求與輸出位置的宣告
+	- `CertificateRequest` 是某一次實際簽發申請
+	- `Order` 是 ACME 的簽發訂單
+	- `Challenge` 是網域控制權驗證任務
+
+- TLS 出問題時，為什麼不該先看 Pod log？ #DevOps #card
+	- 瀏覽器憑證警告通常發生在請求真正進入 app 之前
+	- 第一輪應先查 TLS 入口鏈，不是應用層
+	- 只有在 HTTPS 已正常建立、但回應內容異常時，才往 `Service`、`Endpoints`、Pod log 查
+
+- WeaMind 的 TLS 最小排查順序是什麼？ #DevOps #card
+	- 先判斷症狀是不是典型 TLS 錯誤
+	- 再查 Ingress `tls.secretName` 與 host
+	- 接著查 `Certificate` 是否 `READY=True`
+	- 若不正常，再往下追 `CertificateRequest`、`Order`、`Challenge`
+
+- WeaMind 的 HTTP `80` 與 HTTPS `443` 入口差別在哪裡？ #DevOps #card
+	- `443` 會經過 LB passthrough、Traefik 讀 TLS Secret 做 handshake，再進 Ingress / Service / Pod
+	- `80` 也會先進 Traefik / Ingress
+	- 但 `80` 這邊會被 redirect middleware 導去 HTTPS，不是由 `Ingress.spec.tls` 自動升級
+
+- 正式 `443` 流量和 health check `443` 的差別是什麼？ #DevOps #card
+	- 兩者共享 Traefik、Ingress、Service、Pod 這段後半鏈路
+	- 正式 `443` 來自外部 client，處理真實 HTTPS 請求
+	- health check `443` 來自 Hetzner LB，目的是驗證這條 HTTPS 入口鏈是否 healthy
+
+- 為什麼 `Certificate` 會建在 `weamind` namespace？ #DevOps #card
+	- `Certificate` 是 namespaced 資源
+	- 它通常放在真正要使用這張憑證的 workload namespace
+	- 因為 Ingress 只能引用同 namespace 的 Secret，所以 `Certificate` 與 TLS Secret 也自然放在 `weamind`
