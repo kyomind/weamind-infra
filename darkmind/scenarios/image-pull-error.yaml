@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: darkmind-image-pull-error
+  namespace: darkmind
+  labels:
+    app: darkmind-image-pull-error
+    app.kubernetes.io/name: darkmind
+    app.kubernetes.io/component: image-pull-error
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: darkmind-image-pull-error
+  template:
+    metadata:
+      labels:
+        app: darkmind-image-pull-error
+        app.kubernetes.io/name: darkmind
+        app.kubernetes.io/component: image-pull-error
+    spec:
+      containers:
+        - name: app
+          image: nginx:this-tag-should-not-exist-darkmind
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: darkmind-crash-loop
+  namespace: darkmind
+  labels:
+    app: darkmind-crash-loop
+    app.kubernetes.io/name: darkmind
+    app.kubernetes.io/component: crash-loop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: darkmind-crash-loop
+  template:
+    metadata:
+      labels:
+        app: darkmind-crash-loop
+        app.kubernetes.io/name: darkmind
+        app.kubernetes.io/component: crash-loop
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              echo "darkmind crash-loop scenario: container will exit now"
+              exit 1
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+

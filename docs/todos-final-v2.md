@@ -39,8 +39,9 @@
 ### #10 建立 `Darkmind/` 練習 YAML 包
 
 - 重要性：`★★★★★`
-- 執行時機：**W6 Day 1 建立，整週使用**
+- 執行時機：**W6 前置已建立 v0；W6 Day 1 起驗證並整週使用**
 - 理由：沒有可重複 apply / delete 的固定 lab，command drill 會流於零碎。這是指令特訓能穩定運作的前提。
+- 目前狀態：2026-04-08 已建立 repo 根目錄 `darkmind/`，包含 README 規格、healthy baseline、image pull failure、crash loop、readiness failure、bad rollout 等 70 分主義場景。
 
 ### #2 刻意製造壞 Pod 排查練習
 
