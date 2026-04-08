@@ -48,6 +48,42 @@
 - 所以更準確的說法是：**兩者共享 Traefik、Ingress、Service、Pod 這段後半鏈路，但前半段的發起者、用途、請求內容與成功條件不同。**
 - 最短口述版可以講成：正式 `443` 是真實使用者 HTTPS 流量；health check `443` 是 LB 用固定條件去驗證「這條 HTTPS 入口鏈現在通不通」。
 
+### 為什麼 `Certificate` 會在 `weamind` namespace，而不是在 cert-manager 自己的 namespace？
+
+- 這個點很重要，因為它剛好能把「controller 跑在哪裡」和「它管理的資源放在哪裡」拆開來看。
+- cert-manager controller 本身通常跑在 `cert-manager` namespace，但它管理的 `Certificate` 不必也放在那裡。
+- `Certificate` 是 namespaced 資源。它通常會放在「需要使用這張憑證的工作負載所在 namespace」，因為它最終要產出的 TLS Secret 也會放在同一個 namespace。
+- 在 WeaMind 這題裡，Ingress 在 `weamind` namespace，並且引用 `k8s-kyomind-tw-tls` 這個 Secret；而 Kubernetes 的 Secret 本來就是 namespaced 資源，所以 **Ingress 只能引用同 namespace 的 Secret**。因此最自然的做法就是把 `Certificate` 也建在 `weamind`，讓它把結果寫進 `weamind/k8s-kyomind-tw-tls`。
+- 這也解釋了為什麼 `ClusterIssuer` 和 `Certificate` 的 scope 不一樣：`ClusterIssuer` 是 cluster-scoped，代表整個叢集都能引用的簽發者；`Certificate` 則是某個 namespace 內的具體憑證需求。
+
+### 我怎麼知道叢集裡有 `Certificate` 這種資源，而不是剛好猜對？
+
+- 最直接的系統性做法不是先查某個物件，而是先查「目前 API server 認得哪些 resource kinds」。
+- 這次最有用的指令是：`kubectl api-resources`。我剛剛實際查到，目前叢集裡已註冊這些 cert-manager 相關資源：`certificates`、`certificaterequests`、`orders`、`challenges`、`issuers`、`clusterissuers`。
+- 也就是說，`kubectl get certificate` 之所以成立，不是因為 kubectl 碰巧心領神會，而是因為 API server 現在真的有 `cert-manager.io/v1` 這組資源型別。
+- 若你想再往下確認它們是怎麼被加進來的，可以查 `kubectl get crd | rg 'cert-manager|acme.cert-manager'`。那會讓你看到對應的 CRD 名稱，證明這些 kinds 是透過 CRD 註冊進叢集的。
+- 若你想看單一資源的 schema 與欄位說明，還可以用 `kubectl explain certificate` 或 `kubectl explain certificate.spec`。前提同樣是：這個 kind 已被叢集註冊。
+
+### 在 Headlamp 裡，`Certificate` 大概算哪一類資源？
+
+- 概念上，它屬於 cert-manager 提供的自訂資源，不屬於像 `Secrets`、`ConfigMaps` 這種 Kubernetes 核心內建配置資源。
+- 你現在在 Headlamp 畫面裡能看到 `k8s-kyomind-tw-tls`，是因為它本質上真的是一個 core `Secret`，所以會出現在 `Configuration -> Secrets`。
+- 但 `Certificate` 本身是 CRD，**不一定會在 Headlamp 預設側邊欄直接有一個明顯入口**。根據目前查到的資料，Headlamp 有 cert-manager plugin，裝上後會在側邊欄新增一個 cert-manager 區塊，專門瀏覽這些資源。
+- 若目前這個 Headlamp 沒裝對應 plugin，你在預設 UI 裡不一定容易直接找到 `Certificate`；這不代表它不存在，而比較像是 GUI 沒幫這類 CRD 做出一個現成導航點。
+- 所以在你現在這個環境裡，最穩的策略仍是：**先用 `kubectl api-resources` / `kubectl get certificate` 確認 kind 與物件存在，再把 Headlamp 視為查看 core 資源與部分插件資源的輔助介面。**
+
+### `Certificate`、`CertificateRequest`、`Order`、`Challenge` 到底是在存什麼？它們只是流程記錄嗎？
+
+- 你的直覺有抓到一半：`Secret` 的確最接近「真正的憑證 material」，因為 `tls.crt`、`tls.key` 這些實際會被 Traefik 使用的內容最後是放在 `Secret` 裡。
+- 但 `Certificate` 不能只講成 metadata。更準確地說，它是 **期望狀態 + 結果狀態** 的資源：你在這裡宣告想要哪個 `dnsName`、找哪個 `Issuer`、最後輸出到哪個 `Secret`；同時 controller 也會在它的 status 上回報目前是否 ready、何時到期、何時要 renew。
+- `CertificateRequest`、`Order`、`Challenge` 則更接近 **workflow artifact / 中間狀態資源**。它們不是最後被 app 直接使用的資料本體，而是 cert-manager / ACME 控制流程為了把憑證簽出來，沿途建立出來的狀態物件。
+- 所以可以把它們粗分成三類：
+- `Secret`：真正的輸出物，保存實際憑證與私鑰。
+- `Certificate`：使用者宣告想要什麼憑證，以及 controller 回報目前結果如何的主資源。
+- `CertificateRequest` / `Order` / `Challenge`：為了達成這個目標而展開的流程中間資源，用來承載申請、驗證、簽發各階段的狀態。
+- 這也是 Kubernetes controller 模型很常見的樣子：**真正的 payload 往往在某個輸出資源裡，而控制流程本身則透過一串帶 `spec` / `status` 的資源物件來表達。**
+- 如果把這題壓成最短版，可以這樣講：`Secret` 比較像最終產物；`Certificate` 比較像憑證需求與結果狀態；`CertificateRequest`、`Order`、`Challenge` 則是簽發流程中的中間狀態資源，不只是被動記錄，而是 controller 真的拿來驅動與回報流程的物件。
+
 ## Flashcards
 
 <!-- 待補 -->
