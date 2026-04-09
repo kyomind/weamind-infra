@@ -121,4 +121,44 @@ systemctl daemon-reload && systemctl restart k3s-agent
 
 ## Flashcards
 
-<!-- 留空，待 QA / command 過程中回填 -->
+- `--node-ip` 和 `--flannel-iface` 在 WeaMind 裡各自修的是哪一層？ #DevOps #card
+	- `--node-ip` 修 node 對叢集宣告的位址
+	- `--flannel-iface` 修 overlay 網路要走哪張私網介面
+	- 兩者常一起下，才能把 K3s 拉回私網通道
+
+- 若 `Flannel` / overlay network 壞掉，最先壞的是哪一段？ #DevOps #card
+	- 先壞的是 cluster 內 `Pod <-> Pod` 與 `Service -> Pod` 後半鏈路
+	- 外部入口也可能失敗，但那是底層網路失敗往上層傳導
+	- 不是 `Ingress` path 規則本身先壞
+
+- `Ingress Controller` 最穩的最短定義是什麼？ #DevOps #card
+	- 它把 Kubernetes `Ingress` 規則變成真正可用的 `L7 HTTP/HTTPS` 入口 routing
+	- 會依 `host`、`path`、TLS 與相關規則把流量送到對應 `Service`
+
+- 為什麼 WeaMind 目前以 `Traefik` 為主，而不是另外裝 `Nginx Ingress Controller`？ #DevOps #card
+	- repo 使用 `K3s`，而 `Traefik` 是內建入口方案
+	- 對單人維運的小型叢集來說更務實，整合成本也更低
+
+- 單機版 `Nginx reverse proxy` 和 Kubernetes `Ingress Controller` 的核心差別是什麼？ #DevOps #card
+	- 前者是手動維護固定代理設定
+	- 後者是 controller，會 watch `Ingress`、`Service`、`Endpoints` 並動態更新入口規則
+	- K8s 裡後端抽象層通常是 `Service`
+
+- `ingress-nginx` retirement 和 `Ingress` API 是同一件事嗎？ #DevOps #card
+	- 不是
+	- `Ingress` 是 Kubernetes API 資源
+	- `ingress-nginx` 是實作這個 API 的 controller 專案
+
+- 為什麼說 `Secret` 不是加密？ #DevOps #card
+	- `Secret.data` 的 `base64` 只是表示形式，不是安全機制
+	- 沒有額外的 `etcd encryption`、`RBAC` 與權限控制，不能直接等於安全
+
+- `ConfigMap` 和 `Secret` 在 Kubernetes 裡的本質差別是什麼？ #DevOps #card
+	- 兩者都屬於配置型 key-value 資源
+	- `Secret` 是被系統以敏感資料語意處理的配置資源 kind
+	- 因此更適合承載密碼、token、憑證
+
+- WeaMind 目前判斷某個值該放 `ConfigMap` 還是 `Secret` 的標準是什麼？ #DevOps #card
+	- 看外洩後會不會直接形成授權、冒用或控制風險
+	- `POSTGRES_HOST`、`REDIS_URL`、`BASE_URL` 放 `ConfigMap`
+	- `POSTGRES_PASSWORD`、`LINE_CHANNEL_SECRET`、`LINE_CHANNEL_ACCESS_TOKEN` 放 `Secret`
