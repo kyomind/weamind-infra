@@ -62,21 +62,44 @@
 
 ### 今日學到什麼
 
-- 待填
+- 這次 prework 聚焦在補齊 Kubernetes networking 的兩個基礎元件：`CoreDNS` 與 `Flannel`，並把它們和 `Service`、`kube-proxy`、`Ingress`、外部 DNS 之間的邊界重新切清楚。
+- 我更清楚 `CoreDNS` 在 Kubernetes 裡主要解的是 cluster 內部的 service discovery，也就是把 service name 解析成 `ClusterIP`；它不負責 `Pod IP`、不做 load balancing，也不負責像 `k8s.kyomind.tw` 這類外部 domain。
+- 我把 `Service` 的角色重新講清楚了：它比較像一個穩定入口與抽象層，本質上是固定的 `ClusterIP` 加上一組對到後端 `Pods` 的 endpoints，而不是 Pod 本身。
+- 我也補起了 `kube-proxy` 在這條鏈裡的角色：流量打到 `ClusterIP` 之後，真正負責把流量轉到某個後端 Pod 的，是 `kube-proxy` 而不是 `CoreDNS`。
+- 我對 `Flannel` 的定位也更穩了：它是 K3s 目前用來解 Pod 網路連通性的 CNI 元件，重點不是「流量去哪一個 Pod」，而是「不同 node 上的 Pods 到底能不能互相通」。
+- 今天另一個重要收穫是把 `overlay network` 與 `underlay network` 分開理解：Hetzner private network 是 underlay，`Flannel` 透過 `VXLAN` 在它上面建立 Pod 的 overlay 網路。
+- 我也正式把 `Pod IP` 與 `ClusterIP` 的差異切清楚：`Pod IP` 是真實 endpoint，`ClusterIP` 是虛擬入口；因此更完整的最小流量鏈是 `Pod -> ClusterIP -> kube-proxy -> Pod`。
+- 我知道 Pod 的確可以直接打另一個 Pod IP，但這樣會失去穩定抽象、load balancing 與 endpoint 可替換性，因此實務上通常不把它當成主要介面。
+- 我也釐清了 `CoreDNS` 和外部 DNS 的分工：`CoreDNS` 管 cluster 內的 service name；像 `Cloudflare` 這類外部 DNS 才負責公網 domain。當 Pod 查外部 domain 時，`CoreDNS` 才是扮演 forwarder，而不是 authoritative source。
+- 我另外補上 K3s 常見預設網段的概念：`Pod CIDR` 常見是 `10.42.0.0/16`，`Service CIDR` 常見是 `10.43.0.0/16`，但這些是發行版預設，不是 Kubernetes 規格強制。
+- 在 WeaMind 脈絡下，我更清楚為什麼 `CoreDNS` 看起來比較不顯眼：因為這個專案裡 app 連 PostgreSQL / Redis 走的是 VM 私網 IP，不是 cluster 內的 service name；反過來，`Flannel` 與私網介面設定則直接影響 Pod 跨 node 通訊穩定性，因此更接近這個專案的關鍵基礎能力。
+- 今天也額外建立了一條很實用的 debug 分類法：name 解析失敗先懷疑 `CoreDNS`，有 IP 但 timeout 先懷疑 `Flannel` / 網路層，打 `ClusterIP` 不對再看 `Service` / `endpoints` / `kube-proxy`，外部打不進來才優先查 `Ingress` / `LB`。
 
 ### 已能白話講清楚什麼
 
-- 待填
+- `CoreDNS` 是 Kubernetes 內部 DNS，只負責把 service name 解析成 `ClusterIP`，不負責流量分配，也不是外部 DNS 代管服務。
+- `Service` 提供的是穩定入口與抽象層，真正把流量轉到某個 Pod 的通常是 `kube-proxy`；所以 Kubernetes networking 不能只講 DNS 或只講 Service。
+- `Flannel` 是負責 Pod 網路連通性的 CNI，透過 `VXLAN` 這類封裝方式在 node 的真實網路之上建立 overlay network，讓不同 node 上的 Pods 可以互通。
+- `overlay network` 不是額外一張真實網卡，而是邏輯網路；底下真正承載封包的仍是 Hetzner private network 這類 underlay。
+- 若用一句話壓縮今天的收穫，我已經能講成：Kubernetes networking 的最小骨架是 DNS 找入口、Service 做抽象、`kube-proxy` 做分流、CNI 負責連通。
 
 ### 目前還卡住什麼
 
-- 待填
+- `kube-proxy` 更底層的實作方式，例如 `iptables` 與 `IPVS` 的差異，現在還沒有正式展開。
+- `CoreDNS` 自己的設定檔、`ConfigMap` 與 upstream forwarding 細節，目前只建立了功能定位，還沒進入實作層。
+- `Flannel` 在 Linux 上實際的 routing / interface 呈現，例如 `flannel.1` 與封包路徑，還值得之後補一輪。
+- `VXLAN` 封包更底層地怎麼進出 Linux network stack，目前知道概念，但還不算真正掌握。
+- `NetworkPolicy` 會怎麼影響 Pod-to-Pod 流量，今天還沒有一起展開。
 
 ### 今日最重要的觀念
 
-- 待填
+- `CoreDNS` 不等於外部 DNS；它主要管理 cluster 內 `.svc.cluster.local` 這類 service discovery。
+- `Service` 不是 Pod，本質是穩定入口與抽象層；`ClusterIP` 是虛擬入口，不是後端實體 endpoint。
+- 真正做 `ClusterIP -> Pod` 分流的是 `kube-proxy`，不是 `CoreDNS`。
+- `Flannel` 解的是 Pod 網路「能不能通」的問題，不是 Ingress routing，也不是決定哪個 Pod 接流量。
+- `overlay network` 是透過封裝建立在 underlay 之上的邏輯網路，不是另一套獨立實體網路。
 
 ### 帶回 VS Code 的問題
 
-1.
-2.
+1. 在 WeaMind 目前 repo 與既有 debug 故事裡，`Service`、`selector`、`endpoints`、`Pod IP` 這四者最穩的對照方式是什麼？哪些檔案或 `kubectl` 觀察點最能直接把它們串起來？
+2. 在 WeaMind 這種 app 進 K8s、PostgreSQL / Redis 留在 VM 的架構裡，什麼情況更該先想到 `CoreDNS` 問題，什麼情況更像 `Flannel` / 私網介面或 node-to-node 網路問題？
