@@ -101,4 +101,42 @@
 
 ## Flashcards
 
-<!-- 初始化時保持空白；若需要佔位，可只保留這類特殊註記。等 lesson 過程中真的整理出卡片素材後再填。 -->
+- `kubectl get` 在 Day 1 排查鏈裡主要是在做什麼？ #DevOps #card
+	- 看第一層高層狀態摘要
+	- 先回答哪個 resource 看起來不對勁
+	- 適合快速縮圈，不適合直接做最後定案
+
+- `kubectl describe` 和 `kubectl get events --sort-by=.lastTimestamp` 的分工差在哪裡？ #DevOps #card
+	- `describe` 看單一 resource 的展開式 Kubernetes 視角
+	- `events` 看整個 namespace 的事件流與時間序列
+	- 一個偏單點深挖，一個偏整體時序
+
+- 為什麼 Day 1 要先建立健康基準，再套壞情境？ #DevOps #card
+	- 先知道正常長什麼樣
+	- 之後才看得出哪些欄位和訊號是異常偏離
+	- 健康基準是比較座標系，不是多餘前置作業
+
+- Image pull 類問題可以怎麼快速判讀？ #DevOps #card
+	- `get` 先看到 `ImagePullBackOff`
+	- `describe` 再看 `State=Waiting`、`Reason=ImagePullBackOff`、`Restart Count=0`
+	- `events` 最後補完整因果鏈
+
+- 為什麼 `Restart Count=0` 在 image pull 類問題裡很有價值？ #DevOps #card
+	- 代表 container 還沒成功開始執行
+	- 問題卡在 image pull / 啟動前段
+	- 可用來排除「其實是 app 啟動後 crash」這條支線
+
+- 多 replica 時，label 和 Pod 名稱通常怎麼搭配用？ #DevOps #card
+	- 先用 label 配 `get` 找集合與異常摘要
+	- 再挑單一 Pod 名稱做 `describe`
+	- label 適合穩定鎖範圍，Pod 名稱適合精看單點
+
+- Kubernetes `Event` 為什麼不是單純錯誤清單？ #DevOps #card
+	- `Event` 本身是 resource kind
+	- 它會同時記正常與異常流程
+	- debug 時只是特別關注 warning 與 failure 類事件
+
+- `kubectl delete namespace darkmind` 的效果是什麼？ #DevOps #card
+	- 會啟動整個 namespace 底下所有 namespaced resources 的刪除流程
+	- 適合拿來當 lab 的固定收尾
+	- 在 production namespace 上要非常小心
