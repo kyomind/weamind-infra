@@ -41,30 +41,51 @@ kubectl delete namespace darkmind
 ### 指令
 
 ```bash
-
+kubectl apply -f darkmind/namespace.yaml
+kubectl apply -f darkmind/healthy.yaml
+kubectl get all -n darkmind
 ```
 
 ### 關鍵輸出
 
 ```bash
+namespace/darkmind created
+deployment.apps/darkmind-healthy created
+service/darkmind-healthy created
 
+NAME                                    READY   STATUS              RESTARTS   AGE
+pod/darkmind-healthy-85c6dcf689-rpn7p   0/1     ContainerCreating   0          3s
+
+NAME                       TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+service/darkmind-healthy   ClusterIP   10.43.104.37   <none>        80/TCP    2s
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/darkmind-healthy   0/1     1            0           6s
+
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/darkmind-healthy-85c6dcf689   1         1         0       6s
 ```
 
 ### 使用者選擇理由
 
-- 待補
+- 使用者選第一組指令，理由是這是建立健康基準的正確起手式：先建立獨立 `namespace`，再套用 `darkmind/healthy.yaml` 產生健康的 `Deployment` 與 `Service`，最後用 `kubectl get all -n darkmind` 觀察這個 namespace 目前有哪些物件。
+- 使用者也正確辨認出這一輪主要想看到的是：`Pod`、`Service`、`Deployment`、`ReplicaSet` 是否已經在 `darkmind` namespace 內出現。
 
 ### AI 判讀與修正
 
-- 待補
+- 這個選擇是對的，因為 Day 1 的第一步不是直接看壞情境，而是先把 **健康基準建立起來**。這組指令剛好完成三件事：建立隔離環境、建立健康工作負載、用 `get all` 看第一眼資源摘要。
+- 你對資源種類的判讀也是對的：這一輪已經看到 `Service`、`Deployment`、`ReplicaSet` 與對應的 `Pod` 都出現了，這代表 `darkmind/healthy.yaml` 已經被成功套用。要補正一個小地方：這裡不是透過 repo 裡的 `manifests/deployment.yaml` 建的，而是透過 `darkmind/healthy.yaml` 裡面的 `Deployment` resource 建出來的。
+- 另外一個要收得更準的地方是：你把 `0/1` 和 `ContainerCreating` 讀成「not ready」，這個方向不算錯，但 Day 1 這裡更準確的判讀應是 **它還在啟動中的過渡狀態**，不一定代表異常。因為你是在剛 apply 完後立刻觀察，`AGE` 只有幾秒，這時 `Pod` 還在 `ContainerCreating`、`Deployment` 還沒 `Available`，是很常見的正常暫態。
+- 這也正是健康基準有價值的地方：你不只是在看「最後成功的狀態」，也會看到 **正常系統從剛建立到 Ready 的過程**。之後若某個 Pod 長時間卡在 `ContainerCreating`、`ImagePullBackOff`、`CrashLoopBackOff`，你才知道那不是正常暫態，而是已經偏離基準。
+- 所以這一輪的真正收穫不是「apply 成功了」而已，而是：`kubectl get all -n darkmind` 讓你第一眼看到 namespace 裡的核心資源是否都已出現，以及它們目前是在正常啟動過程，還是已經露出異常訊號。
 
 ### 一句話收斂
 
-- 待補
+- 建立健康基準時，先建 `namespace`、再套 `healthy.yaml`、最後用 `kubectl get all -n darkmind` 看第一眼資源摘要；剛建立幾秒內出現 `ContainerCreating` 這種狀態，通常先判讀成正常啟動中的暫態。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
