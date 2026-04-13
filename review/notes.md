@@ -101,3 +101,23 @@ ClusterIP -> Service networking / kube-proxy -> EndpointSlice / Pod IP:port
 對外講解時可以簡化成「Traefik 依 Ingress 規則把流量送到 `weamind-line-bot:80`」，但深入一層要知道：**CoreDNS 主要服務的是叢集內 DNS 解析**，不是 Ingress controller 唯一或必然的查找機制。
 
 面試收斂版可以講成：CoreDNS 讓 `weamind-line-bot.weamind.svc.cluster.local` 這種 Service name 在 cluster 內可解析；Endpoints / EndpointSlice 則描述這個 Service 後面目前有哪些 Ready Pod。CoreDNS 管名字解析，Endpoints 管後端清單，真正導流到 Pod 則是 Service networking 這層在做。
+
+## 為什麼用 EndpointSlice 取代 Endpoints 是合理的？
+
+從這次輸出可以看到，舊的 `Endpoints` 和新的 `EndpointSlice` 描述的是同一個 Service 後面的同一批 Pod：
+
+```bash
+Endpoints:
+weamind-line-bot   10.42.1.20:8000,10.42.2.19:8000
+
+EndpointSlice:
+weamind-line-bot-vqt42   IPv4   8000   10.42.1.20,10.42.2.19
+```
+
+所以在 WeaMind 目前只有兩個後端 Pod 的情境下，看起來兩者資訊差不多。但 Kubernetes 會把 `v1 Endpoints` 標成 deprecated，主因不是小型服務不能用，而是 `Endpoints` 這種**單一大物件的模型在大型服務上不夠好**。
+
+傳統 `Endpoints` 會把同一個 Service **後面的所有後端塞在同一個物件裡**。當後端 Pod 很多、狀態常改變時，**這個物件會變得很大**，而且每次更新都容易造成較大的 API server / watch / network 負擔。`EndpointSlice` 則把後端切成多個 slice，每個 slice 只承載一部分 endpoints；後端變動時，不一定要更新整個巨大清單。
+
+`EndpointSlice` 也比較適合承載更多結構化資訊，例如 `addressType` 顯示這批 endpoint 是 `IPv4`，port 欄位獨立呈現 `8000`，也能支援更多拓撲、條件與未來擴充資訊。這讓 controller、Ingress controller、Service networking 元件更容易用一致且可擴展的方式追蹤後端。
+
+因此這題可以收斂成：`Endpoints` 和 `EndpointSlice` 都是在描述 Service 後端，但 `EndpointSlice` 把「一個 Service 後面可能有大量、動態變化的 Pod」這件事切成更可擴展的資料模型。對 WeaMind 這種兩個 Pod 的服務，肉眼看差異不大；對 Kubernetes 平台設計來說，EndpointSlice 更適合大規模、頻繁更新與未來擴充，所以取代 Endpoints 是合理的。
