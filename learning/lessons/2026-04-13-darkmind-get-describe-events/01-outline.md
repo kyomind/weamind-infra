@@ -26,7 +26,7 @@
 ## 建議學習順序
 
 1. 先做 `02-qa.md` 的 3 題短 QA，對齊今天要驗證的層次與第一步判斷原則。
-2. 再做 `03-command.md`，以 5 輪微情境完成 Day 1 的 setup、第一層觀察、`describe` 證據、`events` 時間序列與 cleanup。
+2. 再做 `03-command.md`，以 5 輪微情境完成 Day 1 的健康基準建立、錯誤情境套用、第一層 `get` 觀察、`describe` 證據與 `events` 時間序列。
 3. 若 command 過程中冒出延伸問題，先記到 `05-note.md`，不要把 QA 或 command 拉太寬。
 4. 最後回到 `04-report.md`，收斂今天真正練熟的觀察套路。
 
@@ -34,7 +34,7 @@
 
 - 今天建立 `03-command.md`。
 - 這不是 command 先於 QA 的例外日；仍先做短 QA，再進 5 輪 command drill。
-- 今天的 5 輪重點是固定套路，不追求情境廣度：建立基準、用 `get` 找第一層線索、用 `describe` 看 Pod 細節、用 `events` 補時間序列、最後清理 lab。
+- 今天的 5 輪重點是固定套路，不追求情境廣度：建立基準、套用錯誤情境、用 `get` 找第一層線索、用 `describe` 看 Pod 細節、用 `events` 補時間序列。cleanup 改為 command 結束後的固定收尾，不另占主要判讀輪次。
 
 ## 文件分工
 

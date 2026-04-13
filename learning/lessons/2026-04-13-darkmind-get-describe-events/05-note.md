@@ -52,6 +52,41 @@
 - 可以先把它們理解成：`name` 表示這整組東西屬於哪個應用或 lab，`component` 表示它在這個應用裡扮演哪個角色或情境。
 - WeaMind 正式 manifests 目前沒有全面採這套寫法也完全正常，因為這不是必填欄位；Darkmind 這裡多放，是為了讓練習素材的分類語意更清楚，也比較接近常見的 Kubernetes 標記慣例。
 
+### 用 label 做 `describe` 的實務理由
+
+- 在這次情境裡，用 Pod 名稱和用 `-l app=darkmind-image-pull-error` 看到的內容可以一樣，但 **label 寫法通常更穩**。
+- 原因是 Deployment 管理下的 Pod 可能被重建，名稱會跟著變；若把排查流程綁死在某個具體 Pod 名稱，下一次重建後就可能失效。
+- 用 label 的前提是：你知道這組 label 的語意穩定，而且當下不會同時選到一大批不想看的 Pod。對這種單情境練習 lab 來說，用 label 很合理。
+
+### 多 replica 時，label 和 Pod 名稱怎麼取捨
+
+- 你剛剛指出的問題是對的：如果同一組 label 背後有 `2`、`3`、`4` 個 replica，`describe pod -l ...` 可能會一次列出多個 Pod 的內容。
+- 這時不代表 label 寫法錯了，而是代表 **label 比較適合做第一層鎖定範圍**；若你下一步只想精看某一個 replica，通常就要先 `kubectl get pods -l ...` 找出目標，再改用具體 Pod 名稱來看。
+- 也就是說，實務上常是兩段式：先用 label 找集合，再用 Pod 名稱看單點。
+- 若你能用更窄的 label 把範圍縮到單一 Pod，當然也可以；但若穩定 selector 本來就對應整個 replica 集合，那最後精看某一顆 Pod 時，用 Pod 名稱是正常做法。
+
+### Image pull 類 `describe` 的看點
+
+- `Status`: 先看 Pod 是不是還停在 `Pending`，這通常表示它還沒進到穩定執行階段。
+- `State` / `Reason`: 這裡若看到 container `State=Waiting` 且 `Reason=ImagePullBackOff`，表示它卡在拉 image 或 image 準備前段。
+- `Ready` / `ContainersReady`: 若都是 `False`，代表它當然還不能提供服務，但這只是結果，不是根因。
+- `Restart Count`: 這裡若仍是 `0`，很有價值，因為它暗示問題不是 container 啟動後反覆 crash，而是根本還沒成功開始執行。
+- `Image`: 要確認實際 image 引用是否就是你懷疑的那個值；這次直接看到 `nginx:this-tag-should-not-exist-darkmind`，就已經很有訊號。
+- `Events`: image pull 類問題常會在這裡看到完整因果鏈，例如 `Pulling` → `Failed to pull image ... not found` → `ErrImagePull` → `BackOff` / `ImagePullBackOff`。
+- 一句話口訣：image pull 類 `describe` 先看 `Reason`，再看 `Events`，同時用 `Restart Count` 幫自己排除「其實是 app crash」這條支線。
+
+### `kubectl get events` 太多時怎麼看
+
+- `kubectl get events` 預設不會自動只顯示最後幾行；它通常會把 API 目前回傳的 event 列表整批印出來。真正限制它的，常常是 **event 本身只保留短時間**，而不是 CLI 自動幫你 tail。
+- Kubernetes `Event` 通常不是長期保存資料；很多叢集的 event TTL 都偏短，常見是大約 `1` 小時左右，實際仍看 API server 設定。
+- 若輸出太多，實務上通常優先先用 `kubectl` 本身的篩選能力縮小範圍，再視需要接 shell pipe 做最後整理。
+- 常見的第一層篩法包括：先鎖 namespace、再加 `--field-selector`，例如 `type=Warning`、`involvedObject.kind=Pod`、`involvedObject.name=<pod-name>`。
+- 當 `kubectl` 端已經把範圍縮小後，若你只是想快速看最後幾行或找特定關鍵字，再接 `tail`、`grep` 這類 pipe 就很合理。
+- 一句話原則：**先盡量用 Kubernetes 自己的欄位與 selector 縮範圍，再用 shell pipe 做最後整理。**
+- 比如`kubectl get events -n darkmind --sort-by=.lastTimestamp | tail -n 20`或
+`kubectl get events -n darkmind --sort-by=.lastTimestamp | grep ImagePull`
+
+
 ## Flashcards
 
 <!-- 初始化時保持空白；若需要佔位，可只保留這類特殊註記。等 lesson 過程中真的整理出卡片素材後再填。 -->
