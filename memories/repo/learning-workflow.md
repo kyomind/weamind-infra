@@ -1,1 +1,4 @@
 - `learning/lessons/README.md` 只放常態 lesson 規則；`command-heavy-workshop.md` 承接 command-heavy 的按需例外規格。
+- command drill 的價值判準優先看「代表性」與「判讀閉環」，不優先看指令總數。
+- 輪次增加(command-heavy)可以約比平常多 50%，但每一輪都應有**可獨立描述的切入視角**，避免只是換指令重複看同一件事。
+- 設計 command 題目時，優先檢查：每輪是否**對應不同觀察目的**、是否能支撐下一步縮圈、後半段判讀品質是否下降。
