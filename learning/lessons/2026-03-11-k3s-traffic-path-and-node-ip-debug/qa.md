@@ -1,5 +1,5 @@
 # 2026-03-11 K3s Traffic Path And Node IP Debug QA
-
+複習：2026-04-13
 > 原則：每題都先回到 repo 檔案或既有架構文件，不直接背名詞。
 > 這份 QA 的重點是流量路徑、責任邊界與 debug sequence，不是一般 Kubernetes 教科書。
 
@@ -19,7 +19,7 @@
 ### 使用者回答摘要
 
 - 使用者先從 LINE Platform 會把 webhook 請求送到 `k8s.kyomind.tw` 開始描述。
-- 使用者指出請求會先經過 DNS，再到 Hetzner Load Balancer，之後再進入 Traefik。
+- 使用者指出請求會先經過 DNS(Cloudflare A record 指向 Hetzner LB **公網 IP**)，再到 Hetzner Load Balancer，之後再進入 Traefik。
 - 使用者也有抓到 Ingress 規則會依照 host 與 backend service，把流量送到 `weamind-line-bot` Service 的 `80` port。
 - 使用者接著對照 `manifests/service.yaml`，指出 Service 是 `ClusterIP`，會透過 selector 找到 `app: weamind` 的 Pods，並把 `80` 轉到 Pod 的 `8000`。
 - 使用者對 Traefik 在 K3s 內部的實際暴露方式還不夠確定，一度推測它可能以 NodePort Service 形式存在，且兩個 worker 節點上各有一個 Traefik Pod。
@@ -31,8 +31,8 @@
 - 第二個要修正的是 Traefik 這段。以目前 repo 內已確認的資料，我們可以穩定講的是：Hetzner LB 做 TCP 443 passthrough，流量進到 K3s 內的 Traefik，由 Traefik 做 TLS termination，再依 Ingress 規則把流量送到 `weamind-line-bot` Service。這點可由 [README.md](README.md#L84) 與 [docs/WeaMind Infra核心架構.md](docs/WeaMind%20Infra核心架構.md#L12) 支撐。
 - 但「Traefik 一定是 NodePort Service 形式存在」、「一定在兩個 worker 各有一個 Pod」這兩件事，這個 repo 目前沒有直接證據可讓我們講得這麼死，所以這裡要先保守，不要把推測說成已驗證事實。
 - Ingress 這段要再修精準一點：[manifests/ingress.yaml](manifests/ingress.yaml#L1) 裡的 host 是 `k8s.kyomind.tw`，backend service 是 `weamind-line-bot`，port 是 `80`。
-- Service 這段方向正確，但更準確的說法是：Service 不會去看「來源是不是 80 才能處理」，而是它自己對外提供一個 cluster 內的 `80` port，然後把送到這個 service port 的流量轉到 targetPort `8000`，也就是 Pod container 的 `8000`。這點可由 [manifests/service.yaml](manifests/service.yaml#L1) 與 [manifests/deployment.yaml](manifests/deployment.yaml#L1) 對起來。
-- 這題目前可以先收斂成一句比較穩的說法：LINE Platform 依 webhook URL 把請求送到 `k8s.kyomind.tw`，DNS 把網域解析到 Hetzner LB 公網 IP，LB 將 443/TCP 流量 passthrough 到 K3s 內的 Traefik，Traefik 在叢集內終止 TLS 並依 Ingress 規則把流量送到 `weamind-line-bot:80`，Service 再依 selector 把流量轉到 `app: weamind` 的 Pod `8000` port。
+- Service 這段方向正確，但更準確的說法是：Service 不會去看「來源是不是 80 才能處理」，而是它**自己對外提供一個 cluster 內的 `80` port**，然後把送到這個 service port 的流量轉到 targetPort `8000`，也就是 Pod container 的 `8000`。這點可由 [manifests/service.yaml](manifests/service.yaml#L1) 與 [manifests/deployment.yaml](manifests/deployment.yaml#L1) 對起來。
+- 這題目前可以先收斂成一句比較穩的說法：LINE Platform 依 webhook URL 把請求送到 `k8s.kyomind.tw`，DNS 把網域解析到 Hetzner LB 公網 IP，LB 將 443/TCP 流量 passthrough 到 K3s 內的 Traefik，Traefik 在叢集內終止 TLS 並**依 Ingress 規則把流量送到 `weamind-line-bot:80`**，Service 再依 selector 把流量轉到 `app: weamind` 的 Pod `8000` port。
 
 ### 狀態
 

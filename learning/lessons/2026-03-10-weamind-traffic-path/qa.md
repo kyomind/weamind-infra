@@ -1,5 +1,5 @@
 # 2026-03-10 WeaMind Traffic Path QA
-
+複習：2026-04-13
 > 原則：每題都要小，優先回到 repo 看 YAML 或文件再回答。
 > 這份檔案不是標準答案集，而是這次 internal lesson 的互動紀錄。
 
