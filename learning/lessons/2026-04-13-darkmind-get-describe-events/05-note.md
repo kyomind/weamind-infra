@@ -64,6 +64,9 @@
 - 這時不代表 label 寫法錯了，而是代表 **label 比較適合做第一層鎖定範圍**；若你下一步只想精看某一個 replica，通常就要先 `kubectl get pods -l ...` 找出目標，再改用具體 Pod 名稱來看。
 - 也就是說，實務上常是兩段式：先用 label 找集合，再用 Pod 名稱看單點。
 - 若你能用更窄的 label 把範圍縮到單一 Pod，當然也可以；但若穩定 selector 本來就對應整個 replica 集合，那最後精看某一顆 Pod 時，用 Pod 名稱是正常做法。
+- 一個小修正是：通常**不會先 `describe` 整組 replica 再決定要看哪一顆**。更常見的做法仍是先 `kubectl get pods -l ...`，因為你選 Pod 的第一輪依據通常只需要高層資訊，例如 `READY`、`STATUS`、`RESTARTS`、`AGE`、`NODE`。
+- 若 `kubectl get pods` 的摘要已足夠辨認哪顆最異常，就直接用那顆 Pod 名稱做 `describe`。只有在 summary 還不夠、而且 replica 數量仍然很小時，才可能接受一次看多顆 Pod 的 `describe`；但那不是預設最佳路徑。
+- 一句話原則：**選目標 Pod 先靠 `get`，深挖單一 Pod 再靠 `describe`。**
 
 ### Image pull 類 `describe` 的看點
 
@@ -85,6 +88,15 @@
 - 一句話原則：**先盡量用 Kubernetes 自己的欄位與 selector 縮範圍，再用 shell pipe 做最後整理。**
 - 比如`kubectl get events -n darkmind --sort-by=.lastTimestamp | tail -n 20`或
 `kubectl get events -n darkmind --sort-by=.lastTimestamp | grep ImagePull`
+
+### `kubectl delete namespace darkmind` 會做什麼
+
+- 這個指令不是只刪掉 `Namespace` 物件名字本身，而是會啟動 **整個 namespace 及其底下所有 namespaced resources 的刪除流程**。
+- 以 Day 1 這個情境來說，執行後會連同 `darkmind` 裡的 `Deployment`、`ReplicaSet`、`Pod`、`Service`、以及同 namespace 下的其他 namespaced 物件一起清掉。
+- 這就是為什麼它很適合拿來當 lab 的固定收尾：不用一個一個刪 `Deployment`、`Pod`、`Service`，而是整包回到乾淨狀態。
+- 但也因為它是整包刪除，所以它的效果比 `kubectl delete pod ...` 或 `kubectl delete deploy ...` 大很多；在 production namespace 上必須非常小心。
+- 實務上執行後常會先看到 namespace 進入 `Terminating`，代表 Kubernetes 正在把裡面的資源逐步清掉，不一定是瞬間完全消失。
+- 一句話口訣：**`kubectl delete namespace <name>` 是整個工作區打包清空，不是單刪一個資源。**
 
 
 ## Flashcards
