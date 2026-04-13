@@ -1,0 +1,1 @@
+- `learning/lessons/README.md` 只放常態 lesson 規則；`command-heavy-workshop.md` 承接 command-heavy 的按需例外規格。
