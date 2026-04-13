@@ -78,3 +78,26 @@ weamind-line-bot.weamind.svc.cluster.local
 所以 `metadata.name: weamind-line-bot` **會影響 DNS 的第一段**，也就是 Service name；`metadata.namespace: weamind` 會影響第二段。這就是為什麼 Ingress backend 可以寫 `name: weamind-line-bot`，⭐️而**叢集內(任一 node)測試時**也可以打 `http://weamind-line-bot/health`：它們都在指向同一個 Service 入口。
 
 比較精準的講法是：我們沒有在 Service 裡另外宣告 DNS 記錄，但我們宣告了 Service 的 name 和 namespace；Kubernetes/CoreDNS 會**根據這兩個值產生可解析的 cluster 內 DNS 名稱**。
+
+## Service、Endpoints 和 CoreDNS 的關係是什麼？
+
+CoreDNS 和前面兩則 note 的關係可以切成兩段看。
+
+第一段是 Service name 的解析。當叢集內某個 Pod 打 `http://weamind-line-bot/health`，或查完整名稱 `weamind-line-bot.weamind.svc.cluster.local` 時，CoreDNS 負責回答：「這個 Service name 對應到哪個 cluster 內位址？」以 WeaMind 這種一般 `ClusterIP` Service 來說，CoreDNS 通常解析出來的是 **Service 的 ClusterIP**，而不是直接回 Pod IP。
+
+第二段是流量如何到 Pod。當 client 已經拿到 Service 的 ClusterIP，或請求已經被導到這個 Service 入口後，真正把流量分到後端 Pod 的不是 CoreDNS，而是 Kubernetes Service networking 這一層，常見會牽涉到 kube-proxy / iptables / IPVS，以及 Endpoints 或 EndpointSlice 裡記錄的後端 Pod IP / port。
+
+所以 CoreDNS **不負責「產生 Endpoints」**。Endpoints 是 Kubernetes 根據 Service selector、Pod labels、Pod readiness 等狀態整理出的後端清單。CoreDNS 主要負責「**讓 Service 的名字可被解析**」。兩者都和 Service 有關，但責任不同：
+
+```bash
+Service name -> CoreDNS -> ClusterIP
+ClusterIP -> Service networking / kube-proxy -> EndpointSlice / Pod IP:port
+```
+
+另外要注意，Ingress 裡的 `backend.service.name: weamind-line-bot` 比較像 Kubernetes 物件參照，不一定代表 Traefik 是靠一般 DNS lookup 去找 `weamind-line-bot`。
+
+⭐️Traefik 作為 Ingress controller 通常會 **watch Kubernetes API**，讀到 Ingress、Service、Endpoints / EndpointSlice 後**建立自己的路由設定**。
+
+對外講解時可以簡化成「Traefik 依 Ingress 規則把流量送到 `weamind-line-bot:80`」，但深入一層要知道：**CoreDNS 主要服務的是叢集內 DNS 解析**，不是 Ingress controller 唯一或必然的查找機制。
+
+面試收斂版可以講成：CoreDNS 讓 `weamind-line-bot.weamind.svc.cluster.local` 這種 Service name 在 cluster 內可解析；Endpoints / EndpointSlice 則描述這個 Service 後面目前有哪些 Ready Pod。CoreDNS 管名字解析，Endpoints 管後端清單，真正導流到 Pod 則是 Service networking 這層在做。
