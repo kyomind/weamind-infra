@@ -22,7 +22,7 @@
 ### AI 修正與補充
 
 - 核心方向正確，但更準確的說法是：Service 不是只對 Traefik 暴露，而是作為 cluster 內的穩定入口。
-- 在 WeaMind 這條外部流量路徑裡，外部入口已由 Hetzner Load Balancer 與 Traefik 承接，因此 app Service 不需要直接對 Internet 暴露。
+- 在 WeaMind 這條外部流量路徑裡，外部入口已由 Hetzner Load Balancer 與 Traefik 承接，因此 **app Service 不需要直接對 Internet 暴露**。
 
 ### 狀態
 
@@ -43,12 +43,12 @@
 
 ### 使用者回答摘要
 
-- 使用者指出 Pod 是動態的，會因為擴縮容、更新或重建而改變，因此不能把它當成穩定目標。
+- 使用者指出 **Pod 是動態的**，會因為擴縮容、更新或重建而改變，因此不能把它當成穩定目標。
 
 ### AI 修正與補充
 
 - 這個回答正確。
-- 補充重點是：Service 提供穩定抽象層，讓前面的 Ingress Controller 不需要知道每個 Pod 的即時變動，只要把流量送到 Service 即可。
+- 補充重點是：Service 提供**穩定抽象層**，讓前面的 Ingress Controller **不需要知道每個 Pod 的即時變動**，只要把流量送到 Service 即可。
 
 ### 狀態
 
@@ -75,7 +75,7 @@
 ### AI 修正與補充
 
 - 回答正確。
-- 補充邊界：Deployment 負責維持 Pod 副本數；Service 負責找到符合 selector 的 Pods 並把流量分配過去。
+- 補充邊界：Deployment 負責維持 Pod 副本數；Service 負責**找到符合 selector 的 Pods** 並把流量分配過去。
 
 ### 狀態
 
@@ -87,7 +87,7 @@
 
 ### 題目
 
-如果今天 `weamind-line-bot` Service 的 Endpoints 是空的，在這個 repo 裡第一個要對照哪兩個地方？
+如果今天 `weamind-line-bot` Service 的 **Endpoints 是空的**，在這個 repo 裡第一個要對照哪兩個地方？
 
 ### 對照檔案
 
