@@ -74,12 +74,32 @@ kubectl describe ingress -n weamind
 
 新問題一律追加在 `review/notes.md` 檔案末尾。
 
+寫入前，先確認 `review/notes.md` 是否存在。若不存在，AI 應依照「Notes 檔案生命週期」建立新的目前筆記檔，再追加本次問答。
+
 如果使用者追問同一個問題，可以選擇：
 
 - 在原本 H2 底下補一段「補充」
 - 或另開一個新的 H2，標題清楚表示它是延伸問題
 
 判斷標準是：如果追問仍在同一個概念內，補在原題；如果已經換成新的判斷軸或 debug 情境，另開新題。
+
+## Notes 檔案生命週期
+
+`review/notes.md` 永遠代表目前正在累積的複習筆記。
+
+如果 AI 準備寫入時發現 `review/notes.md` 不存在，應先檢查 `review/` 目錄是否存在：
+
+- 若 `review/` 不存在，先建立 `review/`
+- 若 `review/notes.md` 不存在，建立新的 `review/notes.md`
+- 新檔案預設初始化為：
+
+```md
+# Lesson 複習筆記
+
+<!-- Review mode notes will be appended here. Each H2 is one user question. -->
+```
+
+已編號的舊檔案，例如 `notes-01.md`、`notes-02.md`，視為歷史卷。不要覆蓋、合併或改名這些舊檔，除非使用者明確要求。
 
 ## 隱私與公開性
 

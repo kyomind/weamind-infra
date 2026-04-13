@@ -19,7 +19,8 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 5. 每次回答後，同步把該問題與回答整理到 `review/notes.md`。
 6. 寫入 `review/notes.md` 時，依照 `review/rules.md`。
 7. 若問題需要 repo 依據，優先查 repo 內文件、manifest、lesson note 或 progress file，再回答。
-8. 若使用者只是口語化確認或閒聊，且沒有形成可保存的技術問題，可以不用寫入 `review/notes.md`。
+8. 寫入前先依照 `review/rules.md` 確認 `review/notes.md` 是否存在；若不存在，依規則初始化新檔。
+9. 若使用者只是口語化確認或閒聊，且沒有形成可保存的技術問題，可以不用寫入 `review/notes.md`。
 
 ## 必讀文件
 
