@@ -121,3 +121,30 @@ weamind-line-bot-vqt42   IPv4   8000   10.42.1.20,10.42.2.19
 `EndpointSlice` 也比較適合承載更多結構化資訊，例如 `addressType` 顯示這批 endpoint 是 `IPv4`，port 欄位獨立呈現 `8000`，也能支援更多拓撲、條件與未來擴充資訊。這讓 controller、Ingress controller、Service networking 元件更容易用一致且可擴展的方式追蹤後端。
 
 因此這題可以收斂成：`Endpoints` 和 `EndpointSlice` 都是在描述 Service 後端，但 `EndpointSlice` 把「一個 Service 後面可能有大量、動態變化的 Pod」這件事切成更可擴展的資料模型。對 WeaMind 這種兩個 Pod 的服務，肉眼看差異不大；對 Kubernetes 平台設計來說，EndpointSlice 更適合大規模、頻繁更新與未來擴充，所以取代 Endpoints 是合理的。
+
+## EndpointSlice 的切分原則是什麼？50 個 replicas 會怎麼切？
+
+EndpointSlice 的切分不是依照「每個 Deployment replica 一個 slice」，而是由 Kubernetes **endpoint slice controller** 依照 Service 的後端 endpoints 去管理。
+
+官方文件提到，控制平面預設會讓每個 EndpointSlice **不超過 100 個** endpoints；這個值可以透過 kube-controller-manager 的 `--max-endpoints-per-slice` 調整，最高可到 1000。
+
+所以如果 WeaMind 的 `weamind-line-bot` 從 2 replicas 擴到 50 replicas，在預設設定下，而且仍然只有同一種 address type、同一組 port/protocol，大致會是：
+
+```bash
+1 個 EndpointSlice
+裡面放 50 個 endpoints
+```
+
+如果 replicas 變成 250，在預設每 slice 100 個 endpoints 的設定下，才會比較像：
+
+```bash
+EndpointSlice A: 約 100 個 endpoints
+EndpointSlice B: 約 100 個 endpoints
+EndpointSlice C: 約 50 個 endpoints
+```
+
+但這不是一個永遠平均分配的承諾。EndpointSlice controller 會盡量管理與填充既有 slices，但不會為了完美平均而一直重排所有 endpoints，因為那反而會製造更多更新成本。它的主要目標是讓後端清單可以被分片、可擴展地更新，而不是做漂亮的平均切片。
+
+另外，EndpointSlice 也會受到 address type 與 port/protocol 組合影響。每個 EndpointSlice 有自己的 `addressType`，例如 `IPv4`；也有一組適用於該 slice 內 endpoints 的 ports。如果同一個 Service 因為 IPv4 / IPv6、不同 port 組合或其他條件需要分開表示，也可能出現更多 EndpointSlices。
+
+這題可以收斂成：在 WeaMind 目前這種單一 Service port、IPv4、50 replicas 的假設下，預設通常是一個 EndpointSlice 就裝得下；EndpointSlice 真正發揮差異是在超過 100 endpoints、或有更多 address type / port 組合、或大量 endpoints 頻繁變動時。
