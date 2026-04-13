@@ -36,6 +36,7 @@
         "prewrite",
         "privatedocs",
         "psql",
+        "replicaset",
         "Substack",
         "svclb",
         "Tolerations",
