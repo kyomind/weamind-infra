@@ -105,7 +105,7 @@
 ### AI 修正與補充
 
 - 這個方向是對的，而且已經碰到這題最核心的點：`--node-ip` 與 `--flannel-iface` 修的不是應用層 YAML，而是節點地址與叢集網路層。
-- 更精準的說法是：當 K3s 節點把自己宣告成公網 IP，而不是 Hetzner 私網 IP 時，最先被破壞的是節點彼此、overlay 網路、以及需要依賴正確 node address 的元件通訊；外部 webhook 打不進來通常是後續連鎖反應，不是第一層根因。
+- 更精準的說法是：當 K3s 節點把自己宣告成公網 IP，而不是 Hetzner 私網 IP 時，⭐️最先被破壞的是**節點彼此、overlay 網路、以及需要依賴正確 node address 的元件通訊**；外部 webhook 打不進來通常是**後續連鎖反應**，不是第一層根因。
 - 你提到「公網被 ban 掉，所以找不到對方」這個記憶非常關鍵，因為它剛好說明了為什麼這題不是抽象的最佳實踐，而是這個專案的真實 root cause。
 - 這一步可以再收斂成一句：如果 node address 錯了，最早出事的是叢集自己的網路與節點間通訊，Traefik、Service、甚至外部 LB 相關症狀，很多都是後面才浮出來的表面現象。
 - 你選 Hetzner LB 這個觀察點也是合理的。因為在這個專案裡，外部最早能看到的表面症狀，常常就是「LB 打不進正確的私網節點入口」或「Traefik 那段看起來不通」。但更底層的 root cause 仍然是 node address 與私網介面綁定錯誤，而不是 LB 規則本身先壞掉。
@@ -178,17 +178,17 @@
 ### 使用者回答摘要
 
 - 使用者的直覺是「請求由外而內」，因此若 webhook 沒有進到 line-bot，第一反應會想先從最接近外部請求的地方開始查，也就是 DNS、Hetzner LB、Traefik 這條外部入口路徑。
-- 在調整思路後，使用者認為若要先查 cluster 內部，第一個最該看的會是 `weamind-line-bot` 的 Endpoints，因為這能最快確認 Service 後面是否真的有健康的 Pod 可接流量。
+- 在調整思路後，使用者認為若要先查 cluster 內部，第一個最該看的會是 `weamind-line-bot` 的 **Endpoints**，因為這能最快確認 Service 後面是否真的有健康的 Pod 可接流量。
 - 使用者也已能說出判斷邏輯：如果 Service → Endpoints → Pods 這段本身就不正常，其他更外層的檢查就沒有意義。
 - 使用者接著判斷，如果 Service 底下的 Endpoints 與 Pods 都正常，下一步應先看 Ingress / Traefik 是否有正確把流量導到 `weamind-line-bot`，而不是直接跳去查 DNS。
 - 使用者目前的理由是：排查順序應該沿著 Service 的外圍一層一層往外推，而不是在中間層尚未驗證時直接跳到最外層。
 
 ### AI 修正與補充
 
-- 這個直覺很自然，但在這個專案裡，第一輪更穩的排查起點通常不是最外面，而是先切開內外，優先確認 cluster 內部的 `Service → Endpoints → Pods` 這段是不是活的。
-- 原因不是因為外部不重要，而是因為 cluster 內這段比較容易隔離、驗證成本更低，而且一旦內部這段本來就壞了，去查 DNS / Hetzner LB / Traefik 只會浪費時間。
+- 這個直覺很自然，但在這個專案裡，第一輪更穩的排查起點**通常不是最外面**，而是先切開內外，優先確認 cluster 內部的 `Service → Endpoints → Pods` 這段是不是活的。
+- 原因不是因為外部不重要，而是因為 cluster 內這段**比較容易隔離、驗證成本更低**，而且一旦內部這段本來就壞了，去查 DNS / Hetzner LB / Traefik 只會浪費時間。
 - 這點其實也和 [docs/LINE-Webhook-切換流程.md](docs/LINE-Webhook-%E5%88%87%E6%8F%9B%E6%B5%81%E7%A8%8B.md#L20) 的前置檢查順序一致：先看 nodes、pods、endpoints，再看 HTTPS 驗證與 LB 健康狀態。
-- 你選 Endpoints 是對的。因為它是 Service 和 Pod 之間最直接的觀察點，能最快告訴你這個 Service 底下到底有沒有被正確選到、而且可接流量的 Pod。
+- 你選 **Endpoints** 是對的。因為它是 Service 和 Pod 之間最直接的觀察點，能最快告訴你這個 Service 底下到底有沒有被正確選到、而且可接流量的 Pod。
 - 你接著選 Ingress / Traefik 也是對的，而且理由可以再講得更精準：DNS 只能回答「網域有沒有被解析到某個入口」，但它完全不能告訴你請求進到叢集入口之後，有沒有被正確路由到 `weamind-line-bot`。如果 Service / Endpoints / Pods 已經健康，下一個最有診斷價值的就是 Ingress / Traefik 這一層。
 - 所以這題在這個專案裡的第一輪排查順序，可以先收斂成：先看 nodes / pods / endpoints，確認 cluster 內基礎路徑活著；再看 Ingress / Traefik 是否把 `k8s.kyomind.tw` 導到 `weamind-line-bot:80`；最後才看 DNS、Hetzner LB、Webhook URL 這些更外層入口。
 - 這樣排序的理由是：越靠內層越容易隔離問題、驗證成本越低，而且只要內層已經壞了，外層資訊幾乎沒有診斷價值。
