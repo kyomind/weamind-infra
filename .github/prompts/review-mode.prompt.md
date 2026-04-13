@@ -65,9 +65,7 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 
 完成寫入後，可以簡短告知：
 
-```text
 已補到 `review/notes.md`。
-```
 
 若只是小問題，也可以把回答和已寫入提示合在同一則訊息中。
 

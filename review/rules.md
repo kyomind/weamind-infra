@@ -43,7 +43,11 @@
 - 寫成使用者之後能直接拿來重講的版本
 - 避免把一題擴成完整 lesson
 
-若需要列指令，使用 `bash` code block：
+若需要 fenced code block，預設使用 `bash`，不要使用 `text`。即使內容只是 Service FQDN、URL、環境變數名稱或一小段可貼到 shell 觀察的片段，也優先用 `bash`，讓筆記保有基本 highlight。
+
+例外是內容本身有明確格式，例如 YAML、Markdown、JSON、TOML，才使用對應語言標記。
+
+指令範例：
 
 ```bash
 kubectl get ingress -n weamind
