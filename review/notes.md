@@ -96,7 +96,7 @@ ClusterIP -> Service networking / kube-proxy -> EndpointSlice / Pod IP:port
 
 另外要注意，Ingress 裡的 `backend.service.name: weamind-line-bot` 比較像 Kubernetes 物件參照，不一定代表 Traefik 是靠一般 DNS lookup 去找 `weamind-line-bot`。
 
-⭐️Traefik 作為 Ingress controller 通常會 **watch Kubernetes API**，讀到 Ingress、Service、Endpoints / EndpointSlice 後**建立自己的路由設定**。
+⭐️Traefik 作為 Ingress controller 通常會 **watch Kubernetes API**，讀到 Ingress、Service、Endpoints / EndpointSlice 後，**建立自己的路由設定**。
 
 對外講解時可以簡化成「Traefik 依 Ingress 規則把流量送到 `weamind-line-bot:80`」，但深入一層要知道：**CoreDNS 主要服務的是叢集內 DNS 解析**，不是 Ingress controller 唯一或必然的查找機制。
 
