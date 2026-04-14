@@ -37,6 +37,7 @@
         "privatedocs",
         "psql",
         "replicaset",
+        "replicasets",
         "Substack",
         "svclb",
         "Tolerations",
