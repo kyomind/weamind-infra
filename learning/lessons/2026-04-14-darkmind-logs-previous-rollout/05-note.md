@@ -174,7 +174,7 @@ kubectl get deploy -n darkmind -o yaml > incident-evidence/deployments.yaml
 ### `imagePullPolicy: IfNotPresent` 是什麼意思
 
 - `IfNotPresent` 的意思是：**如果這個節點本機已經有該 image，就直接用本地快取；如果沒有，才去 registry 拉。**
-- 以 [darkmind/scenarios/bad-rollout-01-good.yaml](darkmind/scenarios/bad-rollout-01-good.yaml) 來說，若 node 上之前已經拉過 `nginx:1.27-alpine`，那 container runtime 可能就不會再重新 pull。
+- 以 `darkmind/scenarios/bad-rollout-01-good.yaml` 來說，若 node 上之前已經拉過 `nginx:1.27-alpine`，那 container runtime 可能就不會再重新 pull。
 - 它和 `Always` 的差異在於：`Always` 幾乎每次啟動都會先嘗試向 registry 確認 / 拉取；`IfNotPresent` 則優先信任 node 本地已有的 image。
 - 實務上，`IfNotPresent` 常用於較穩定的版本標籤或 lab；`Always` 常用於你明確想每次都去確認最新內容的情境。不過真正上 production，很多團隊更偏好直接用 immutable image tag 或 digest，避免 `latest` 類歧義。
 
@@ -190,7 +190,7 @@ kubectl get deploy -n darkmind -o yaml > incident-evidence/deployments.yaml
 
 ### ⭐️如果第二次 apply 的 YAML 和第一次差很多，最後誰說了算
 
-- 在這個 lab 裡，[darkmind/scenarios/bad-rollout-01-good.yaml](darkmind/scenarios/bad-rollout-01-good.yaml) 和 [darkmind/scenarios/bad-rollout-02-bad.yaml](darkmind/scenarios/bad-rollout-02-bad.yaml) 的 Deployment 都是同一個 resource：
+- 在這個 lab 裡，`darkmind/scenarios/bad-rollout-01-good.yaml` 和 `darkmind/scenarios/bad-rollout-02-bad.yaml` 的 Deployment 都是同一個 resource：
 	1. kind 都是 `Deployment`
 	2. `metadata.name` 都是 `darkmind-rollout`
 	3. `metadata.namespace` 都是 `darkmind`
@@ -276,8 +276,8 @@ kubectl delete pod -n darkmind <crash-loop-pod-name>
 - 如果只看「會不會造成 rollout 卡住」這件事，兩份 YAML 的 **關鍵差異主要只有兩個**：
 	1. `image`
 	2. `imagePullPolicy`
-- 在 [darkmind/scenarios/bad-rollout-01-good.yaml](darkmind/scenarios/bad-rollout-01-good.yaml) 裡，image 是 `nginx:1.27-alpine`，`imagePullPolicy` 是 `IfNotPresent`。
-- 在 [darkmind/scenarios/bad-rollout-02-bad.yaml](darkmind/scenarios/bad-rollout-02-bad.yaml) 裡，image 是 `nginx:this-tag-should-not-exist-darkmind`，`imagePullPolicy` 是 `Always`。
+- 在 `darkmind/scenarios/bad-rollout-01-good.yaml` 裡，image 是 `nginx:1.27-alpine`，`imagePullPolicy` 是 `IfNotPresent`。
+- 在 `darkmind/scenarios/bad-rollout-02-bad.yaml` 裡，image 是 `nginx:this-tag-should-not-exist-darkmind`，`imagePullPolicy` 是 `Always`。
 - 其他 rollout 相關核心欄位，例如 `replicas`、`strategy.rollingUpdate.maxUnavailable`、`maxSurge`、`readinessProbe`、resources、labels、selector，基本上都維持一致。
 - 還有一個 repo 層面的差異值得注意：good 版本 YAML 另外還包含一個 `Service`，bad 版本 YAML 則只有 `Deployment`。但這個差異 **不是這次 rollout 卡住的主因**，因為你前一步已經建立過同名 Service；後面只對 bad Deployment apply，不會自動刪掉先前的 Service。
 - 所以如果今天要收成一句最精準的說法：**這兩份 rollout YAML 的設計重點，就是盡量只改 image 相關條件，讓你能把 rollout 卡住的主因鎖在 image pull 失敗，而不是混入其他變數。**

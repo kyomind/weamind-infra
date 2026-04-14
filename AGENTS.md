@@ -133,6 +133,11 @@ AGENTS.md should stay at the workflow and collaboration-rule level, not duplicat
 - Do not let a single day sprawl into unlimited follow-up topics
 - Prioritize why, how, trade-offs, and debug sequence over re-listing implementation steps
 
+### Lesson File Reference Style
+
+- Inside lesson markdown files under `learning/lessons/`, when referring to repo files in prose, prefer inline code paths such as `darkmind/scenarios/bad-rollout-01-good.yaml` instead of Markdown links.
+- Reason: these lesson files are read primarily as study notes inside the editor; Markdown links add visual noise and may not be reliably clickable in the user's workflow.
+
 If the user asks to continue in a new conversation, do not advance by date alone.
 
 Instead:
