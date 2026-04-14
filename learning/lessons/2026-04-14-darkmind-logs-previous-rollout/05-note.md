@@ -21,6 +21,18 @@
 
 ## Notes
 
+### `Running` 和 `Ready` 差在哪裡
+
+- 這兩個不是同一件事。`Running` 比較接近 **Pod phase / container 進程已經跑起來**；`Ready` 比較接近 **這個 Pod 是否已被 Kubernetes 判定可以安全接流量 / 提供服務**。
+- 所以你會看到一種很常見的暫態：`STATUS` 顯示 `Running`，但 `READY` 欄位還是 `0/1`。這代表 container 已經啟動了，但 Kubernetes 還沒把它判成 ready。
+- 若 container **有設定 `readinessProbe`**，那通常要等 probe 成功後，該 container 才會被標成 ready，Pod 的 `Ready` condition 才可能變成 `True`。
+- 若 container **沒有設定 `readinessProbe`**，那它通常在成功啟動後，就可能很快被視為 ready；也就是說，不是所有 Pod 都一定要有 readiness probe 才能 ready。
+- 更完整地說，Pod 被判成 Ready，通常要滿足兩層：
+	1. Pod 內該 ready 的 containers 都是 ready
+	2. 若有額外 `readinessGates`，那些條件也要成立
+- 在 `kubectl get pods` 裡看到的 `READY 1/1`，比較像「**1 個 container ready / 總共 1 個 container**」的摘要顯示；不是單純 phase 名字。
+- 一句話口訣：`Running` 是「程式有跑起來」，`Ready` 是「Kubernetes 願意把流量交給你」。
+
 ### rollout undo 前後，壞 Pod 的 logs 還看不看得到
 
 - 這個追問很重要，因為它碰到 **先救火還是先保全證據** 的實務取捨。

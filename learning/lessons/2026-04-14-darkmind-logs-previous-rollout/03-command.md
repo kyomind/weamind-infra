@@ -102,30 +102,42 @@ kubectl rollout history deploy/darkmind-rollout -n darkmind
 ### 指令
 
 ```bash
-
+kubectl get pods -n darkmind
+kubectl apply -f darkmind/scenarios/crash-loop.yaml
+kubectl get pods -n darkmind
 ```
 
 ### 關鍵輸出
 
 ```bash
+NAME                                READY   STATUS    RESTARTS   AGE
+darkmind-healthy-85c6dcf689-zth8m   1/1     Running   0          19s
 
+deployment.apps/darkmind-crash-loop created
+
+NAME                                  READY   STATUS             RESTARTS      AGE
+darkmind-crash-loop-f6dfb6fdd-7d97k   0/1     CrashLoopBackOff   1 (11s ago)   18s
+darkmind-healthy-85c6dcf689-zth8m     1/1     Running            0             17m
 ```
 
 ### 使用者選擇理由
 
-- 待回答
+- 使用者選第一組指令，理由是要先把預期會壞掉的 `Deployment` 套進叢集，讓 `CrashLoopBackOff` 情境真正出現，後面才有正確的觀察對象可看。
+- 使用者也刻意把 `apply` 和第二次 `get pods` 分開執行，避免 apply 完立刻觀察時還沒收斂到異常狀態，這個操作節奏是合理的。
 
 ### AI 判讀與修正
 
-- 待補
+- 這個選擇是對的，而且你這次刻意把 `apply` 與後續觀察拆開，這個節奏很實務。因為 `CrashLoopBackOff` 類問題不是一套上去就一定瞬間穩定顯示同一個狀態；先建立情境，再補一次 `get pods`，比較容易看到已經進入重啟循環後的樣子。
+- 這份輸出最有價值的地方，是你同時保留了健康基準與壞情境的對照：`darkmind-healthy` 仍是 `1/1 Running`，而新的 `darkmind-crash-loop` 已經變成 `0/1 CrashLoopBackOff`，而且 `RESTARTS` 已經是 `1`。這正好說明今天的問題已經不是 image pull 前段，而是 **container 有啟動過、又退出，開始進入重啟 backoff**。
+- 你這輪也順手再次驗證了一個很重要的概念：不是所有 `Running` 都等於 Ready，也不是所有異常都該先從 `describe` 開始。現在既然已經看到 `CrashLoopBackOff` 和 `RESTARTS` 增加，下一輪最有價值的證據就會開始往 `logs` 偏移。
 
 ### 一句話收斂
 
-- 待補
+- 把 `crash-loop` 情境套進叢集後，先用 `kubectl get pods -n darkmind` 確認它真的進到 `CrashLoopBackOff` 且已有重啟次數；這表示問題已經落到 container 執行與退出循環，而不是建立前段。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
