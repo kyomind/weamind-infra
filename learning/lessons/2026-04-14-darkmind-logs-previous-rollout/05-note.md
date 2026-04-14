@@ -107,6 +107,17 @@ kubectl get deploy -n darkmind -o yaml > incident-evidence/deployments.yaml
 	6. `rollout history`
 - 如果是 production 正在燒，這組最小集合通常就夠你先 rollback，再慢慢分析。
 
+### `CrashLoopBackOff` 會不會到某個上限就停住或自動刪掉
+
+- 一般 `Deployment` 底下的 Pod，不會因為 `CrashLoopBackOff` 重啟很多次就自動被刪掉。更準確地說，kubelet 會持續重試重啟，只是重試間隔會做 **exponential backoff**。
+- 這個 backoff 會愈來愈長，但不是「到某個重啟次數就自動放棄並刪 Pod」。在常見行為下，延遲會一路增加到上限，之後停在一個較長的固定等待時間，再繼續重試。
+- 所以你看到 `CrashLoopBackOff` 時，更接近「**還在重試，但目前因 backoff 暫停一下**」，不是「這個 Pod 已經被系統放棄並清掉」。
+- 也因此，只要 Pod 還存在，而且對應 container logs 還沒被節點上的 log rotation 或 garbage collection 清掉，你通常都還能 `kubectl logs` / `kubectl logs --previous` 去看。
+- 但這裡要補兩個邊界：
+	1. `kubectl logs --previous` 只保證上一個已終止的 container instance，不是所有歷史輪次都保留。
+	2. 如果 Pod 被刪掉、被新 Pod 取代、節點重開、或容器日志已被清理，你就可能拿不到先前那一輪的 logs。
+- 一句話口訣：`CrashLoopBackOff` 通常是 **會繼續重試、不會自動刪 Pod**；但 logs 能不能一直拿到，不是永久保證，所以重要證據要早點留。
+
 ## Flashcards
 
 <!-- lesson 進行後再回填 -->

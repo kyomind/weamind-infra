@@ -160,30 +160,38 @@ kubectl rollout undo deploy/darkmind-crash-loop -n darkmind
 ### 指令
 
 ```bash
-
+kubectl logs -n darkmind -l app=darkmind-crash-loop
+kubectl get pods -n darkmind
 ```
 
 ### 關鍵輸出
 
 ```bash
+darkmind crash-loop scenario: container will exit now
 
+NAME                                  READY   STATUS             RESTARTS        AGE
+darkmind-crash-loop-f6dfb6fdd-7d97k   0/1     CrashLoopBackOff   6 (2m19s ago)   8m20s
+darkmind-healthy-85c6dcf689-zth8m     1/1     Running            0               17m
 ```
 
 ### 使用者選擇理由
 
-- 待回答
+- 使用者選第一個指令，理由是既然上一輪已經確認 Pod 進到 `CrashLoopBackOff`，這一輪最有價值的下一步就是直接看 app / container 自己留下的輸出。
+- 使用者也補了一次 `kubectl get pods -n darkmind`，確認目前 Pod 仍停在 `CrashLoopBackOff` 且 `RESTARTS` 已持續增加。
 
 ### AI 判讀與修正
 
-- 待補
+- 這個選擇是對的。當上一輪已經明確看到 `CrashLoopBackOff` 與 `RESTARTS` 增加時，`kubectl logs` 是今天最直接的下一步，因為它開始回答「**container 自己到底輸出了什麼**」，而不是只停在 Kubernetes 狀態摘要。
+- 這份輸出也很適合對照 `darkmind/scenarios/crash-loop.yaml`：你看到的 `darkmind crash-loop scenario: container will exit now`，正好就是 YAML 裡刻意設計的輸出，代表這顆 container 確實有啟動、印出訊息、然後退出。這進一步支持我們對 `CrashLoopBackOff` 的判讀：問題不是 image pull，也不是 container 根本沒跑起來，而是 **它有跑，但很快結束**。
+- 你補的第二次 `get pods` 也很有價值，因為 `RESTARTS=6` 代表 kubelet 還在持續嘗試重啟。這時 `kubectl logs` 通常還看得到最新那一輪或當前 container instance 的輸出，但如果你真正要抓「上一輪怎麼死的」，下一步會更適合看 `kubectl logs --previous`。
 
 ### 一句話收斂
 
-- 待補
+- 當 Pod 已進到 `CrashLoopBackOff`，先用 `kubectl logs` 看 app 自己留下的直接輸出；若已確認它會反覆重啟，下一步就該切到 `kubectl logs --previous` 去補上一輪退出前的證據。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
