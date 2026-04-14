@@ -301,6 +301,8 @@
 
 初始化提醒：只有 `學習注意事項` 可以先回填；`Notes` 與 `Flashcards` 在建立骨架時必須先留空。若需要佔位，最多只保留 HTML comment 這類特殊註記，用來提示之後會長內容；這不算真正已回填內容。等 lesson 過程中真的出現延伸問答、暫時結論或卡片素材後，再往裡面補。
 
+`Notes` 之後新增內容時，H3 使用語意標題即可，不需要編號。單則 note 可以先用一小段前言交代問題來源或背景，再用 bullet list 展開要點，最後用單獨段落收斂；若需要放指令、輸出片段或明確步驟，則依內容改用 code block、ordered list 或更適合閱讀的段落安排。
+
 <template example 05-note.md>
 # YYYY-MM-DD Lesson Title Notes
 

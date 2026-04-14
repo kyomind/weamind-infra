@@ -170,3 +170,46 @@ kubectl describe svc weamind-line-bot -n weamind
 ```
 
 一句話收斂：**空 Endpoints 可以判斷 Service 目前沒有可導流的 Pod，但不能只靠這一點就斷言整個 namespace 裡完全沒有 Pod。**
+
+## -o wide 是什麼？用不用它，差別到底在哪？
+
+`-o wide` 可以先理解成：**還是同一個 `kubectl get`，只是把預設表格輸出再展開一點，補更多實用欄位**。它不是查另一種資料來源，也不是改變資源本身，只是改變你看到的顯示內容。
+
+所以「有沒有用 `-o wide`」的差別，核心不是 Kubernetes 看到的世界不同，而是**你拿到的觀察資訊密度不同**。
+
+以這次 WeaMind 的例子來說：
+
+- `kubectl get pods -n weamind`：你先看到 Pod 名稱、Ready、Status、Restarts、Age，適合先判斷有沒有活著
+- `kubectl get pods -n weamind -o wide`：會再補出像 Pod IP、Node 這類欄位，才有辦法把 Endpoints 裡的 IP 對回實際 Pod
+
+所以這題真正要記住的是：**`-o wide` 不是「更多細節的萬用完整版」，而是「表格模式下的加欄版」**。當你只是想快速看健康狀態，預設輸出通常夠；當你要對 IP、對 node、看 image、看更具體的執行位置時，`-o wide` 才會有差。
+
+另外也要補一個邊界：`-o wide` 常見於 `kubectl get`，而且是否有明顯差異，取決於資源種類。像 Pods 用 `-o wide` 很常有用，因為會多出 Pod IP / Node；但有些資源就可能只多一兩欄，甚至差異不大。所以它不是「所有 kubectl 指令的通用深度模式」，而是某些 `get` 輸出格式的一種變體。
+
+如果要和其他 `-o` 一起比較，可以這樣背：
+
+- 預設輸出：快速掃狀態
+- `-o wide`：仍然是表格，但多幾個關鍵欄位
+- `-o yaml` / `-o json`：看完整物件內容
+
+所以在 debug 流程裡，`-o wide` 很適合卡在中間那一層：**預設輸出不夠，但又還沒必要直接翻整份 YAML/JSON。**
+
+一句話收斂：**`-o wide` 不會改變 Kubernetes 裡的實際狀態，只是把 `kubectl get` 的表格輸出展開，讓你多看到像 Pod IP、Node 這種預設沒顯示的欄位。**
+
+## pod-template-hash 是誰加的？目的與作用是什麼？
+
+可以先回答成：**是 Deployment / ReplicaSet 這條控制鏈自動加上的，不是你在 manifest 手動寫的。**
+
+更精準一點說，通常是 Deployment controller 依照 Pod template 的內容算出一個 hash，然後把這個值放進它建立出的 ReplicaSet selector、Pod template labels，最後你才會在 Pod 身上看到像 `pod-template-hash=5985b7f7f6` 這種 label。
+
+它的主要目的不是給 Service 用，而是給 Kubernetes 自己做「版本分流與歸屬辨識」。作用可以抓三個重點：
+
+- 區分不同版本的 ReplicaSet：同一個 Deployment 每次 Pod template 有變更，例如 image、env、command、probe 變了，就會產生新的 hash，從而建立新的 ReplicaSet
+- 讓 ReplicaSet 只接管屬於自己的 Pods：ReplicaSet 需要有辦法辨認哪些 Pods 是它那一版模板生出來的，避免不同版本互相搶 Pod
+- 支援 rollout / rollback：Deployment 做 rolling update 時，本質上就是新舊 ReplicaSet 並存一段時間；這個 hash 讓系統能清楚分辨舊版本 Pods 和新版本 Pods
+
+所以在你這次看到的情境裡，兩個 Pods 都有同樣的 `pod-template-hash=5985b7f7f6`，表示它們來自同一個 ReplicaSet，也就是同一版 Pod template。若之後 Deployment 更新，常見情況就是會看到另一批 Pods 帶著不同的 `pod-template-hash`。
+
+也因為它的用途是給 Deployment / ReplicaSet 管理版本，所以 **Service 通常不應該依賴這個 hash 當 selector**。Service 應該選穩定、業務語意明確的 label，例如這個 repo 裡的 `app=weamind`；如果用 `pod-template-hash` 當 selector，rollout 時很容易只選到某一版 Pods，甚至導致切流不穩。
+
+一句話收斂：**`pod-template-hash` 是 Kubernetes 控制器為了區分不同 Pod template 版本而自動加上的標記，主要服務對象是 Deployment 與 ReplicaSet 的 rollout 管理，不是給 Service 當主要 selector 用的。**

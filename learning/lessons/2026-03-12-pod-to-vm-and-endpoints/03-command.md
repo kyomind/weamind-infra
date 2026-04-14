@@ -1,5 +1,5 @@
 # 2026-03-12 Pod To VM And Endpoints Command
-
+複習：2026-04-14
 ## 今日指令練習目標
 
 把今天 lesson 的兩條路徑各自對到實際觀察：
@@ -135,7 +135,7 @@ Endpoints:                10.42.2.13:8000,10.42.1.14:8000
 ### AI 判讀與修正
 
 - 這個輸出把三件事串起來了：Service 用 `app=weamind` 選 Pod、Service 自己有穩定的 ClusterIP 入口、而背後實際對到的是兩個 Pod IP。
-- 這也順便釐清兩種位址：`IP` 欄位是 Service 自己的入口，`Endpoints` 欄位才是這個入口背後實際接到的 Pod IP/port。
+- 這也順便釐清兩種位址：`IP` 欄位**是 Service 自己的**入口，`Endpoints` 欄位才是這個入口背後實際接到的 Pod IP/port。
 - `Port: 80/TCP` 與 `TargetPort: 8000/TCP` 則回答了這個 Service 如何把進來的 80 port 流量轉到 Pod 的 8000。
 
 ### 一句話收斂
