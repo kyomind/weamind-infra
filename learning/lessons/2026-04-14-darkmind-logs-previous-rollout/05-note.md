@@ -111,12 +111,15 @@ kubectl get deploy -n darkmind -o yaml > incident-evidence/deployments.yaml
 
 - 一般 `Deployment` 底下的 Pod，不會因為 `CrashLoopBackOff` 重啟很多次就自動被刪掉。更準確地說，kubelet 會持續重試重啟，只是重試間隔會做 **exponential backoff**。
 - 這個 backoff 會愈來愈長，但不是「到某個重啟次數就自動放棄並刪 Pod」。在常見行為下，延遲會一路增加到上限，之後停在一個較長的固定等待時間，再繼續重試。
+- 對一般 `Deployment` / `ReplicaSet` 管理的 Pod 來說，**預設沒有一個「重啟幾次就停止」的次數上限**。只要 Pod 還存在、`restartPolicy` 允許重啟，而且控制器還想維持這個 Pod，kubelet 就會繼續重試。
+- 真正常見的「有次數上限」比較像 `Job` 的 `backoffLimit`，那是另一種工作負載語意；不要把它和 `Deployment` 的 `CrashLoopBackOff` 混在一起。
+- 在 kubelet 常見行為下，重試等待時間會逐步增加，**上限通常收斂到大約 5 分鐘左右**，之後就不是無限越等越久，而是維持在較長的 backoff 節奏繼續重試。
 - 所以你看到 `CrashLoopBackOff` 時，更接近「**還在重試，但目前因 backoff 暫停一下**」，不是「這個 Pod 已經被系統放棄並清掉」。
 - 也因此，只要 Pod 還存在，而且對應 container logs 還沒被節點上的 log rotation 或 garbage collection 清掉，你通常都還能 `kubectl logs` / `kubectl logs --previous` 去看。
 - 但這裡要補兩個邊界：
 	1. `kubectl logs --previous` 只保證上一個已終止的 container instance，不是所有歷史輪次都保留。
 	2. 如果 Pod 被刪掉、被新 Pod 取代、節點重開、或容器日志已被清理，你就可能拿不到先前那一輪的 logs。
-- 一句話口訣：`CrashLoopBackOff` 通常是 **會繼續重試、不會自動刪 Pod**；但 logs 能不能一直拿到，不是永久保證，所以重要證據要早點留。
+- 一句話口訣：`CrashLoopBackOff` 對 `Deployment` 來說通常是 **沒有固定最大重啟次數、只會持續重試且 backoff 時間有上限**；但 logs 能不能一直拿到，不是永久保證，所以重要證據要早點留。
 
 ### 為什麼 `current log` 和 `--previous` 有時看起來一樣
 
@@ -168,6 +171,37 @@ kubectl get deploy -n darkmind -o yaml > incident-evidence/deployments.yaml
 	2. revision `2`：bad version
 	3. revision `3`：把內容回退到 revision `1` 的新 rollout
 - 一句話口訣：**undo 回的是內容，不是 revision 編號。**
+
+### kubelet 到底根據什麼決定要不要重啟 container
+
+- 在 node 上，真正盯著 Pod 與 container 狀態並執行重啟的是 kubelet。
+- 對 kubelet 來說，核心問題不是「你這個 app 邏輯有沒有 bug」，而是：**這個 Pod 規格要求應該有一個正在運作的 container，但它現在退出了，是否應該再把它拉起來**。
+- 常見會觸發 kubelet 重新啟動 container 的情況包括：
+	1. container 主程序退出，且 exit code 非 `0`
+	2. container 正常退出，但 Pod 的 `restartPolicy` 要求應重啟
+	3. liveness probe 失敗，kubelet 會把 container kill 掉，再依 `restartPolicy` 決定是否重啟
+- 所以 kubelet 決定是否重啟，看的主要是 **container 是否終止**、**Pod 規格允不允許重啟**、以及 **健康檢查是否要求它被重建**，而不是直接理解應用程式的商業邏輯。
+- 一句話口訣：**kubelet 重啟 container，不是因為它懂你的 app，而是因為它要把 Pod 規格要求的執行狀態維持住。**
+
+### `restartPolicy` 在 Deployment 裡實際扮演什麼角色
+
+- `restartPolicy` 是 **Pod spec 的欄位**，不是 Deployment spec 自己獨有的欄位。
+- 但當 Pod 是由 Deployment 管理時，實務上 template 裡的 `restartPolicy` **幾乎固定是** `Always`。Deployment / ReplicaSet 的預期語意，就是維持長期運作的服務型工作負載。
+- ⭐️這代表什麼？代表同一顆 Pod 裡的 container 若退出，**先由 kubelet 在 Pod 內重啟 container**；不會第一時間就靠 Deployment 重新建一顆新 Pod。
+- 只有在 Pod 這個物件本身消失、不再符合條件、或 ReplicaSet 需要補副本時，控制器層才會再建立新的 Pod。
+- 所以在 Deployment 情境裡，你可以把責任拆成兩層：
+	1. **kubelet + restartPolicy=Always**：處理「同一顆 Pod 裡 container 掛了怎麼辦」
+	2. **Deployment / ReplicaSet**：處理「整體應該維持幾顆 Pod、用哪個 template、要不要 rollout / rollback」
+- 一句話口訣：**Deployment 負責維持 Pod 集合，restartPolicy 負責同一顆 Pod 裡 container 掛掉後怎麼處理。**
+
+### 為什麼 `CrashLoopBackOff` 明明是 Pod 狀態，但真正反覆重啟的是 container
+
+- 這個混淆非常常見。你在 `kubectl get pods` 看到的是 Pod 列表，所以 `STATUS` 欄位會把人最關心的狀態濃縮顯示在 Pod 那一行上，例如 `Running`、`ImagePullBackOff`、`CrashLoopBackOff`。
+- 但 `CrashLoopBackOff` 真正描述的，不是「Pod 整個物件被刪掉又重建很多次」，而是 **Pod 裡的某個 container 一直啟動、退出、再被 kubelet 重啟，並進入 backoff**。
+- 在今天這個 `darkmind-crash-loop` 情境裡，你可以從 **⭐️Pod 名稱幾乎不變**、但 `RESTARTS` 一直增加看出這點。這說明大多數時候是 **⭐️同一顆 Pod 還在，只是其中的 container 不斷重啟**。
+- 若是 Pod 本身真的被刪掉又重建，你通常更容易看到的是 **Pod 名稱改變**、新的 Pod 被產生，這比較接近 ReplicaSet / Deployment 層的替換行為。
+- 所以 `CrashLoopBackOff` 可以理解成：**Pod 那一行在替你摘要顯示「這顆 Pod 裡的 container 正在 crash + backoff」**，不是說 Pod 物件自己在不停重建。
+- 一句話口訣：**畫面上是 Pod 狀態，底層上是 container 重啟循環。**
 
 ## Flashcards
 
