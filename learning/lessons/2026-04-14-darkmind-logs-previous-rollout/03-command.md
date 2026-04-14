@@ -214,30 +214,45 @@ kubectl get svc -n darkmind
 ### 指令
 
 ```bash
-
+kubectl logs -n darkmind -l app=darkmind-crash-loop --previous
+kubectl logs -n darkmind -l app=darkmind-crash-loop --previous
+kubectl get pods -n darkmind
+kubectl logs -n darkmind -l app=darkmind-crash-loop --previous
 ```
 
 ### 關鍵輸出
 
 ```bash
+darkmind crash-loop scenario: container will exit now
 
+unable to retrieve container logs for containerd://e788ff6eb312b2594610893b7264098144fbab0723ad043cd90c1d73100dd848
+
+NAME                                  READY   STATUS             RESTARTS      AGE
+darkmind-crash-loop-f6dfb6fdd-7d97k   0/1     CrashLoopBackOff   8 (20s ago)   16m
+darkmind-healthy-85c6dcf689-zth8m     1/1     Running            0             33m
+
+darkmind crash-loop scenario: container will exit now
 ```
 
 ### 使用者選擇理由
 
-- 待回答
+- 使用者選第一個指令，理由是上一輪已經確認這是 `CrashLoopBackOff`，所以這一輪應該要直接看上一個已終止 container instance 的輸出。
+- 使用者也敏銳觀察到一個很重要的現象：`kubectl logs --previous` 並不是每次都穩定成功，同一個 Pod 上有時拿得到、有時又短暫拿不到。
 
 ### AI 判讀與修正
 
-- 待補
+- 這個選擇是對的，而且你觀察到的「有時拿得到、有時拿不到」正是 `CrashLoopBackOff` 排查裡非常真實的一個細節。`kubectl logs --previous` 看的不是固定歷史檔案，而是 **目前這個 Pod 對應的上一個已終止 container instance**；在快速重啟循環裡，這個對象本身就是流動的。
+- 你這次拿到的內容和 current log 一樣，不是因為 `current` 與 `previous` 本質上一定相同，而是因為這個 lab 裡每一輪 container 執行的行為都一樣：都只印出 `darkmind crash-loop scenario: container will exit now`，然後立刻 `exit 1`。所以不論你抓到 current 還是 previous，內容都可能一模一樣。
+- 中間那次 `unable to retrieve container logs for containerd://...` 也很有代表性。這通常不表示 Pod 被自動刪掉了，而更常見的是：**你查詢的那個瞬間，上一個已終止 container instance 的 log 目標正好不可用**。在快速重啟時，current / previous 的切換是移動中的，所以 `--previous` 天生就比一般 `logs` 更容易遇到時序窗口。
+- 這也再次說明：如果你真的很在意上一輪退出前的輸出，最好 **盡早抓、盡早存**，而不是假設之後任何時間都一定能補拿到。
 
 ### 一句話收斂
 
-- 待補
+- `kubectl logs --previous` 很適合抓上一輪怎麼退出，但在 `CrashLoopBackOff` 的快速重啟循環裡，它不是每次都穩定可得；若每一輪 app 行為相同，current 和 previous 的內容也可能看起來完全一樣。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
@@ -261,30 +276,40 @@ kubectl delete namespace darkmind
 ### 指令
 
 ```bash
-
+kubectl apply -f darkmind/scenarios/bad-rollout-01-good.yaml
+kubectl rollout status deploy/darkmind-rollout -n darkmind --timeout=60s
 ```
 
 ### 關鍵輸出
 
 ```bash
+deployment.apps/darkmind-rollout created
+service/darkmind-rollout created
 
+deployment "darkmind-rollout" successfully rolled out
 ```
 
 ### 使用者選擇理由
 
-- 待回答
+- 使用者選第一組指令，理由是要先建立 `darkmind-rollout` 的健康基準，確認正常版本的 Deployment 能順利完成 rollout，後面套壞版本時才有對照組。
+- 使用者也追問了兩個重點：第一次 `apply` 建立 Deployment 是否也算 rollout，以及 `kubectl rollout status --timeout=60s` 若超時代表什麼。
 
 ### AI 判讀與修正
 
-- 待補
+- 這個選擇是對的。進壞 rollout 之前，先用 good version 建立一條「正常 rollout 會成功完成」的基準線，這樣後面 bad version 卡住時，你才知道問題不是 rollout 指令本身，而是新版本內容有問題。
+- 你第一個追問方向也對：**第一次 apply 建立 Deployment，實務上也會觸發第一次 rollout**。因為 Deployment controller 會依照新建立的 Pod template 建立第一個 ReplicaSet，再把 Pod 推到目標副本數。也就是說，雖然它不是「從舊版更新到新版」的 rollout，但在 Deployment 視角下，這仍是一個 rollout 過程，所以 `kubectl rollout status` 查得到完全合理。
+- 第二個追問也很重要：`--timeout=60s` 的意思不是「60 秒後幫你修好」，而是 **最多等 60 秒看 rollout 有沒有完成**。若時間內沒完成，`kubectl rollout status` 會以 timeout / non-zero exit 結束，回答你的是「**在這段等待時間內，rollout 沒有成功收斂**」。它本身不會自動 rollback，也不會自動刪資源。
+- 所以這一輪可以收成兩個穩定觀念：
+- 第一，**第一次 apply 建立 Deployment 也可以視為第一次 rollout**。
+- 第二，`rollout status --timeout` 是觀察等待上限，不是修復機制；超時代表 rollout 仍未完成，下一步才輪到你做更深觀察或回退判斷。
 
 ### 一句話收斂
 
-- 待補
+- 先用 good version 建立正常 rollout 基準；第一次 apply 建立 Deployment 本身也會形成第一次 rollout，而 `rollout status --timeout` 只是設定等待上限，超時代表 rollout 尚未完成，不代表系統自動修復或自動回退。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
@@ -310,30 +335,57 @@ kubectl port-forward -n darkmind svc/darkmind-rollout 8080:80
 ### 指令
 
 ```bash
-
+kubectl apply -f darkmind/scenarios/bad-rollout-02-bad.yaml
+kubectl rollout status deploy/darkmind-rollout -n darkmind --timeout=30s
+kubectl rollout history deploy/darkmind-rollout -n darkmind
+kubectl rollout undo deploy/darkmind-rollout -n darkmind
+kubectl rollout status deploy/darkmind-rollout -n darkmind --timeout=30s
+kubectl rollout history deploy/darkmind-rollout -n darkmind
 ```
 
 ### 關鍵輸出
 
 ```bash
+deployment.apps/darkmind-rollout configured
 
+Waiting for deployment "darkmind-rollout" rollout to finish: 1 old replicas are pending termination...
+error: timed out waiting for the condition
+
+deployment.apps/darkmind-rollout
+REVISION  CHANGE-CAUSE
+1         <none>
+2         <none>
+
+deployment.apps/darkmind-rollout rolled back
+
+deployment "darkmind-rollout" successfully rolled out
+
+deployment.apps/darkmind-rollout
+REVISION  CHANGE-CAUSE
+2         <none>
+3         <none>
 ```
 
 ### 使用者選擇理由
 
-- 待回答
+- 使用者選第一組指令，理由是要依照今天的 rollout 排查鏈，先套壞版本、再確認 rollout 卡住、接著看 revision 軌跡，最後做 `undo` 回退。
+- 使用者也刻意把四個主要指令分開時間執行，並在 `undo` 後額外再跑一次 `rollout status` 與 `rollout history`，確認 rollback 之後 Deployment 真的重新收斂。
+- 使用者補充追問了兩個很好的觀察點：`CHANGE-CAUSE` 為什麼是 `<none>`，以及為什麼 `undo` 後 revision 會從 `2` 變成 `3`。
 
 ### AI 判讀與修正
 
-- 待補
+- 這個選擇是對的，而且你這次不是機械式照抄，而是把四個步驟拆開觀察，這很接近真實 incident 的節奏。這份輸出其實把整條 rollout 排查鏈都走完了：先 `configured` 套上壞版本，再用 `rollout status` 看到它在等待舊 replica 終止且最終 timeout，接著用 `rollout history` 確認目前至少有 revision `1` 和 `2`，最後 `undo` 後再用一次 `rollout status` 確認恢復成功。
+- `Waiting for deployment ... 1 old replicas are pending termination...` 這段訊息很有價值。它代表 Deployment controller 正在進行 rolling update，但新舊 ReplicaSet 的替換沒有順利收斂，所以在你設定的等待窗口內 rollout 沒完成。這就是今天想練的 Deployment 層級證據，而不是單顆 Pod log。
+- 你最後再跑一次 `rollout history` 非常好，因為它驗證了一個容易誤解的點：`kubectl rollout undo` **不是把 revision 計數器倒退**，而是建立一個新的 rollout，讓 Deployment 的 Pod template 回到先前 revision 的內容。所以 undo 後看到 revision `3` 很正常；它代表「第三次 rollout 的內容等同於先前的好版本」，不是把數字改回 `1`。
+- 這一輪也順手補出一個實務判斷：rollout 類問題的最小修復鏈通常不是「先長時間盯 Pod」，而是 **先判斷 rollout 是否卡住、確認可回退 revision，再做 undo，最後再確認 rollout 是否恢復成功**。
 
 ### 一句話收斂
 
-- 待補
+- 壞版本 rollout 卡住時，先用 `rollout status` 確認失敗，再用 `rollout history` 看 revision 軌跡，最後用 `rollout undo` 觸發新的回退 rollout；undo 成功後 revision 會往前增加，不會倒退回舊數字。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
@@ -341,13 +393,17 @@ kubectl port-forward -n darkmind svc/darkmind-rollout 8080:80
 
 ### 今天用哪些指令看懂了什麼
 
-- 待回填
-- 待回填
+- `kubectl logs` 與 `kubectl logs --previous` 讓我分清楚 current 與上一輪已退出 container 的證據邊界，也看到了 `CrashLoopBackOff` 裡 `--previous` 不一定每次都穩定可得。
+- `kubectl rollout status`、`kubectl rollout history`、`kubectl rollout undo` 讓我看懂 Deployment rollout 卡住時，不該只盯單顆 Pod，而要切到 revision 與回退這個控制面層級。
 
 ### 練習後還不順手的地方
 
-- 待回填
+- rollout 卡住時，何時該先補 `describe` / `events`，何時該直接 rollback，這個 incident 判斷還要再多練。
 
 ### 補充
 
-- 固定收尾待回填。
+- 固定收尾待執行：
+
+```bash
+kubectl delete namespace darkmind
+```

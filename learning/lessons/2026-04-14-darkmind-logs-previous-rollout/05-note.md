@@ -118,6 +118,57 @@ kubectl get deploy -n darkmind -o yaml > incident-evidence/deployments.yaml
 	2. 如果 Pod 被刪掉、被新 Pod 取代、節點重開、或容器日志已被清理，你就可能拿不到先前那一輪的 logs。
 - 一句話口訣：`CrashLoopBackOff` 通常是 **會繼續重試、不會自動刪 Pod**；但 logs 能不能一直拿到，不是永久保證，所以重要證據要早點留。
 
+### 為什麼 `current log` 和 `--previous` 有時看起來一樣
+
+- 在這個 `darkmind` lab 裡，`crash-loop.yaml` 的 container 每一輪執行的事情都一樣：印一行固定字串，然後立刻退出。
+- 所以你看到 `kubectl logs` 和 `kubectl logs --previous` 內容一樣，**不是因為 current 與 previous 本質上沒有差別**，而是因為每一輪程式行為都完全一樣，輸出自然就重複。
+- 如果是真實應用，current 和 previous 很可能不同。例如 current 只跑到初始化前半段，previous 才真正印出 stack trace 或 fatal error。
+
+### 為什麼 `kubectl logs --previous` 有時會短暫拿不到
+
+- `kubectl logs --previous` 看的不是「任意舊版本 log」，而是 **目前這個 Pod 的上一個已終止 container instance**。
+- 在 `CrashLoopBackOff` 的快速重啟循環中，這個對象是移動中的，所以你可能遇到時序窗口：
+	1. 剛好上一個 container instance 的 log 還沒準備好
+	2. current / previous 剛切換完成，`kubectl` 查詢時撞到過渡瞬間
+	3. container runtime / kubelet 暫時無法把那個上一輪 instance 的 log 取回
+- 所以你這次看到「先拿到、再拿不到、過一下又拿到」，在 crash-loop 類情境裡其實很合理，重點是：**`--previous` 天生就比一般 `logs` 更吃時機**。
+- 這不一定代表「你拿得太晚」或「Pod 已被刪掉」，雖然那兩種情況也可能導致拿不到。更常見的解釋是：你碰到的是快速重啟循環裡的時序窗口。
+- 如果你真的很在意上一輪退出前的輸出，實務上要嘛盡快抓，要嘛第一時間用 `tee` 或重新導向把它存下來，不要假設稍後一定還能補拿。
+
+### 第一次 `apply` 建立 Deployment，算不算 rollout
+
+- 算，而且這個觀念很重要。只要 Deployment controller 根據一個 Pod template 去建立 / 推進對應的 ReplicaSet 與 Pods，從 Deployment 視角看，就有 rollout 過程。
+- 所以第一次 `kubectl apply -f ...` 建立一個新的 Deployment 時，雖然不是「舊版升級到新版」，但它仍然會有第一個 revision、第一個 ReplicaSet、第一波 Pods 被推起來，因此 `kubectl rollout status` 查得到完全合理。
+- 可以把它理解成：**第一次 apply 是第一次發布，更新 template 則是後續發布**；兩者都屬於 rollout，只是前者沒有舊版對照。
+
+### `kubectl rollout status --timeout` 超時代表什麼
+
+- `--timeout=60s` 的意思是：CLI 最多等 60 秒，看這個 rollout 能不能收斂完成。
+- 如果時間內完成，你會看到 `successfully rolled out`。
+- 如果時間內沒完成，`kubectl rollout status` 會 timeout 結束，通常伴隨非零 exit code。它回答的是：**在這個等待窗口內，rollout 還沒成功完成**。
+- 這不等於 Deployment 被刪掉，也不等於 Kubernetes 幫你自動 rollback。它只是告訴你：現在 rollout 還卡著，下一步該做更深觀察，例如看 Pod 狀態、revision、事件，或評估要不要 `rollout undo`。
+- 一句話口訣：`--timeout` 是等待上限，不是修復機制。
+
+### `kubectl rollout history` 裡的 `CHANGE-CAUSE` 是什麼
+
+- `CHANGE-CAUSE` 是給人看的變更原因欄位，用來幫你回想「這次 rollout 是因為什麼變更」。
+- 你現在看到 `<none>` 很正常，因為一般直接 `kubectl apply -f ...` 並不會自動幫你填 change cause。
+- 歷史上常見做法是用 `kubectl annotate deployment ... kubernetes.io/change-cause="..."`，或某些工作流曾搭配 `--record` 類寫法把命令記進去。這樣 `rollout history` 裡就可能看到例如：
+	1. `update image to nginx:1.27-alpine`
+	2. `rollback to stable revision after bad rollout`
+	3. `change readiness probe path to /health`
+- 所以 `CHANGE-CAUSE` 不是 Kubernetes 自己推理出來的根因，而是 **你是否有主動留下人類可讀的變更說明**。
+
+### 為什麼 `kubectl rollout undo` 之後 revision 會變成 3
+
+- 這個點很重要：`undo` 不是把 revision 計數器往回撥，而是 **建立一次新的 rollout**，只不過它把 Pod template 改回先前 revision 的內容。
+- 所以你原本有 revision `1` 和 `2`，做 `undo` 後看到 revision `3`，完全合理。revision `3` 的內容可能和 revision `1` 很像，甚至一樣，但它仍是一次新的發布事件。
+- 可以把它理解成：
+	1. revision `1`：最初 good version
+	2. revision `2`：bad version
+	3. revision `3`：把內容回退到 revision `1` 的新 rollout
+- 一句話口訣：**undo 回的是內容，不是 revision 編號。**
+
 ## Flashcards
 
 <!-- lesson 進行後再回填 -->
