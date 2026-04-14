@@ -1,5 +1,5 @@
 # 2026-03-12 Pod To VM And Endpoints Notes
-
+複習：2026-04-14
 ## Notes
 
 ### Pod IP 是怎麼來的？在 cluster 裡是不是唯一？

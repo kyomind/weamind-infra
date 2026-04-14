@@ -213,3 +213,80 @@ kubectl describe svc weamind-line-bot -n weamind
 也因為它的用途是給 Deployment / ReplicaSet 管理版本，所以 **Service 通常不應該依賴這個 hash 當 selector**。Service 應該選穩定、業務語意明確的 label，例如這個 repo 裡的 `app=weamind`；如果用 `pod-template-hash` 當 selector，rollout 時很容易只選到某一版 Pods，甚至導致切流不穩。
 
 一句話收斂：**`pod-template-hash` 是 Kubernetes 控制器為了區分不同 Pod template 版本而自動加上的標記，主要服務對象是 Deployment 與 ReplicaSet 的 rollout 管理，不是給 Service 當主要 selector 用的。**
+
+## Pod crash 時，什麼情況是 Kubelet 重啟容器？什麼情況是 ReplicaSet 建新 Pod？
+
+這題最重要的第一句是：**Kubernetes 平常不是在「重啟同一個 Pod 物件」，而是兩條不同機制在工作。**
+
+- `Kubelet` 管的是「這個已存在的 Pod 裡面的容器要不要重啟」
+- `ReplicaSet` 管的是「目前符合條件的 Pod 數量夠不夠，不夠就補一個新的 Pod」
+
+所以判斷關鍵不是只看「app 掛了」，而是要看：**壞掉的是容器執行狀態，還是整個 Pod 物件已經不存在 / 即將消失 / 被判定失效。**
+
+先講 Kubelet 這條。
+
+在 WeaMind 這種由 Deployment 建出的 Pod，`restartPolicy` 預設就是 `Always`。這表示如果 Pod 還在、也還綁在某個 node 上，而只是容器程序退出了，例如：
+
+- 主程序 crash
+- liveness probe 失敗後容器被 kill
+- container process 被 OOM kill
+
+⭐️這時通常是 **同一個 Pod 物件裡的容器被 Kubelet 重啟**。你常看到的現象會是：
+
+- Pod 名稱不變
+- Pod UID 不變
+- 通常 Pod IP 也不變
+- `RESTARTS` 數字增加
+- 可能進入 `CrashLoopBackOff`
+
+也就是說，這比較像「同一間房子裡的人一直重開機」，不是重新蓋一間新房子。
+
+再講 ReplicaSet 這條。
+
+ReplicaSet 不直接處理容器 crash；它處理的是 **Pod 數量與歸屬**。當它發現自己應該維持的 Pod 不夠了，才會建立新的 Pod。常見情況包括：
+
+- 某個 Pod 物件被刪掉
+- 某個 Pod 已經進入 `Failed` 並不再算有效副本
+- node 故障後，原 Pod 最後被控制平面判定失效並移除
+- rollout 時舊 Pod 被逐步淘汰，需要新 Pod 遞補
+
+這時你看到的通常會是：
+
+- 出現新的 Pod 名稱
+- 新的 Pod UID
+- 常常也會有新的 Pod IP
+- 舊 Pod 可能處於 `Terminating`、`Failed`，或已消失
+
+所以比較精準地說：**ReplicaSet 不是因為「容器一 crash」就立刻補 Pod，而是因為「它管理的有效 Pod 數量少了」才補新 Pod。**
+
+這也是最容易混淆的地方。比如一個 Pod 裡的 app 一直 crash，若 Pod 物件本身還在，那常常只是 Kubelet 一直重啟容器，ReplicaSet 不一定會立刻多生一個新 Pod。你可能會看到的是一個**還活著但不健康的 Pod**，狀態變成 `CrashLoopBackOff`，而不是自動冒出另一個替身。
+
+把這件事跟 WeaMind 現在的 Deployment 連起來看，因為 [manifests/deployment.yaml](manifests/deployment.yaml) 有 `livenessProbe` 和 `readinessProbe`：
+
+- 如果 app 卡死、health check 過不了，Kubelet 可能先依 liveness probe 把容器殺掉再重啟
+- 如果 Pod 雖然還活著但 readiness 沒過，它可能先從 Service 後端清單拿掉，但 **不代表 ReplicaSet 一定會立刻補一個新的 Pod**
+- 只有當原 Pod 真的被刪除、失效，或 rollout 正在替換時，ReplicaSet 才會建立新的 Pod 來維持副本數
+
+因此最好背的版本是：
+
+- **容器層故障**：先看 Kubelet 是否在同一個 Pod 內重啟容器
+- **Pod 層消失或被淘汰**：才輪到 ReplicaSet 補新的 Pod
+
+如果要用觀察訊號快速分辨，可以這樣看：
+
+- `RESTARTS` 一直增加、Pod 名稱沒變：比較像 Kubelet 在重啟容器
+- 冒出一個新 Pod 名稱、舊 Pod 消失或進入終止：比較像 ReplicaSet 在補新的 Pod
+
+一句話收斂：**Kubelet 負責把「還存在的 Pod」裡壞掉的容器重啟；ReplicaSet 則在「有效 Pod 數量不足」時，另外建立新的 Pod 來補足副本數。**
+
+補一個複習時很好用的快速判斷表：
+
+| 看到的狀態               | 比較像誰在處理                                      | 代表什麼                      | ReplicaSet 會不會立刻補新 Pod         |
+| ------------------------ | --------------------------------------------------- | ----------------------------- | ------------------------------------- |
+| `CrashLoopBackOff`       | Kubelet                                             | Pod 還在，但容器反覆啟動失敗  | 通常不會立刻補，因為 Pod 物件還在     |
+| `NotReady`               | 先是 Kubelet / Pod 狀態機制影響，再反映到 Endpoints | Pod 還存在，但暫時不該接流量  | 通常不會只因為 `NotReady` 就立刻補    |
+| `Failed`                 | Pod 已經失效，接著控制器會介入                      | 這個 Pod 物件已不算有效副本   | 比較可能，因為有效副本數少了          |
+| `Terminating`            | 控制器或刪除流程中                                  | 舊 Pod 正在退場               | 常常會，視副本策略與 rollout 狀態而定 |
+| Pod 直接消失，冒出新名字 | ReplicaSet                                          | 舊 Pod 已不在，控制器補新副本 | 會，這就是補新 Pod 的典型訊號         |
+
+可以把它背成一句很短的規則：**只要 Pod 物件還在，通常先想 Kubelet；只要 Pod 物件少了、失效了、被淘汰了，才開始想 ReplicaSet。**
