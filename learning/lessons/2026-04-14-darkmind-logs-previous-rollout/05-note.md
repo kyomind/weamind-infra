@@ -162,6 +162,44 @@ kubectl get deploy -n darkmind -o yaml > incident-evidence/deployments.yaml
 	3. `change readiness probe path to /health`
 - 所以 `CHANGE-CAUSE` 不是 Kubernetes 自己推理出來的根因，而是 **你是否有主動留下人類可讀的變更說明**。
 
+### 為什麼 `namespace: darkmind` 只宣告一次，不用在 Pod template 再寫一次
+
+- 這題要先分清楚：Deployment 是一個 namespaced resource，而 Pod template 不是獨立送進 API server 的另一個頂層 resource；它只是 Deployment spec 裡的一段「未來要建立的 Pod 規格」。
+- 所以當你在 Deployment 的 `metadata.namespace: darkmind` 指定 namespace 時，這個 Deployment controller 之後建立出來的 ReplicaSet 與 Pods，本來就會落在同一個 namespace，不需要在 `template.metadata` 再寫一次。
+- 反過來說，`labels` 之所以在外層和 `template.metadata.labels` 都常出現，是因為它們用途不同：
+	1. 外層 `metadata.labels` 是貼在 Deployment 物件自己身上
+	2. `template.metadata.labels` 是貼在未來建立出來的 Pod 身上
+- 這就是為什麼 namespace 不像 label 那樣常重複宣告。namespace 是由上層 namespaced resource 決定的範圍；label 則是不同物件各自要攜帶的屬性。
+
+### `imagePullPolicy: IfNotPresent` 是什麼意思
+
+- `IfNotPresent` 的意思是：**如果這個節點本機已經有該 image，就直接用本地快取；如果沒有，才去 registry 拉。**
+- 以 [darkmind/scenarios/bad-rollout-01-good.yaml](darkmind/scenarios/bad-rollout-01-good.yaml) 來說，若 node 上之前已經拉過 `nginx:1.27-alpine`，那 container runtime 可能就不會再重新 pull。
+- 它和 `Always` 的差異在於：`Always` 幾乎每次啟動都會先嘗試向 registry 確認 / 拉取；`IfNotPresent` 則優先信任 node 本地已有的 image。
+- 實務上，`IfNotPresent` 常用於較穩定的版本標籤或 lab；`Always` 常用於你明確想每次都去確認最新內容的情境。不過真正上 production，很多團隊更偏好直接用 immutable image tag 或 digest，避免 `latest` 類歧義。
+
+### `revisionHistoryLimit` 是什麼
+
+- `revisionHistoryLimit: 5` 的意思是：Deployment 最多保留最近 `5` 份舊 revision 對應的歷史 ReplicaSets，方便之後查 `rollout history` 或做 `rollout undo`。
+- 它不是「只能 rollout 五次」，而是 **舊 revision 歷史最多保留幾份**。超過之後，更舊的歷史 ReplicaSet 可能會被清理掉。
+- 所以這個欄位主要影響的是：
+	1. 你能往回看的 revision 深度
+	2. 你能直接 rollback 的歷史範圍
+	3. 要不要保留太多舊 ReplicaSet 佔用控制面資訊
+- 在這個 lab 裡設成 `5`，就是讓你還有幾版歷史可觀察，但不把歷史無限累積下去。
+
+### ⭐️如果第二次 apply 的 YAML 和第一次差很多，最後誰說了算
+
+- 在這個 lab 裡，[darkmind/scenarios/bad-rollout-01-good.yaml](darkmind/scenarios/bad-rollout-01-good.yaml) 和 [darkmind/scenarios/bad-rollout-02-bad.yaml](darkmind/scenarios/bad-rollout-02-bad.yaml) 的 Deployment 都是同一個 resource：
+	1. kind 都是 `Deployment`
+	2. `metadata.name` 都是 `darkmind-rollout`
+	3. `metadata.namespace` 都是 `darkmind`
+- 所以它們不是兩個 Deployment controller 在互相打架，而是 **同一個 Deployment 物件被第二次 apply 更新內容**。換句話說，控制器還是只有一個，名字也還是同一個，只是它的 spec 被改了。
+- 在一般 `kubectl apply -f` 的語意下，對同名同 namespace 的同一個物件再 apply 新 YAML，API server 會更新這個既有物件；Deployment controller 接著就根據更新後的 spec 行事。簡單講，**後 apply 的宣告式期望狀態會成為新的目標狀態**。
+- 但要補一個重要邊界：這句話只對「同一個物件」成立。如果第二份 YAML 換了不同的 `name` 或不同的 `namespace`，那就會變成另一個 Deployment，也就真的會有第二個控制器存在。
+- 還有一個常見誤解也要一起講清楚：第二份 YAML 若**沒有**包含第一份 YAML 裡的某個「不同資源」，不代表它會自動刪掉那個資源。今天 good 檔裡有 `Service`、bad 檔裡沒有，但你對 bad 檔 apply 之後，原本那個 Service 不會因為「第二份沒寫」就自動被刪除。因為 Service 是另一個獨立物件，不是同一個 Deployment 物件的一部分。
+- 一句話口訣：**同名同 namespace 的 Deployment 再 apply，是更新同一個控制器；不是兩個控制器互相聽指揮。**
+
 ### 為什麼 `kubectl rollout undo` 之後 revision 會變成 3
 
 - 這個點很重要：`undo` 不是把 revision 計數器往回撥，而是 **建立一次新的 rollout**，只不過它把 Pod template 改回先前 revision 的內容。
@@ -186,13 +224,76 @@ kubectl get deploy -n darkmind -o yaml > incident-evidence/deployments.yaml
 ### `restartPolicy` 在 Deployment 裡實際扮演什麼角色
 
 - `restartPolicy` 是 **Pod spec 的欄位**，不是 Deployment spec 自己獨有的欄位。
-- 但當 Pod 是由 Deployment 管理時，實務上 template 裡的 `restartPolicy` **幾乎固定是** `Always`。Deployment / ReplicaSet 的預期語意，就是維持長期運作的服務型工作負載。
+- 但這裡要修正成更準的說法：當 Pod 是由 Deployment 管理時，template 裡的 `restartPolicy` **實際上必須是** `Always`。不是只是習慣如此，而是這種控制器的工作負載語意本來就是長期維持服務。
+- 如果你在 Deployment 的 Pod template 裡改成 `OnFailure` 或 `Never`，一般不會變成一個「只是比較少見但還能正常跑」的設計，而是更接近 **不符合 Deployment / ReplicaSet 的預期語意，通常會在 API 驗證層就被拒絕**。
+- 從設計上也能看出衝突：Deployment 想維持的是長期提供服務的 Pod 集合；若 Pod 內 container 結束後不應再自動重啟，那它會更像 `Job` / `CronJob` 這類「做完就結束」的工作負載，而不是 Deployment。
 - ⭐️這代表什麼？代表同一顆 Pod 裡的 container 若退出，**先由 kubelet 在 Pod 內重啟 container**；不會第一時間就靠 Deployment 重新建一顆新 Pod。
 - 只有在 Pod 這個物件本身消失、不再符合條件、或 ReplicaSet 需要補副本時，控制器層才會再建立新的 Pod。
 - 所以在 Deployment 情境裡，你可以把責任拆成兩層：
 	1. **kubelet + restartPolicy=Always**：處理「同一顆 Pod 裡 container 掛了怎麼辦」
 	2. **Deployment / ReplicaSet**：處理「整體應該維持幾顆 Pod、用哪個 template、要不要 rollout / rollback」
 - 一句話口訣：**Deployment 負責維持 Pod 集合，restartPolicy 負責同一顆 Pod 裡 container 掛掉後怎麼處理。**
+
+### 如果想把 crash-loop 壞 Pod 停掉，還不要讓它再自動重建
+
+- 這題要先分清楚「我想刪的是 Pod 還是我想停的是控制器」。
+- 如果 `darkmind-crash-loop` 是由 Deployment 管理，那 **不應該** 直接只刪 Pod，因為 ReplicaSet 會立刻再補一顆新的 Pod，結果只是再壞一次。
+- 這種情況下，常見正確做法有兩種：
+	1. **暫時停掉但保留 Deployment**：
+
+```bash
+kubectl scale deploy/darkmind-crash-loop -n darkmind --replicas=0
+```
+
+	2. **整個情境不要了，直接移除控制器**：
+
+```bash
+kubectl delete deploy darkmind-crash-loop -n darkmind
+```
+
+- 不建議的做法則是這種：
+
+```bash
+kubectl delete pod -n darkmind <crash-loop-pod-name>
+```
+
+- 因為這只是在刪現有 Pod，不是在停掉背後的期望狀態；Deployment / ReplicaSet 看到少一顆，就會補一顆回來。
+- 一句話口訣：**要停自動重建，就處理 Deployment / ReplicaSet，不要只刪 Pod。**
+
+### 對新版 YAML 再做一次 `kubectl apply`，算不算常見 rollout 做法
+
+- 算，這是很常見的 **declarative update** 思路。你把新的 Deployment YAML 套上去，若 Pod template 有差異，Deployment controller 就會啟動新的 rollout。
+- 在小型專案、手動操作、教學情境、或 GitOps / CI 產出的最終步驟裡，對新版 YAML 做 `kubectl apply -f ...` 是很常見的更新方式。
+- 真實團隊裡常見的不是每次都手打這條命令，而是：
+	1. `kubectl apply -f` 由 CI/CD 幫你執行
+	2. `kustomize build ... | kubectl apply -f -`
+	3. `helm upgrade`
+	4. GitOps controller 代為套用宣告式變更
+- 但底層精神是一樣的：**把新的期望狀態宣告給 API server，再讓 Deployment controller 做 rollout。**
+
+### `bad-rollout-01-good.yaml` 和 `bad-rollout-02-bad.yaml` 的主要差異
+
+- 如果只看「會不會造成 rollout 卡住」這件事，兩份 YAML 的 **關鍵差異主要只有兩個**：
+	1. `image`
+	2. `imagePullPolicy`
+- 在 [darkmind/scenarios/bad-rollout-01-good.yaml](darkmind/scenarios/bad-rollout-01-good.yaml) 裡，image 是 `nginx:1.27-alpine`，`imagePullPolicy` 是 `IfNotPresent`。
+- 在 [darkmind/scenarios/bad-rollout-02-bad.yaml](darkmind/scenarios/bad-rollout-02-bad.yaml) 裡，image 是 `nginx:this-tag-should-not-exist-darkmind`，`imagePullPolicy` 是 `Always`。
+- 其他 rollout 相關核心欄位，例如 `replicas`、`strategy.rollingUpdate.maxUnavailable`、`maxSurge`、`readinessProbe`、resources、labels、selector，基本上都維持一致。
+- 還有一個 repo 層面的差異值得注意：good 版本 YAML 另外還包含一個 `Service`，bad 版本 YAML 則只有 `Deployment`。但這個差異 **不是這次 rollout 卡住的主因**，因為你前一步已經建立過同名 Service；後面只對 bad Deployment apply，不會自動刪掉先前的 Service。
+- 所以如果今天要收成一句最精準的說法：**這兩份 rollout YAML 的設計重點，就是盡量只改 image 相關條件，讓你能把 rollout 卡住的主因鎖在 image pull 失敗，而不是混入其他變數。**
+
+### 實務上 rollout 最常改的是不是 image 版本
+
+- 在很多服務型應用裡，**最常見的 rollout 觸發點確實是 image tag / digest 更新**。這是最典型、最容易對應到「發布新版本」的情境。
+- 但實務上不只這一種。只要 Deployment 的 **Pod template** 發生變化，都可能觸發新的 rollout，例如：
+	1. image tag / digest 變更
+	2. environment variables 變更
+	3. command / args 變更
+	4. readiness / liveness probe 變更
+	5. resource requests / limits 變更
+	6. volume mount、secret / config reference 變更
+	7. labels / annotations 寫在 Pod template 內的變更
+- 所以可以這樣記：**最常見的是 image 版本變更，但不是唯一；真正會觸發 rollout 的，是 Pod template 的變更。**
 
 ### 為什麼 `CrashLoopBackOff` 明明是 Pod 狀態，但真正反覆重啟的是 container
 
