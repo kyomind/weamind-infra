@@ -41,30 +41,44 @@ kubectl logs -n darkmind -l app=darkmind-crash-loop
 ### 指令
 
 ```bash
-
+kubectl apply -f darkmind/namespace.yaml
+kubectl apply -f darkmind/healthy.yaml
+kubectl get pods -n darkmind
+kubectl get pods -n darkmind
 ```
 
 ### 關鍵輸出
 
 ```bash
+namespace/darkmind created
+deployment.apps/darkmind-healthy created
+service/darkmind-healthy created
 
+NAME                                READY   STATUS    RESTARTS   AGE
+darkmind-healthy-85c6dcf689-zth8m   0/1     Running   0          2s
+
+NAME                                READY   STATUS    RESTARTS   AGE
+darkmind-healthy-85c6dcf689-zth8m   1/1     Running   0          19s
 ```
 
 ### 使用者選擇理由
 
-- 待回答
+- 使用者選第一組指令，理由是 Day 2 仍然要先建立 `namespace` 與健康基準資源，讓後面 `crash-loop` 與 `bad-rollout` 的觀察都有乾淨的比較座標。
+- 使用者也主動補了一次 `kubectl get pods -n darkmind`，確認健康 Pod 從剛建立時的 `0/1 Running` 暫態，進一步收斂到 `1/1 Running` 的穩定狀態。
 
 ### AI 判讀與修正
 
-- 待補
+- 這個選擇是對的，而且你多補一次 `kubectl get pods -n darkmind` 這個動作也很對。Day 2 雖然主題變成 `logs` 與 `rollout`，但前提仍然是先建立 **可比較的健康基準**，不然後面看到壞情境時，很難分清楚哪些是異常、哪些只是剛建立時的正常暫態。
+- 你這次輸出裡最值得注意的點是：第一次 `get pods` 時看到 `0/1 Running`、`AGE 2s`，第二次再看則變成 `1/1 Running`。這很適合拿來提醒自己：`Running` 不等於已 Ready，`0/1` 到 `1/1` 的過程本身就是正常啟動鏈的一部分。
+- 也就是說，今天這一輪不只是在「建立資源」，而是在建立 **之後辨認 crash 或 rollout 問題時的健康對照組**。
 
 ### 一句話收斂
 
-- 待補
+- Day 2 進壞情境前，仍要先建立健康基準並確認 Pod 真正收斂到 `1/1 Running`；這樣後面看到 `CrashLoopBackOff` 或 rollout 卡住時，才有穩定的比較座標。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
