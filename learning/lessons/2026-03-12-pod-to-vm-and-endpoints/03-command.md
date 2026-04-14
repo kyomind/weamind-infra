@@ -45,7 +45,7 @@ weamind-line-bot   10.42.1.14:8000,10.42.2.13:8000   54d
 
 ### AI 判讀與修正
 
-- `ENDPOINTS` 欄位列出的就是這個 Service 目前實際對到的後端位址，也就是 Pod IP 與 port。
+- ⭐️`ENDPOINTS` 欄位列出的就是這個 Service **目前實際對到的後端位址**，也就是 **Pod IP 與 port**。
 - 更精準地說，這裡顯示的是 namespace 內的 Endpoints 資源清單；在這個案例裡，`weamind-line-bot` 這一列對應的就是 `weamind-line-bot` Service 的後端清單。
 - 看到兩個位址，就可以先判斷目前至少有 2 個可導流的 Pod 在接流量。
 

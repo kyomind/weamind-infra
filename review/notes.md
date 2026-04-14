@@ -148,3 +148,25 @@ EndpointSlice C: 約 50 個 endpoints
 另外，EndpointSlice 也會受到 address type 與 port/protocol 組合影響。每個 EndpointSlice 有自己的 `addressType`，例如 `IPv4`；也有一組適用於該 slice 內 endpoints 的 ports。如果同一個 Service 因為 IPv4 / IPv6、不同 port 組合或其他條件需要分開表示，也可能出現更多 EndpointSlices。
 
 這題可以收斂成：在 WeaMind 目前這種單一 Service port、IPv4、50 replicas 的假設下，預設通常是一個 EndpointSlice 就裝得下；EndpointSlice 真正發揮差異是在超過 100 endpoints、或有更多 address type / port 組合、或大量 endpoints 頻繁變動時。
+
+## 如果 Endpoints 查出來是空的，能不能直接判斷 Service 接不到 Pod？
+
+可以先下的結論是：**就這個 Service 目前的導流狀態來說，它後面沒有可用的 Pod endpoints，所以它現在無法把流量轉送到 Pod。** 這個判斷在 WeaMind 的情境裡是成立的，因為 [manifests/service.yaml](manifests/service.yaml) 的 `weamind-line-bot` Service 是靠 `selector: app: weamind` 去選 Pod，而 [manifests/deployment.yaml](manifests/deployment.yaml) 的 Pod 也確實是靠 `app: weamind` 這個 label 被選到。
+
+但更精準地說，**空 Endpoints 不等於「叢集裡完全沒有 Pod」**，而是等於「這個 Service 目前沒有可導流的後端」。常見原因有幾種：
+1. Pod 根本沒起來
+2. Pod 有起來但 label 不符合 Service selector
+3. Pod 還沒 Ready
+4. 查錯 namespace
+
+以 WeaMind 這份 Deployment 來看，因為有 readiness probe，所以就算 Pod 處於 Running，也可能尚未被納入 Service 後端。
+
+所以面試或複習時，最穩的說法是：如果 `kubectl get endpoints -n weamind` 看到 `weamind-line-bot` 的 endpoints 是空的，我可以先確認這個 Service 現在接不到可用 Pod；下一步要去分辨是「沒有 Pod」、還是「有 Pod 但沒有被這個 Service 選進來」。這時通常就接著查：
+
+```bash
+kubectl get pods -n weamind
+kubectl get pods -n weamind -o wide --show-labels
+kubectl describe svc weamind-line-bot -n weamind
+```
+
+一句話收斂：**空 Endpoints 可以判斷 Service 目前沒有可導流的 Pod，但不能只靠這一點就斷言整個 namespace 裡完全沒有 Pod。**
