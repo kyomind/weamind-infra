@@ -295,6 +295,99 @@ kubectl delete pod -n darkmind <crash-loop-pod-name>
 	7. labels / annotations 寫在 Pod template 內的變更
 - 所以可以這樣記：**最常見的是 image 版本變更，但不是唯一；真正會觸發 rollout 的，是 Pod template 的變更。**
 
+### `kubectl apply` 更新同一個 Deployment 時，哪些欄位會觸發 rollout、哪些不會
+
+- 最核心的判斷句是：**只要 Deployment 的 Pod template，也就是 `spec.template` 底下的內容有變，通常就會觸發新的 rollout。**
+- 原因是 Deployment controller 會把 `spec.template` 視為「我要維持的 Pod 藍圖」。這份藍圖一變，就需要建立新的 ReplicaSet，讓新 Pod 依新藍圖被推出來。
+- 因此，常見**會觸發 rollout** 的變更包括：
+	1. `spec.template.spec.containers[].image`
+	2. `spec.template.spec.containers[].env`
+	3. `spec.template.spec.containers[].command` / `args`
+	4. `spec.template.spec.containers[].resources`
+	5. `spec.template.spec.containers[].readinessProbe` / `livenessProbe`
+	6. `spec.template.metadata.labels` / annotations
+	7. volume、volumeMount、secret / config reference
+- 反過來說，常見**不會直接觸發 rollout** 的欄位，通常是 Deployment 自己的外層控制欄位，而不是 Pod template 內容，例如：
+	1. `spec.replicas`
+	2. `spec.revisionHistoryLimit`
+	3. `spec.strategy.rollingUpdate.maxUnavailable`
+	4. `spec.strategy.rollingUpdate.maxSurge`
+	5. `metadata.annotations` 寫在 Deployment 外層、不是寫在 `spec.template.metadata` 裡的變更
+- 這些欄位當然仍然會改變 Deployment 行為，但通常比較像是在調整「怎麼發布」或「保留多少歷史」，而不是宣告一個新的 Pod 藍圖，所以不一定會新長一個 rollout。
+- 用今天的 `bad-rollout` lab 來看，之所以第二次 apply 會形成新的 rollout，關鍵就是 **`spec.template.spec.containers[0].image` 和 `imagePullPolicy` 變了**。這兩個都在 Pod template 裡，所以 Deployment controller 會建立新的 revision。
+- 你也可以順手對照一個反例：如果今天你只把 `revisionHistoryLimit: 5` 改成 `10`，那通常不會因為這件事就建立一個新的 rollout；因為 Pod template 本身沒有變。
+- 一句話口訣：**看 `spec.template` 有沒有變；有變就多半會 rollout，沒變通常只是調整控制器行為。**
+
+### 為什麼 `replicas` 改變通常不算 rollout，但畫面上還是會看到 Pod 數量變化
+
+- 這題最容易混的地方是：**「有 Pod 變化」不等於「有 rollout」**。
+- 當你改 `spec.replicas`，Deployment controller 會去調整目標副本數，讓現有 ReplicaSet 底下的 Pod 變多或變少。這是 **scale 行為**，不是在換一份新的 Pod template。
+- 因為 `spec.template` 沒變，所以通常不需要建立新的 ReplicaSet，也不會產生新的 revision；控制器只是對既有版本做水平擴縮。
+- 你在畫面上當然 still 會看到 Pod 數量改變，例如從 `2` 顆變 `3` 顆或縮成 `1` 顆，但那比較像「同一版 Pod 多幾顆 / 少幾顆」，不是「推出一個新版 Pod」。
+- 可以這樣對照：
+	1. **scale**：同一個 ReplicaSet，同一份 Pod template，只是數量變了
+	2. **rollout**：Pod template 變了，所以長出新的 ReplicaSet，逐步把舊版 Pod 換成新版 Pod
+- 所以面試時可以用一句話回答：**改 replicas 會讓 Pod 數量變動，但通常不算 rollout，因為它沒有改 Pod template，只是在調整同一版工作負載的副本數。**
+
+### `kubectl scale` 的常見用法、情境與範例
+
+- `kubectl scale` 的核心用途很單純：**直接調整工作負載的副本數**。它最常用在 `Deployment`、`ReplicaSet`、`StatefulSet` 這類有 replicas 概念的資源上。
+- 它處理的是 scale，不是 rollout。也就是說，預設是在 **不改 Pod template** 的前提下，讓同一版工作負載變多或變少。
+
+#### 常見情境
+
+- **臨時擴容**：流量變大，先把 `replicas` 從 `2` 提到 `4`
+- **臨時縮容**：流量低、要省資源，先把副本數從 `4` 降回 `2`
+- **暫停故障情境**：像今天的 `darkmind-crash-loop`，想先停掉不斷重建的壞 Pod，可把 Deployment scale 到 `0`
+- **維護窗口降載**：短時間只保留最小副本數，方便觀察或節省節點資源
+- **驗證多副本行為**：想觀察 service load balancing、rollout 策略、或多副本下的 `get pods` / `describe` 行為
+
+#### 最常見指令範例
+
+- 把 Deployment 擴到 `3` 個副本：
+
+```bash
+kubectl scale deploy/darkmind-rollout -n darkmind --replicas=3
+```
+
+- 把 Deployment 縮到 `1` 個副本：
+
+```bash
+kubectl scale deploy/darkmind-rollout -n darkmind --replicas=1
+```
+
+- 把壞情境整個停掉：
+
+```bash
+kubectl scale deploy/darkmind-crash-loop -n darkmind --replicas=0
+```
+
+- scale 完後常見的確認方式：
+
+```bash
+kubectl get deploy -n darkmind
+kubectl get pods -n darkmind
+kubectl rollout status deploy/darkmind-rollout -n darkmind --timeout=30s
+```
+
+#### 怎麼判讀 scale 是否成功
+
+- 先看 `kubectl get deploy` 的 `DESIRED`、`CURRENT`、`AVAILABLE` 是否往目標副本數收斂
+- 再看 `kubectl get pods`，確認 Pod 數量是否真的變多或變少
+- 若 scale up 後新 Pod 起不來，這時看到的問題通常還是 image、probe、resources 等 Pod 自身問題，不是 `scale` 指令本身有問題
+
+#### 和 rollout 的差異再收一次
+
+- `kubectl scale`：改的是副本數，通常不會長新 revision
+- `kubectl rollout restart` / apply 新 template：改的是 Pod template，會形成新的 rollout
+- 所以如果目標是「多幾顆同版 Pod」，用 `scale`
+- 如果目標是「推出新版本 Pod」，看 rollout / apply
+
+#### 一個實務提醒
+
+- `kubectl scale` 很適合臨時操作，但如果你之後還會用 YAML / GitOps 同步狀態，要注意：**手動 scale 改的是 live state**。若之後又 apply 舊 YAML，而 YAML 裡 `replicas` 還是原值，那副本數可能又被蓋回去。
+- 一句話口訣：**`scale` 是快速改數量，`rollout` 是推出新版本；兩者都會讓畫面變動，但語意不同。**
+
 ### 為什麼 `CrashLoopBackOff` 明明是 Pod 狀態，但真正反覆重啟的是 container
 
 - 這個混淆非常常見。你在 `kubectl get pods` 看到的是 Pod 列表，所以 `STATUS` 欄位會把人最關心的狀態濃縮顯示在 Pod 那一行上，例如 `Running`、`ImagePullBackOff`、`CrashLoopBackOff`。
