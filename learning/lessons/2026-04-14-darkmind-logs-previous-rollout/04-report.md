@@ -6,7 +6,7 @@
 
 ## 狀態
 
-- 進行中
+- 已完成
 
 ## QA 收斂了什麼
 
@@ -39,8 +39,9 @@
 
 - rollout 卡住時如何再搭配 `describe`、`events`、`get rs` 做更細的控制面排查，還可以再補一輪。
 - `CHANGE-CAUSE` 這類變更紀錄在真實團隊工作流裡如何維護，還可再補 CI/CD 情境對照。
+- `exec`、`port-forward`、`readiness-fail` 這條 Day 3 線還沒接上，之後可用 `darkmind` 繼續往下推。
 
 ## 下一步
 
-- 若今天繼續互動，可先收你接下來的追問，再視需要補進 `05-note.md`。
-- 若今天先收尾，下一步就是執行固定 cleanup，然後把 lesson 狀態收斂成完整 report。
+- 正式主線上，W6 Day 2 已完成；下一步可進入 W6 Day 3，主題較合理地接 `exec`、`port-forward`、`readiness-fail`。
+- 若先做複習，優先回收這兩天 `darkmind` lesson 的 `report`、`notes` 與 `flashcards`，再決定是否進入下一天。
