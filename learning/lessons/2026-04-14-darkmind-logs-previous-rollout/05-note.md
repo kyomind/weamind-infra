@@ -399,4 +399,82 @@ kubectl rollout status deploy/darkmind-rollout -n darkmind --timeout=30s
 
 ## Flashcards
 
-<!-- lesson 進行後再回填 -->
+- `CrashLoopBackOff` 類問題為什麼 Day 2 會先看 `kubectl logs`？ #DevOps #card
+	- 因為問題已落到 container 執行與退出循環
+	- `logs` 開始回答 app / process 自己輸出了什麼
+	- 它要和 Day 1 的 Kubernetes 視角工具互補
+
+- `kubectl logs` 和 `kubectl logs --previous` 的分工是什麼？ #DevOps #card
+	- `logs` 看現在這一輪 container instance 的輸出
+	- `logs --previous` 看上一個已終止 container instance 的輸出
+	- 在 crash loop 裡兩者一起看，才容易接上前因後果
+
+- 為什麼 `kubectl logs --previous` 有時會短暫拿不到？ #DevOps #card
+	- 它只看目前這個 Pod 的上一個已終止 container instance
+	- 在快速重啟循環裡 current / previous 對象是移動中的
+	- 所以它比一般 `logs` 更吃查詢時機
+
+- `CrashLoopBackOff` 代表 Pod 會自動被刪掉嗎？ #DevOps #card
+	- 不代表自動刪 Pod
+	- 常見行為是 kubelet 持續重試，但等待時間做 exponential backoff
+	- 對 Deployment 來說通常沒有固定最大重啟次數
+
+- `Running` 和 `Ready` 的差異是什麼？ #DevOps #card
+	- `Running` 是程式有跑起來
+	- `Ready` 是 Kubernetes 願意把流量交給你
+	- 有 readiness probe 時，通常要 probe 成功才會 ready
+
+- rollout 類問題時，`status`、`history`、`undo` 各自回答什麼？ #DevOps #card
+	- `rollout status` 看這次 rollout 有沒有順利收斂
+	- `rollout history` 看 Deployment 的 revision 軌跡
+	- `rollout undo` 是回退到前一版或指定 revision 的恢復動作
+
+- 為什麼 `kubectl rollout undo` 之後 revision 會增加？ #DevOps #card
+	- `undo` 回的是內容，不是 revision 編號
+	- 它會建立一次新的 rollout
+	- 所以 revision 會往前增加，不會倒退
+
+- 第一次 `kubectl apply -f` 建立 Deployment 算 rollout 嗎？ #DevOps #card
+	- 算第一次發布
+	- Deployment controller 會建立第一個 ReplicaSet 並推起 Pods
+	- 所以 `kubectl rollout status` 查得到很正常
+
+- 什麼變更通常會觸發 Deployment rollout？ #DevOps #card
+	- 關鍵看 `spec.template` 有沒有變
+	- image、env、command、probe、resources、template labels/annotations 都常會觸發
+	- 外層控制欄位變更不一定會形成新 rollout
+
+- 為什麼改 `replicas` 通常不算 rollout？ #DevOps #card
+	- 因為 Pod template 沒變
+	- 控制器只是對既有版本做 scale
+	- 有 Pod 數量變化，不等於有新 revision
+
+- `kubectl scale` 最適合拿來做什麼？ #DevOps #card
+	- 快速調整同一版工作負載的副本數
+	- 可用於臨時擴容、縮容或把故障情境 scale 到 0
+	- 它處理的是 scale，不是 rollout
+
+- 如果想停掉 crash-loop 壞 Pod，又不讓它自動重建，該怎麼做？ #DevOps #card
+	- 處理 Deployment / ReplicaSet，不要只刪 Pod
+	- 可用 `kubectl scale deploy/... --replicas=0`
+	- 或直接刪掉 Deployment
+
+- 為什麼 `namespace` 不用在 Pod template 再寫一次？ #DevOps #card
+	- Deployment 是 namespaced resource
+	- Pod template 不是獨立頂層物件，只是未來 Pod 規格
+	- Deployment 建出的 ReplicaSet 與 Pods 會自動落在同一個 namespace
+
+- `imagePullPolicy: IfNotPresent` 的行為是什麼？ #DevOps #card
+	- 節點本機已有 image 就直接用快取
+	- 本機沒有時才去 registry 拉取
+	- 它和 `Always` 的差別在於是否每次都先嘗試拉取 / 確認
+
+- `revisionHistoryLimit` 控制的是什麼？ #DevOps #card
+	- 控制 Deployment 最多保留多少舊 revision 歷史
+	- 影響 `rollout history` 可回看的深度與可回退範圍
+	- 不是限制 rollout 次數
+
+- 對同名同 namespace 的 Deployment 再 apply 新 YAML，最後誰說了算？ #DevOps #card
+	- 這是在更新同一個 Deployment 物件
+	- 控制器還是只有一個，不是兩個控制器打架
+	- 後 apply 的宣告式期望狀態會成為新的目標狀態
