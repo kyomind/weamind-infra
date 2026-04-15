@@ -333,4 +333,31 @@ ReplicaSet 不直接處理容器 crash；它處理的是 **Pod 數量與歸屬**
 
 一句話收斂：**同一個 ReplicaSet 底下的 Pods 會共用同一個 `pod-template-hash`，但 Pod 名稱最後那段小尾巴只是用來區分不同 Pod，不是第二個版本 hash。**
 
-🐥顯然pod是需要獨立的尾碼來區分不同的pod，因為ReplicaSet會建立多個Pod，需要再加上一個unique字串
+🐱：顯然 Pod 是需要獨立的尾碼來區分不同的 Pod，因為 ReplicaSet 會建立多個 Pod，需要再加上一個 unique 字串。
+
+## `kubectl rollout status` 為什麼要寫 `deployment/`？不寫會怎樣？
+
+簡答：**對，因為 `rollout status` 不是只看一種資源，所以要先告訴 kubectl 你要看的資源類型。**
+
+`kubectl rollout status` 的用法是：
+
+```bash
+kubectl rollout status TYPE NAME
+kubectl rollout status TYPE/NAME
+```
+
+所以 `deployment/weamind` 的 `deployment/` 前綴，本質上是在指定 resource type。這不是單純裝飾，而是在告訴 kubectl：你要看的是 Deployment 這個 rollout 狀態。
+
+如果你直接寫：
+
+```bash
+kubectl rollout status weamind -n weamind
+```
+
+kubectl 會把 `weamind` 當成「資源類型」來解析，而不是資源名稱，因此會報類似這種錯：
+
+```bash
+error: the server doesn't have a resource type "weamind"
+```
+
+一句話記法：**`rollout status` 要先知道你在看哪一種 workload，所以要寫 `deployment weamind` 或 `deployment/weamind`；省略類型時，kubectl 會把名稱誤當成 type。**
