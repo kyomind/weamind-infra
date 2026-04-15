@@ -1,5 +1,5 @@
 # 2026-03-16 Deployment Basics Command
-
+複習：2026-04-15
 ## 今日指令練習目標
 
 把今天 lesson 的管理層級對到實際觀察：
@@ -199,9 +199,9 @@ Events:          <none>
 ### AI 判讀與修正
 
 - 這次補跑 `kubectl describe deployment weamind -n weamind` 很有價值，因為它把前一輪的延伸疑問直接收斂掉了。
-- 和 `kubectl get rs -n weamind` 相比，這個指令的優勢是它直接站在 Deployment 視角，把 `NewReplicaSet`、`OldReplicaSets`、更新策略、selector、conditions 一次列出來，因此更貼近「某個 Deployment 底下 currently 由誰承接」這個問題。
+- ⭐️和 `kubectl get rs -n weamind` 相比，這個指令的優勢是它直接站在 Deployment 視角，把 `NewReplicaSet`、`OldReplicaSets`、更新策略、selector、conditions 一次列出來，因此更貼近「某個 Deployment 底下 currently 由誰承接」這個問題。
 - 代價也正如你觀察到的：它的資訊面比較廣，若只是想快速掃一眼目前有哪些 ReplicaSets，`get rs` 會更乾淨；若是要確認 owner 關係與 rollout 歷史，`describe deployment` 會更準。
-- 以這次輸出來看，可以直接收斂出：目前 `weamind-5985b7f7f6` 是承接中的 `NewReplicaSet`，其餘列出的 `OldReplicaSets` 都是舊 rollout 留下來、但目前副本數已縮為 0 的版本。
+- ⭐️以這次輸出來看，可以直接收斂出：目前 `weamind-5985b7f7f6` 是承接中的 `NewReplicaSet`，其餘列出的 `OldReplicaSets` 都是舊 rollout 留下來、但目前副本數已縮為 0 的版本。
 
 ### 一句話收斂
 
@@ -257,7 +257,7 @@ weamind-5985b7f7f6-wdptx   1/1     Running   0          55d   app=weamind,pod-te
 - 這題的最小收斂要抓兩個對應點：第一，Pod 名稱 `weamind-5985b7f7f6-t2qpm`、`weamind-5985b7f7f6-wdptx` 前半段的 `weamind-5985b7f7f6`，已經和前一輪看到的 ReplicaSet 名稱 `weamind-5985b7f7f6` 對上。第二，Pods 上的 `pod-template-hash=5985b7f7f6`，也正好和這個 ReplicaSet 名稱尾段的 hash 一致。
 - 所以雖然這個輸出沒有直接寫出「owner 是哪個 ReplicaSet」，但它已經給出足夠強的對照線索：目前這兩個 Pods 是由 `weamind-5985b7f7f6` 這個 ReplicaSet 建出來的。
 - 你的直覺也對一半：因為 repo 沒有獨立手寫 ReplicaSet YAML，所以這層關係確實要回到 Deployment 的 rollout 結果去理解；但執行期要把 Pod 對回 ReplicaSet，最直接的觀察點不是 Deployment YAML 本身，而是 Pod 名稱前綴加上 `pod-template-hash` 這個 label。
-- 如果之後要看更精準的 owner 關係，而不是靠名稱和 hash 判讀，可以再補看單一 Pod 的 `ownerReferences`；但對今天這題來說，先能用 Pod 名稱與 `pod-template-hash` 對回 ReplicaSet，就已經夠用了。
+- ⭐️如果之後要看更精準的 owner 關係，而不是靠名稱和 hash 判讀，可以再補看單一 Pod 的 `ownerReferences`；但對今天這題來說，先能用 Pod 名稱與 `pod-template-hash` 對回 ReplicaSet，就已經夠用了。
 
 ### 一句話收斂
 
