@@ -69,6 +69,47 @@
 - ⭐️若是像 Grafana、Prometheus、Argo CD、Kubernetes Dashboard 這類 **叢集內管理 UI**，`port-forward` 幾乎是非常常見的日常操作，因為它能快速在本機瀏覽器打開介面，又不需要先把服務公開出去。
 - 真正常見、值得優先熟的實務順序通常是：**Service first、Pod second**。因為 Service 比較接近一般應用入口；Pod 則比較偏向單點 debug。Deployment 類型可以會用，但通常不會是第一個要背熟的主力形態。
 
+### W6D3 command drill 的核心邊界
+
+- `Running`：Pod / container 還在跑。
+- `exec`：我可以從 container 內部視角進去看。
+- `port-forward`：我可以從本機建立 debug tunnel 打進去。
+- `Ready`：Kubernetes 是否判定它已具備接流量能力。
+- `endpoints`：Service 最終是否真的把它收進可送流量的後端名單。
+
+- 這五件事必須拆開看，不能混成同一層結論。
+- 一個 Pod 可以同時是 `Running`、`exec` 得進去、甚至 `port-forward` 打得到，但 **仍然不是 Ready，也仍然不在 Service 的 `endpoints` 裡**。
+- 今天整份 lesson 的價值，就是把「container 還活著」和「Service 願不願意送流量給它」徹底分開。
+
 ## Flashcards
 
-<!-- lesson 收尾後若有穩定卡片素材，再補在這裡 -->
+- `Running` 和 `Ready` 差在哪裡？ #DevOps #card
+	- `Running` 比較接近 Pod / container 已啟動在跑
+	- `Ready` 比較接近是否已具備接流量能力
+	- Pod 可以是 `Running`，但仍然不是 `Ready`
+
+- 為什麼 `readinessProbe` 失敗時一定要看 `endpoints`？ #DevOps #card
+	- Pod 狀態只能回答它還活不活著
+	- `endpoints` 才回答 Service 會不會真的送流量給它
+	- `endpoints` 空白代表它不是目前可送流量的後端
+
+- `kubectl exec` 真正證明的是什麼？ #DevOps #card
+	- 它先證明 container 仍可互動、可進入內部視角
+	- 單靠進得去 shell，不等於服務本身已正常回應
+	- 還要在 container 內補打 `127.0.0.1` 或做最小服務驗證
+
+- `kubectl port-forward` 真正證明的是什麼？ #DevOps #card
+	- 它在本機建立 debug 用的臨時 tunnel
+	- 證明我能從本機透過 `kubectl` 打到目標 Pod / Service port
+	- 不等於正式 Ingress / LB / 外部流量路徑都已健康
+
+- `readiness-fail` 情境最關鍵的判讀句是什麼？ #DevOps #card
+	- Pod 可以是 `0/1 Running`
+	- `exec` 也仍可能成功
+	- 但 `endpoints` 依然可以是空的
+	- 這表示 container 還活著，不代表 Service 會送流量給它
+
+- 實務上最常見的 `port-forward` 對象是哪兩種？ #DevOps #card
+	- `Service` 最常見，適合快速驗證應用入口或內部 UI
+	- `Pod` 次常見，適合鎖定單顆 Pod 做單點 debug
+	- 排查時若在意到底打到哪顆 Pod，直接指定 Pod 更準
