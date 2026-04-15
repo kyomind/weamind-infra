@@ -81,6 +81,30 @@
 - 一個 Pod 可以同時是 `Running`、`exec` 得進去、甚至 `port-forward` 打得到，但 **仍然不是 Ready，也仍然不在 Service 的 `endpoints` 裡**。
 - 今天整份 lesson 的價值，就是把「container 還活著」和「Service 願不願意送流量給它」徹底分開。
 
+### 為什麼這份 YAML 會穩定觸發 readiness fail
+
+- 這份 `readiness-fail.yaml` 的主因，確實是 `readinessProbe` 去打了一個不存在的路徑：`/darkmind-missing-health`
+- 這個情境之所以穩定成立，不只是一個 path 寫錯而已，而是整組條件有刻意配好：container 正常啟動、port 對得上、Service selector 對得上，但 readiness probe 會持續失敗
+- `livenessProbe` 打的是 `/`，所以 container 不會因為 liveness fail 被重啟
+- 因此最後會形成今天要的狀態：Pod / container 還活著，但 Pod 不 Ready，而且 Service 不會把它收進 `endpoints`
+
+### `kubectl describe` 裡的 `#success=1 #failure=3` 代表什麼
+
+- 在 `kubectl describe deploy` 或 `kubectl describe pod` 的 probe 顯示裡，`#success=1` 和 `#failure=3` 不是「目前已成功幾次、失敗幾次」的統計值
+- 它們代表的是 probe 設定裡的 **`successThreshold`** 與 **`failureThreshold`**
+- 所以 `Readiness: http-get ... #success=1 #failure=3` 的意思是：這個 probe 需要 **連續 1 次成功** 才算通過，連續 **3 次失敗** 才算失敗
+- 這裡的 `#success=1` 是預設門檻，不代表這個不存在的端點真的成功過一次
+- 也就是說，就算 `/darkmind-missing-health` 理論上不可能成功，`kubectl describe` 仍會印出 `#success=1`，因為它顯示的是 probe 規格，不是執行歷史
+
+### 如何從 `readiness-fail.yaml` 直接推導出最後會看到什麼
+
+- 第一個先看的是 container 本身會不會啟動。這份 YAML 用的是標準 `nginx:1.27-alpine`，port 也是常見的 `80`，所以沒有刻意設計成 crash 或 image pull fail 類問題
+- 第二個看 `readinessProbe`。它打的是 `/darkmind-missing-health`，對標準 nginx 來說這不是預設存在的路徑，所以 probe 預期會持續失敗
+- 第三個看 `livenessProbe`。它打的是 `/`，而 `/` 對 nginx 會正常回頁面，所以 liveness 不會失敗，container 也不會因為 liveness 被重啟
+- 第四個看 Service selector 與 port。這份 YAML 的 selector 與 Pod label 是對得上的，Service port 與 targetPort 也對得上，所以不是 selector 寫錯或 port 接錯導致沒有後端
+- 把前面四件事合起來，就能直接推導出最後狀態：**Pod / container 會活著，所以會看到 `Running`；但 readiness 會失敗，所以會看到 `0/1 Ready`；因為 Pod 不 Ready，所以 Service 的 `endpoints` 會是空的**
+- 也就是說，這份 YAML 最值得練的不是「怎麼把 probe 寫壞」，而是 **如何從 probe、liveness、selector、Service 這幾塊配置，預先推導出 Pod 與 `endpoints` 會呈現什麼狀態**
+
 ## Flashcards
 
 - `Running` 和 `Ready` 差在哪裡？ #DevOps #card
