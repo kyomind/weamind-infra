@@ -333,4 +333,4 @@ ReplicaSet 不直接處理容器 crash；它處理的是 **Pod 數量與歸屬**
 
 一句話收斂：**同一個 ReplicaSet 底下的 Pods 會共用同一個 `pod-template-hash`，但 Pod 名稱最後那段小尾巴只是用來區分不同 Pod，不是第二個版本 hash。**
 
-🐱顯然pod是需要獨立的尾碼來區分不同的pod，因為ReplicaSet會建立多個Pod，需要再加上一個unique字串
+🐥顯然pod是需要獨立的尾碼來區分不同的pod，因為ReplicaSet會建立多個Pod，需要再加上一個unique字串
