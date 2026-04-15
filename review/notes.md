@@ -2,7 +2,7 @@
 
 ## Endpoints 是怎麼產生與動態更新的？
 
-Endpoints 可以理解成「某個 Service 在執行期實際可以導流到哪些後端 Pod IP / port」。在 WeaMind 這個 repo 裡，`weamind-line-bot` Service 不是手動指定 Pod IP，而是靠 `manifests/service.yaml` 裡的 selector：
+Endpoints 可以理解成「某個 Service 在執行期實際可以導流到哪些後端 Pod IP / port」。在 WeaMind 裡，`weamind-line-bot` Service 不是手動指定 Pod IP，而是靠 `manifests/service.yaml` 裡的 selector：
 
 ```yaml
 selector:
@@ -18,7 +18,7 @@ labels:
 
 當 Service selector 選到符合 label 的 Pod，而且 Pod 已經進入**可接流量**的狀態時，**Kubernetes 會把這些 Pod 的 IP 和目標 port 整理成 Service 對應的 Endpoints**。對 WeaMind 來說，就是把 `weamind-line-bot:80` 對到後端 Pod 的 `8000`。
 
-⭐️它是**動態更新**的，不是固定寫死。當 Deployment 建新 Pod、舊 Pod 被刪除、Pod IP 改變、**Pod readiness 狀態改變**，或 Service **selector 被修改**時，Kubernetes **控制器**會重新計算這個 Service 後面有哪些可用後端。現在 Kubernetes 內部更主要使用 EndpointSlice，但 `kubectl get endpoints weamind-line-bot -n weamind` 仍然是很直覺的觀察點。
+它是**動態更新**的，不是固定寫死。當 Pod 建立、刪除、IP 改變、readiness 改變，或 Service selector 被修改時，控制器都會重新計算這個 Service 的後端。現在 Kubernetes 內部更主要用 EndpointSlice，但 `kubectl get endpoints weamind-line-bot -n weamind` 仍然是很直覺的觀察點。
 
 Endpoints 會是空的，通常代表 `Service -> Pod` 這一段還沒有成立。第一輪先查：
 
@@ -27,11 +27,11 @@ Endpoints 會是空的，通常代表 `Service -> Pod` 這一段還沒有成立�
 - Deployment 是否成功建立 Pod，例如 image pull、排程、啟動或 readiness probe 是否失敗
 - namespace 是否查對，這裡應該是 `weamind`
 
-所以面試時可以收斂成：Service 是穩定入口，Endpoints 是 Kubernetes 根據 Service selector、Pod label 和 Pod readiness 動態整理出的後端清單；如果 Endpoints 是空的，我會先對照 Service selector 和 Deployment 的 Pod labels，再看 Pod 是否 Ready，而不是先跳去查 PostgreSQL 或 Redis。
+一句話收斂：Service 是穩定入口，Endpoints 是 Kubernetes 根據 Service selector、Pod label 和 Pod readiness 動態整理出的後端清單；如果 Endpoints 是空的，先查 selector、labels 和 Pod Ready 狀態。
 
 ## Service 是否有自己的內部 DNS 和 Port？
 
-這個理解大方向是合理的，但可以修得更精準：Service 是 Kubernetes 裡一個獨立資源，它會提供一個穩定的 cluster 內入口；這個入口通常包含穩定的 Service name / DNS 名稱、ClusterIP，以及 Service port。
+這個理解大方向是對的。Service 是 Kubernetes 裡一個獨立資源，會提供穩定的 cluster 內入口；這個入口通常包含 Service name / DNS 名稱、ClusterIP，以及 Service port。
 
 在 WeaMind 裡，`weamind-line-bot` Service 宣告在 `weamind` namespace，因此叢集內可以用類似 `weamind-line-bot` 或完整一點的 `weamind-line-bot.weamind.svc.cluster.local` 來解析它。這個 DNS 名稱不是在 YAML 裡另外手寫一個 `dns` 欄位，而是 Kubernetes/CoreDNS 根據 Service 的 `metadata.name` 和 `metadata.namespace` 自動提供。
 
@@ -48,11 +48,11 @@ ports:
 
 這代表：打到 `weamind-line-bot:80` 的 cluster 內流量，會被 Service 導向符合 `app: weamind` 的 Pod，並轉到 Pod 的 `8000` port。
 
-所以比較準確的說法是：Service 一旦被建立，就會**因為自己的 name / namespace 取得 cluster 內 DNS 名稱**；而 Service port、targetPort、selector 則是我們在 manifest 裡明確宣告的路由規則。不是「DNS 和 port 兩者都要手動聲明才算 Service」，而是「建立 Service 並宣告 port/selector 後，Kubernetes 會自動提供對應的 cluster 內 DNS 入口」。
+比較準的說法是：Service 建立後，會**因為自己的 name / namespace 取得 cluster 內 DNS 名稱**；而 port、targetPort、selector 則是 manifest 裡明確宣告的路由規則。不是 DNS 和 port 都要手動宣告，而是建立 Service 並宣告 port/selector 後，Kubernetes 會自動提供對應的 cluster 內 DNS。
 
 ## Service metadata.name 如何影響內部 DNS？
 
-`metadata.name` 不是一個專門的 DNS 欄位，但它會成為 Kubernetes Service 內部 DNS 名稱的核心部分。
+`metadata.name` 不是專門的 DNS 欄位，但它會成為 Kubernetes Service 內部 DNS 名稱的核心部分。
 
 以 WeaMind 來說，Service manifest 裡宣告：
 
@@ -62,7 +62,7 @@ metadata:
   namespace: weamind
 ```
 
-因此在同一個 namespace 裡，Pod 通常**可以直接用短名 `weamind-line-bot` 連到**這個 Service；若要寫完整一點，可以是：
+因此在同一個 namespace 裡，Pod 通常**可以直接用短名 `weamind-line-bot` 連到**這個 Service；寫完整一點則是：
 
 ```bash
 weamind-line-bot.weamind.svc.cluster.local
@@ -74,18 +74,17 @@ weamind-line-bot.weamind.svc.cluster.local
 <service-name>.<namespace>.svc.cluster.local
 ```
 
-⭐️⭐️⭐️
-所以 `metadata.name: weamind-line-bot` **會影響 DNS 的第一段**，也就是 Service name；`metadata.namespace: weamind` 會影響第二段。這就是為什麼 Ingress backend 可以寫 `name: weamind-line-bot`，⭐️而**叢集內(任一 node)測試時**也可以打 `http://weamind-line-bot/health`：它們都在指向同一個 Service 入口。
+所以 `metadata.name: weamind-line-bot` **會影響 DNS 的第一段**，也就是 Service name；`metadata.namespace: weamind` 會影響第二段。這就是為什麼 Ingress backend 可以寫 `name: weamind-line-bot`，而叢集內也可以打 `http://weamind-line-bot/health`。
 
-比較精準的講法是：我們沒有在 Service 裡另外宣告 DNS 記錄，但我們宣告了 Service 的 name 和 namespace；Kubernetes/CoreDNS 會**根據這兩個值產生可解析的 cluster 內 DNS 名稱**。
+一句話收斂：我們不是手動宣告 DNS 記錄，而是宣告 Service 的 name / namespace，然後由 Kubernetes/CoreDNS 產生可解析的 cluster 內 DNS 名稱。
 
 ## Service、Endpoints 和 CoreDNS 的關係是什麼？
 
-CoreDNS 和前面兩則 note 的關係可以切成兩段看。
+可以拆成兩段看。
 
-第一段是 Service name 的解析。當叢集內某個 Pod 打 `http://weamind-line-bot/health`，或查完整名稱 `weamind-line-bot.weamind.svc.cluster.local` 時，CoreDNS 負責回答：「這個 Service name 對應到哪個 cluster 內位址？」以 WeaMind 這種一般 `ClusterIP` Service 來說，CoreDNS 通常解析出來的是 **Service 的 ClusterIP**，而不是直接回 Pod IP。
+第一段是名字解析。當叢集內某個 Pod 打 `http://weamind-line-bot/health`，或查 `weamind-line-bot.weamind.svc.cluster.local` 時，CoreDNS 主要負責把 Service name 解析成 **Service 的 ClusterIP**，不是直接回 Pod IP。
 
-第二段是流量如何到 Pod。當 client 已經拿到 Service 的 ClusterIP，或請求已經被導到這個 Service 入口後，真正把流量分到後端 Pod 的不是 CoreDNS，而是 Kubernetes Service networking 這一層，常見會牽涉到 kube-proxy / iptables / IPVS，以及 Endpoints 或 EndpointSlice 裡記錄的後端 Pod IP / port。
+第二段是流量轉送。當請求已經到達這個 Service 入口後，真正把流量分到後端 Pod 的不是 CoreDNS，而是 Kubernetes Service networking 這一層，後面會用到 Endpoints 或 EndpointSlice 裡記錄的 Pod IP / port。
 
 所以 CoreDNS **不負責「產生 Endpoints」**。Endpoints 是 Kubernetes 根據 Service selector、Pod labels、Pod readiness 等狀態整理出的後端清單。CoreDNS 主要負責「**讓 Service 的名字可被解析**」。兩者都和 Service 有關，但責任不同：
 
@@ -94,13 +93,9 @@ Service name -> CoreDNS -> ClusterIP
 ClusterIP -> Service networking / kube-proxy -> EndpointSlice / Pod IP:port
 ```
 
-另外要注意，Ingress 裡的 `backend.service.name: weamind-line-bot` 比較像 Kubernetes 物件參照，不一定代表 Traefik 是靠一般 DNS lookup 去找 `weamind-line-bot`。
+另外要注意，Ingress 裡的 `backend.service.name: weamind-line-bot` 比較像 Kubernetes 物件參照；Traefik 通常是 watch Kubernetes API 來建立路由，不一定是靠一般 DNS lookup 找 Service。
 
-⭐️Traefik 作為 Ingress controller 通常會 **watch Kubernetes API**，讀到 Ingress、Service、Endpoints / EndpointSlice 後，**建立自己的路由設定**。
-
-對外講解時可以簡化成「Traefik 依 Ingress 規則把流量送到 `weamind-line-bot:80`」，但深入一層要知道：**CoreDNS 主要服務的是叢集內 DNS 解析**，不是 Ingress controller 唯一或必然的查找機制。
-
-面試收斂版可以講成：CoreDNS 讓 `weamind-line-bot.weamind.svc.cluster.local` 這種 Service name 在 cluster 內可解析；Endpoints / EndpointSlice 則描述這個 Service 後面目前有哪些 Ready Pod。CoreDNS 管名字解析，Endpoints 管後端清單，真正導流到 Pod 則是 Service networking 這層在做。
+一句話收斂：CoreDNS 管 Service 名字解析，Endpoints / EndpointSlice 管後端清單，真正把流量送到 Pod 的是 Service networking 這層。
 
 ## 為什麼用 EndpointSlice 取代 Endpoints 是合理的？
 
@@ -114,17 +109,15 @@ EndpointSlice:
 weamind-line-bot-vqt42   IPv4   8000   10.42.1.20,10.42.2.19
 ```
 
-所以在 WeaMind 目前只有兩個後端 Pod 的情境下，看起來兩者資訊差不多。但 Kubernetes 會把 `v1 Endpoints` 標成 deprecated，主因不是小型服務不能用，而是 `Endpoints` 這種**單一大物件的模型在大型服務上不夠好**。
+所以在 WeaMind 目前只有兩個後端 Pod 的情境下，看起來兩者資訊差不多。但 Kubernetes 會把 `v1 Endpoints` 標成 deprecated，主因不是小型服務不能用，而是 `Endpoints` 這種**單一大物件模型在大型服務上不夠好**。
 
-傳統 `Endpoints` 會把同一個 Service **後面的所有後端塞在同一個物件裡**。當後端 Pod 很多、狀態常改變時，**這個物件會變得很大**，而且每次更新都容易造成較大的 API server / watch / network 負擔。`EndpointSlice` 則把後端切成多個 slice，每個 slice 只承載一部分 endpoints；後端變動時，不一定要更新整個巨大清單。
+傳統 `Endpoints` 會把同一個 Service 的所有後端塞在同一個物件裡。當後端很多、狀態常改變時，物件會變大，更新成本也會變高。`EndpointSlice` 則把後端切成多個 slice，每個 slice 只承載一部分 endpoints，因此更適合大規模與頻繁更新。
 
-`EndpointSlice` 也比較適合承載更多結構化資訊，例如 `addressType` 顯示這批 endpoint 是 `IPv4`，port 欄位獨立呈現 `8000`，也能支援更多拓撲、條件與未來擴充資訊。這讓 controller、Ingress controller、Service networking 元件更容易用一致且可擴展的方式追蹤後端。
-
-因此這題可以收斂成：`Endpoints` 和 `EndpointSlice` 都是在描述 Service 後端，但 `EndpointSlice` 把「一個 Service 後面可能有大量、動態變化的 Pod」這件事切成更可擴展的資料模型。對 WeaMind 這種兩個 Pod 的服務，肉眼看差異不大；對 Kubernetes 平台設計來說，EndpointSlice 更適合大規模、頻繁更新與未來擴充，所以取代 Endpoints 是合理的。
+一句話收斂：`Endpoints` 和 `EndpointSlice` 都是在描述 Service 後端，但 `EndpointSlice` 的資料模型更可擴展，所以取代 Endpoints 是合理的。
 
 ## EndpointSlice 的切分原則是什麼？50 個 replicas 會怎麼切？
 
-EndpointSlice 的切分不是依照「每個 Deployment replica 一個 slice」，而是由 Kubernetes **endpoint slice controller** 依照 Service 的後端 endpoints 去管理。
+EndpointSlice 的切分不是「每個 Deployment replica 一個 slice」，而是由 Kubernetes **endpoint slice controller** 依照 Service 的後端 endpoints 去管理。
 
 官方文件提到，控制平面預設會讓每個 EndpointSlice **不超過 100 個** endpoints；這個值可以透過 kube-controller-manager 的 `--max-endpoints-per-slice` 調整，最高可到 1000。
 
@@ -143,15 +136,13 @@ EndpointSlice B: 約 100 個 endpoints
 EndpointSlice C: 約 50 個 endpoints
 ```
 
-但這不是一個永遠平均分配的承諾。EndpointSlice controller 會盡量管理與填充既有 slices，但不會為了完美平均而一直重排所有 endpoints，因為那反而會製造更多更新成本。它的主要目標是讓後端清單可以被分片、可擴展地更新，而不是做漂亮的平均切片。
+但這不是平均分配的保證。controller 會盡量重用既有 slices，而不是為了平均切分而一直重排所有 endpoints。再加上 address type、port/protocol 組合也會影響切分，所以實際 slice 數量不只看 replica 數。
 
-另外，EndpointSlice 也會受到 address type 與 port/protocol 組合影響。每個 EndpointSlice 有自己的 `addressType`，例如 `IPv4`；也有一組適用於該 slice 內 endpoints 的 ports。如果同一個 Service 因為 IPv4 / IPv6、不同 port 組合或其他條件需要分開表示，也可能出現更多 EndpointSlices。
-
-這題可以收斂成：在 WeaMind 目前這種單一 Service port、IPv4、50 replicas 的假設下，預設通常是一個 EndpointSlice 就裝得下；EndpointSlice 真正發揮差異是在超過 100 endpoints、或有更多 address type / port 組合、或大量 endpoints 頻繁變動時。
+一句話收斂：在 WeaMind 這種單一 port、IPv4、50 replicas 的假設下，預設通常一個 EndpointSlice 就裝得下；EndpointSlice 真正顯出差異是在 endpoints 很多、條件更多或更新很頻繁時。
 
 ## 如果 Endpoints 查出來是空的，能不能直接判斷 Service 接不到 Pod？
 
-可以先下的結論是：**就這個 Service 目前的導流狀態來說，它後面沒有可用的 Pod endpoints，所以它現在無法把流量轉送到 Pod。** 這個判斷在 WeaMind 的情境裡是成立的，因為 [manifests/service.yaml](manifests/service.yaml) 的 `weamind-line-bot` Service 是靠 `selector: app: weamind` 去選 Pod，而 [manifests/deployment.yaml](manifests/deployment.yaml) 的 Pod 也確實是靠 `app: weamind` 這個 label 被選到。
+可以先下結論：**就這個 Service 目前的導流狀態來說，它後面沒有可用的 Pod endpoints，所以它現在無法把流量轉送到 Pod。** 這個判斷在 WeaMind 的情境裡是成立的，因為 [manifests/service.yaml](manifests/service.yaml) 的 `weamind-line-bot` Service 是靠 `selector: app: weamind` 去選 Pod，而 [manifests/deployment.yaml](manifests/deployment.yaml) 的 Pod 也確實帶有 `app: weamind`。
 
 但更精準地說，**空 Endpoints 不等於「叢集裡完全沒有 Pod」**，而是等於「這個 Service 目前沒有可導流的後端」。常見原因有幾種：
 1. Pod 根本沒起來
@@ -161,7 +152,7 @@ EndpointSlice C: 約 50 個 endpoints
 
 以 WeaMind 這份 Deployment 來看，因為有 readiness probe，所以就算 Pod 處於 Running，也可能尚未被納入 Service 後端。
 
-所以面試或複習時，最穩的說法是：如果 `kubectl get endpoints -n weamind` 看到 `weamind-line-bot` 的 endpoints 是空的，我可以先確認這個 Service 現在接不到可用 Pod；下一步要去分辨是「沒有 Pod」、還是「有 Pod 但沒有被這個 Service 選進來」。這時通常就接著查：
+所以比較穩的說法是：如果 `kubectl get endpoints -n weamind` 看到 `weamind-line-bot` 的 endpoints 是空的，我可以先確認這個 Service 現在接不到可用 Pod；下一步再去分辨是「沒有 Pod」、還是「有 Pod 但沒被選進來」。這時通常就接著查：
 
 ```bash
 kubectl get pods -n weamind
@@ -175,16 +166,16 @@ kubectl describe svc weamind-line-bot -n weamind
 
 `-o wide` 可以先理解成：**還是同一個 `kubectl get`，只是把預設表格輸出再展開一點，補更多實用欄位**。它不是查另一種資料來源，也不是改變資源本身，只是改變你看到的顯示內容。
 
-所以「有沒有用 `-o wide`」的差別，核心不是 Kubernetes 看到的世界不同，而是**你拿到的觀察資訊密度不同**。
+所以差別的核心不是 Kubernetes 看到的世界不同，而是**你拿到的觀察資訊密度不同**。
 
 以這次 WeaMind 的例子來說：
 
 - `kubectl get pods -n weamind`：你先看到 Pod 名稱、Ready、Status、Restarts、Age，適合先判斷有沒有活著
 - `kubectl get pods -n weamind -o wide`：會再補出像 Pod IP、Node 這類欄位，才有辦法把 Endpoints 裡的 IP 對回實際 Pod
 
-所以這題真正要記住的是：**`-o wide` 不是「更多細節的萬用完整版」，而是「表格模式下的加欄版」**。當你只是想快速看健康狀態，預設輸出通常夠；當你要對 IP、對 node、看 image、看更具體的執行位置時，`-o wide` 才會有差。
+所以真正要記住的是：**`-o wide` 不是「更多細節的萬用完整版」，而是「表格模式下的加欄版」**。當你只是想快速看健康狀態，預設輸出通常夠；當你要對 IP、對 node、看更具體的執行位置時，`-o wide` 才會有差。
 
-另外也要補一個邊界：`-o wide` 常見於 `kubectl get`，而且是否有明顯差異，取決於資源種類。像 Pods 用 `-o wide` 很常有用，因為會多出 Pod IP / Node；但有些資源就可能只多一兩欄，甚至差異不大。所以它不是「所有 kubectl 指令的通用深度模式」，而是某些 `get` 輸出格式的一種變體。
+另外，`-o wide` 常見於 `kubectl get`，而且效果取決於資源種類。像 Pods 很常有用，因為會多出 Pod IP / Node；但有些資源差異就不大。
 
 如果要和其他 `-o` 一起比較，可以這樣背：
 
@@ -326,3 +317,18 @@ ReplicaSet 不直接處理容器 crash；它處理的是 **Pod 數量與歸屬**
 例如你想只抓某個 Deployment 的 image、replicas、labels，或想把多個物件的欄位整理成固定格式，`json` 會比 `wide` 好處理，也比直接剖 YAML 更穩。
 
 一句話記法：**`wide` 偏人工快速觀察，`yaml` 偏人工閱讀完整結構，`json` 偏程式處理與精準取值。**
+
+## `pod-template-hash` 和 Pod 名稱最後那段是什麼關係？
+
+你的理解大方向是對的，但可以再修得更精準一點：**同一版 Pod template 會對應同一個 `pod-template-hash`，因此同一個 ReplicaSet 和它底下的 Pods 會共用這個 hash。**
+
+也就是說，在某一次 rollout / revision 裡，如果 Deployment 產生了一個新的 ReplicaSet，那這個 ReplicaSet 名稱尾段會帶著那個 hash，而它建立出來的 Pods 也會帶同樣的 `pod-template-hash` label。這就是為什麼你可以用 ReplicaSet 名稱尾段和 Pod 上的 `pod-template-hash` 對起來。
+
+但 Pod 名稱最後那段像 `-t2qpm`，**不是另一個 `pod-template-hash`**，也不是 revision hash。它比較像 Kubernetes 為了讓每個 Pod 名稱唯一而加上的隨機後綴，用來區分同一個 ReplicaSet 底下的不同 Pod。
+
+所以可以這樣記：
+
+- `weamind-5985b7f7f6` 這段，對應的是這一版 Pod template / ReplicaSet 的 hash
+- `-t2qpm`、`-wdptx` 這段，對應的是個別 Pod 的唯一名稱後綴
+
+一句話收斂：**同一個 ReplicaSet 底下的 Pods 會共用同一個 `pod-template-hash`，但 Pod 名稱最後那段小尾巴只是用來區分不同 Pod，不是第二個版本 hash。**
