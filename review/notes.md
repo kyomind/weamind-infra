@@ -361,3 +361,10 @@ error: the server doesn't have a resource type "weamind"
 ```
 
 一句話記法：**`rollout status` 要先知道你在看哪一種 workload，所以要寫 `deployment weamind` 或 `deployment/weamind`；省略類型時，kubectl 會把名稱誤當成 type。**
+
+🐱：可以使用簡寫
+```bash
+kubectl rollout status deploy/weamind -n weamind
+# 或
+kubectl rollout status deploy weamind -n weamind
+```
