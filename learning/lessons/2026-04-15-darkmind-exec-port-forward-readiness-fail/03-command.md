@@ -193,12 +193,8 @@ Accept-Ranges: bytes
 
 ### AI 判讀與修正
 
-- 這個選擇是對的。`kubectl port-forward -n darkmind svc/darkmind-healthy 8080:80` 不是去改 Service 設定，也不是把 Service 暴露到外網；它做的事情是：**由你本機上的 `kubectl` 程序先監聽 `127.0.0.1:8080`，再透過 Kubernetes API 連線，把這個本機 port 的流量轉送到叢集內 `darkmind-healthy` Service 的 `80` port。**
-- 所以當你看到 `Forwarding from 127.0.0.1:8080 -> 80`，意思不是「節點機器開了一個 8080」，而是 **你自己的本機現在開了一個 8080 入口**；只要本機有程式連到這個 port，`kubectl` 就會把流量透過已存在的 cluster 連線轉送進去。
-- `Forwarding from [::1]:8080 -> 80` 則表示它同時也在監聽本機 IPv6 loopback；也就是說，`localhost` 這邊同時支援 IPv4 與 IPv6 的本地連線。
-- `Handling connection for 8080` 表示真的有一條連線打進來了。對照你另一個終端的 `curl -I http://127.0.0.1:8080/`，可以確定這條連線就是本機 `curl` 發出的 HTTP 請求，而 `kubectl` 已成功把它轉送到叢集內目標服務。
-- 後面的 `HTTP/1.1 200 OK` 與 `Server: nginx/1.27.5` 則是最關鍵的驗證結果：它證明透過這條 **本機臨時 tunnel**，你確實打到了叢集內的 nginx HTTP 服務，而且服務有正常回應。
-- 但這一輪最重要的邊界也要一起記住：**`port-forward` 驗證的是「從本機透過 `kubectl` 建的臨時通道，我能不能打到這個 Pod / Service 的 port」；它不等於正式 Service / Ingress / 外部流量路徑就一定健康。** 也就是說，這一輪證明的是 debug 通道可用，不是整條正式線上流量已完成驗證。
+- 這個選擇是對的，而且輸出也完整證明了本機臨時 tunnel 已成功建立，`curl` 確實打到了叢集內的 nginx 服務。
+- 這一輪 `port-forward` 的具體資料路徑、`127.0.0.1:8080 -> 80` 的意義，以及實務上常見的 forwarding 對象與情境，整理在 `05-note.md`，command 這裡只保留最小收斂：**你已驗證 debug 用的本機 tunnel 可用，但這不等於正式 Service / Ingress / 外部流量路徑都已驗證完成。**
 
 ### 一句話收斂
 
@@ -230,30 +226,44 @@ kubectl exec -it -n darkmind deploy/darkmind-readiness-fail -- sh
 ### 指令
 
 ```bash
-
+kubectl apply -f darkmind/scenarios/readiness-fail.yaml
+kubectl get pods,endpoints -n darkmind
 ```
 
 ### 關鍵輸出
 
 ```bash
+deployment.apps/darkmind-readiness-fail created
+service/darkmind-readiness-fail created
 
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME                                          READY   STATUS    RESTARTS   AGE
+pod/darkmind-healthy-85c6dcf689-4xd98         1/1     Running   0          56m
+pod/darkmind-readiness-fail-8c5dffc59-bjl5c   0/1     Running   0          2s
+
+NAME                                ENDPOINTS       AGE
+endpoints/darkmind-healthy          10.42.1.27:80   56m
+endpoints/darkmind-readiness-fail                   2s
 ```
 
 ### 使用者選擇理由
 
-- 待補
+- 使用者選第一組，因為這一輪的目標就是先把 `readiness-fail` 情境放進叢集，再立刻確認它是否出現了預期的 `Running` 但不 `Ready`，以及 `endpoints` 有沒有因此變成空的。
 
 ### AI 判讀與修正
 
-- 待補
+- 這個選擇是對的。這一輪最重要的不是先進 container，也不是先 rollback，而是先確認壞情境 **真的已經形成**。
+- 輸出裡最關鍵的第一個訊號是：`pod/darkmind-readiness-fail-...` 目前是 **`0/1 Running`**。這正好對上今天前面 QA 與 Command 1 建立的對照：Pod phase 還在 `Running`，表示 container 沒 crash；但 `READY` 是 `0/1`，表示 Kubernetes 已明確判定它目前 **not ready**。
+- 第二個關鍵訊號是：`endpoints/darkmind-readiness-fail` 目前是空的。這正是今天 Day 3 最核心的證據之一，因為它表示 **雖然 Pod 還活著，但 Service 並沒有把它收進可送流量的後端名單**。
+- 也就是說，這一輪已經把今天想看的差異具體化了：**container 可能還在跑，但 readiness 沒過時，Service 仍可以完全不送流量給它。** 這也是為什麼 Day 3 一定要把 Pod 狀態和 `endpoints` 一起看。
 
 ### 一句話收斂
 
-- 待補
+- `readiness-fail` 情境成立後，可以同時看到 **`0/1 Running`** 和 **空的 `endpoints`**；這表示 Pod / container 仍在跑，但 Service 已不把它當成可送流量的後端。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
@@ -277,30 +287,39 @@ kubectl logs -n darkmind -l app=darkmind-readiness-fail --previous
 ### 指令
 
 ```bash
-
+kubectl exec -it -n darkmind deploy/darkmind-readiness-fail -- sh
+kubectl get endpoints -n darkmind darkmind-readiness-fail
 ```
 
 ### 關鍵輸出
 
 ```bash
+Alias tip: kex -n darkmind deploy/darkmind-readiness-fail -- sh
+/ #
 
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME                      ENDPOINTS   AGE
+darkmind-readiness-fail               5m42s
 ```
 
 ### 使用者選擇理由
 
-- 待補
+- 使用者選第一組，理由是這一輪要把兩件事並排看清楚：一方面 `exec` 進得去，代表 Pod / container 其實還在運作；另一方面 `endpoints` 仍是空的，代表它雖然活著，卻不是可接流量的後端。
 
 ### AI 判讀與修正
 
-- 待補
+- 這個選擇是對的，因為在三個候選裡，只有第一組能同時回答今天這一輪要刻意對照的兩件事：**container 內部是否仍可互動**，以及 **Service 是否仍把它納入後端**。
+- 第一個關鍵訊號是：你仍然可以 `kubectl exec -it -n darkmind deploy/darkmind-readiness-fail -- sh` 進到 container 裡。這表示至少在這個情境下，Pod / container 並沒有 crash，也不是無法互動的狀態。
+- 第二個關鍵訊號是：`kubectl get endpoints -n darkmind darkmind-readiness-fail` 仍然顯示 **空的 `ENDPOINTS`**。這表示雖然 container 還活著，但 Service 依然沒有把它當成健康後端。
+- 這一輪正好把 Day 3 的核心邊界完整對齊：**`exec` 得進去，不等於 Service 會把流量送進去。** 也就是說，container 層的「活著 / 可互動」，和 Service 層的「可收流量」，是兩件必須分開看的事。
 
 ### 一句話收斂
 
-- 待補
+- 在 `readiness-fail` 情境裡，**`exec` 仍可能成功**，但 `endpoints` 依然可以是空的；這表示 container 還活著，不代表它已被 Service 視為可收流量的健康後端。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
@@ -308,12 +327,16 @@ kubectl logs -n darkmind -l app=darkmind-readiness-fail --previous
 
 ### 今天用哪些指令看懂了什麼
 
-- 待補
-- 待補
+- `kubectl get po,svc,endpoints -n darkmind` 幫我建立 healthy baseline：確認 Pod 已 Ready，而且 Service 後面真的有可送流量的後端。
+- `kubectl exec ... -- sh` 加上 container 內 `wget http://127.0.0.1/`，幫我確認 container 內部服務本身是否有正常回應。
+- `kubectl port-forward ...` 加上本機 `curl`，幫我驗證 debug 用的本機 tunnel 是否能打到叢集內 Service，但這不等於正式外部流量已驗證完成。
+- `kubectl apply -f darkmind/scenarios/readiness-fail.yaml` 加上 `kubectl get pods,endpoints -n darkmind`，幫我確認壞情境是否已形成：Pod 可能仍在 `Running`，但 `endpoints` 已經是空的。
+- `kubectl exec ...` 加上 `kubectl get endpoints ...`，幫我把最後的邊界釘死：container 可互動，不等於 Service 會送流量給它。
 
 ### 練習後還不順手的地方
 
-- 待補
+- `port-forward` 的資料路徑、常見 forwarding 對象與情境，仍需要再多做一兩次實作才能更直覺。
+- `Running`、`Ready`、`endpoints`、`exec`、`port-forward` 這五者的邊界已能講出來，但還需要再練一次口頭收斂，讓描述更短更穩。
 
 ### 補充
 

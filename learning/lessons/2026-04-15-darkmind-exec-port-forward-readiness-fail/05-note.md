@@ -52,6 +52,23 @@
 - 所以 `busybox wget -qO- http://127.0.0.1/` 能成功的前提，是 container 裡真的有 `busybox` 這個執行檔，而且它內建了 `wget`。
 - 今天這個 nginx:alpine 情境裡，你已經直接驗證到獨立的 `wget` 本身就存在，所以不需要 fallback 到 `busybox wget`；那個寫法只是常見精簡映像裡的備用招。
 
+### `kubectl port-forward` 具體做了什麼
+
+- `kubectl port-forward -n darkmind svc/darkmind-healthy 8080:80` 不會修改 Service 設定，也不會把 Service 暴露到外網。
+- 它做的事情是：**在你本機先監聽 `127.0.0.1:8080`，再透過 `kubectl` 與 Kubernetes API 的連線，把這個本機 port 的流量轉送到叢集內目標資源的 `80` port。**
+- 所以 `Forwarding from 127.0.0.1:8080 -> 80` 的意思不是「叢集節點開了 8080」，而是 **你自己的電腦現在有一個本地入口 `127.0.0.1:8080`**。
+- `Forwarding from [::1]:8080 -> 80` 表示它同時也監聽本機 IPv6 loopback，也就是 `localhost` 這邊同時支援 IPv4 與 IPv6。
+- `Handling connection for 8080` 表示真的有一條連線打進本機這個暫時入口；在這次練習裡，這條連線就是另一個終端送出的 `curl -I http://127.0.0.1:8080/`。
+- 這個工具最重要的邊界是：**它驗證的是 debug 用的臨時通道，不等於正式 Service / Ingress / LB / 外部流量路徑都已驗證完成。**
+
+### 實務上最常見的 forwarding 對象與情境
+
+- 最常見的是 **forward 到 Service**。情境通常是：你想快速驗證某個應用的 HTTP / TCP port 是否有回應，但不想經過 Ingress、LB 或 DNS。這很適合本地 `curl`、臨時打 API、看內部 dashboard。
+- 第二常見的是 **forward 到 Pod**。情境通常是：你要鎖定單一 Pod 做 debug，不想讓 Service 幫你做負載分流，或該 Pod 根本沒有對應的 Service。這對排查單顆 Pod 的差異特別有用。
+- 也常見 **forward 到 Deployment**。這本質上是方便寫法，`kubectl` 會幫你找到某個符合條件的 Pod 再建立轉送。適合快速操作，但排查時若你很在意「到底是打到哪一顆 Pod」，通常還是直接指定 Pod 更準。
+- ⭐️若是像 Grafana、Prometheus、Argo CD、Kubernetes Dashboard 這類 **叢集內管理 UI**，`port-forward` 幾乎是非常常見的日常操作，因為它能快速在本機瀏覽器打開介面，又不需要先把服務公開出去。
+- 真正常見、值得優先熟的實務順序通常是：**Service first、Pod second**。因為 Service 比較接近一般應用入口；Pod 則比較偏向單點 debug。Deployment 類型可以會用，但通常不會是第一個要背熟的主力形態。
+
 ## Flashcards
 
 <!-- lesson 收尾後若有穩定卡片素材，再補在這裡 -->
