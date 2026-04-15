@@ -304,3 +304,25 @@ ReplicaSet 不直接處理容器 crash；它處理的是 **Pod 數量與歸屬**
 最後只要再記一個邊界：**workload 不是等於 Pod。** Pod 比較像 workload 在某個時刻的執行個體；你真正想維持的是 line-bot 這個服務，而不是某個 Pod 名字本身。
 
 一句話收斂：**workload 就是 Kubernetes 想持續跑著並管理的應用；Pod 是它的執行個體，Deployment / StatefulSet / DaemonSet 則是管理不同 workload 形態的控制器。**
+
+## 實務上會直接寫 Pod 或 ReplicaSet YAML 嗎？
+
+簡答：**有，但很少。**
+
+- Pod YAML 在實務上多半只用於臨時測試、除錯、一次性驗證，或非常簡單的示範。
+- ReplicaSet YAML 幾乎不會直接手寫，因為長期服務通常會直接寫 Deployment，讓 Deployment 去建立和管理 ReplicaSet。
+- 真正常見的做法是直接寫更高層控制器，例如 Deployment、StatefulSet、DaemonSet、Job、CronJob。
+
+一句話記法：**Pod 偶爾手寫來做臨時事；ReplicaSet 幾乎不手寫；正式服務通常寫更高層控制器。**
+
+## `-o json` 什麼情況下比 `-o wide` 更常用？
+
+簡答：**當你不是只想「看」，而是想「取欄位、做自動化、交給程式處理」時，`json` 更常用。**
+
+- `-o wide` 比較像給人眼看的加欄版表格，適合快速觀察。
+- `-o yaml` 常用來看完整物件內容、對照 manifest、讀設定結構。
+- `-o json` 則更常出現在腳本、自動化、CI、或要搭配 `jq` 精準抽欄位的情境。
+
+例如你想只抓某個 Deployment 的 image、replicas、labels，或想把多個物件的欄位整理成固定格式，`json` 會比 `wide` 好處理，也比直接剖 YAML 更穩。
+
+一句話記法：**`wide` 偏人工快速觀察，`yaml` 偏人工閱讀完整結構，`json` 偏程式處理與精準取值。**
