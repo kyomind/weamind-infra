@@ -33,6 +33,9 @@ kubectl apply -f darkmind/namespace.yaml
 kubectl apply -f darkmind/healthy.yaml
 kubectl get pods,svc,endpoints -n darkmind
 
+kubectl apply -f darkmind/scenarios/readiness-fail.yaml
+
+kubectl exec -it -n darkmind deploy/darkmind-healthy -- sh
 ```
 
 ### 指令
@@ -160,30 +163,50 @@ kubectl logs -n darkmind -l app=darkmind-healthy
 ### 指令
 
 ```bash
-
+kubectl port-forward -n darkmind svc/darkmind-healthy 8080:80
+curl -I http://127.0.0.1:8080/
 ```
 
 ### 關鍵輸出
 
 ```bash
+Alias tip: k port-forward -n darkmind svc/darkmind-healthy 8080:80
+Forwarding from 127.0.0.1:8080 -> 80
+Forwarding from [::1]:8080 -> 80
+Handling connection for 8080
 
+HTTP/1.1 200 OK
+Server: nginx/1.27.5
+Date: Wed, 15 Apr 2026 03:48:35 GMT
+Content-Type: text/html
+Content-Length: 615
+Last-Modified: Wed, 16 Apr 2025 12:55:34 GMT
+Connection: keep-alive
+ETag: "67ffa8c6-267"
+Accept-Ranges: bytes
 ```
 
 ### 使用者選擇理由
 
-- 待補
+- 使用者選第一個指令，因為這一輪的目標是從本機臨時打到叢集裡的 HTTP 服務，`kubectl port-forward` 正是三個選項裡唯一會真的建立 local tunnel 的操作。
+- 使用者也明確要求：這一輪不只要知道怎麼執行，還要理解這個指令實際在資料路徑上做了什麼。
 
 ### AI 判讀與修正
 
-- 待補
+- 這個選擇是對的。`kubectl port-forward -n darkmind svc/darkmind-healthy 8080:80` 不是去改 Service 設定，也不是把 Service 暴露到外網；它做的事情是：**由你本機上的 `kubectl` 程序先監聽 `127.0.0.1:8080`，再透過 Kubernetes API 連線，把這個本機 port 的流量轉送到叢集內 `darkmind-healthy` Service 的 `80` port。**
+- 所以當你看到 `Forwarding from 127.0.0.1:8080 -> 80`，意思不是「節點機器開了一個 8080」，而是 **你自己的本機現在開了一個 8080 入口**；只要本機有程式連到這個 port，`kubectl` 就會把流量透過已存在的 cluster 連線轉送進去。
+- `Forwarding from [::1]:8080 -> 80` 則表示它同時也在監聽本機 IPv6 loopback；也就是說，`localhost` 這邊同時支援 IPv4 與 IPv6 的本地連線。
+- `Handling connection for 8080` 表示真的有一條連線打進來了。對照你另一個終端的 `curl -I http://127.0.0.1:8080/`，可以確定這條連線就是本機 `curl` 發出的 HTTP 請求，而 `kubectl` 已成功把它轉送到叢集內目標服務。
+- 後面的 `HTTP/1.1 200 OK` 與 `Server: nginx/1.27.5` 則是最關鍵的驗證結果：它證明透過這條 **本機臨時 tunnel**，你確實打到了叢集內的 nginx HTTP 服務，而且服務有正常回應。
+- 但這一輪最重要的邊界也要一起記住：**`port-forward` 驗證的是「從本機透過 `kubectl` 建的臨時通道，我能不能打到這個 Pod / Service 的 port」；它不等於正式 Service / Ingress / 外部流量路徑就一定健康。** 也就是說，這一輪證明的是 debug 通道可用，不是整條正式線上流量已完成驗證。
 
 ### 一句話收斂
 
-- 待補
+- `kubectl port-forward` 會在本機開一個暫時的 `127.0.0.1:8080` 入口，並把流量透過 `kubectl` 轉送到叢集內 `svc/darkmind-healthy` 的 `80` port；`curl` 拿到 `200 OK` 代表這條 debug 用的本機 tunnel 已成功打到服務。
 
 ### 狀態
 
-- 未開始
+- 已完成
 
 ---
 
