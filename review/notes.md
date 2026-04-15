@@ -290,3 +290,17 @@ ReplicaSet 不直接處理容器 crash；它處理的是 **Pod 數量與歸屬**
 | Pod 直接消失，冒出新名字 | ReplicaSet                                          | 舊 Pod 已不在，控制器補新副本 | 會，這就是補新 Pod 的典型訊號         |
 
 可以把它背成一句很短的規則：**只要 Pod 物件還在，通常先想 Kubelet；只要 Pod 物件少了、失效了、被淘汰了，才開始想 ReplicaSet。**
+
+## 怎麼理解 workload：定義、控制器和 WeaMind 例子
+
+可以先用一個夠準的版本來記：**workload 是 Kubernetes 裡要被執行、維持、管理的應用工作負載。** 它不是某一個固定 Pod，也不是某一種單一資源型別；重點是「**這個應用要怎麼被穩定地跑著**」。
+
+因此，Deployment、StatefulSet、DaemonSet 比較好的理解不是 workload 本體，而是「**它們是拿來管理不同類型 workload 的控制器**」。真正被跑起來的執行單位仍然是 Pod，但 Kubernetes 更在意的是**這個 workload 能不能持續維持期望狀態**。
+
+放回 WeaMind，line-bot 就是最典型的 workload。[manifests/deployment.yaml](manifests/deployment.yaml) 不是在保護某一顆固定 Pod，而是在宣告這個服務要持續存在、維持副本數、能更新、能被 Service 接流量。這就是 workload 思維，也就是「**顧好這個服務整體有沒有持續可用**」。
+
+例子可以這樣記：line-bot 是由 Deployment 管理的 workload；Traefik 也是 workload，只是它負責入口流量；PostgreSQL、Redis 也可以算 workload，但更偏 stateful，因此 WeaMind 目前仍留在 VM 端。
+
+最後只要再記一個邊界：**workload 不是等於 Pod。** Pod 比較像 workload 在某個時刻的執行個體；你真正想維持的是 line-bot 這個服務，而不是某個 Pod 名字本身。
+
+一句話收斂：**workload 就是 Kubernetes 想持續跑著並管理的應用；Pod 是它的執行個體，Deployment / StatefulSet / DaemonSet 則是管理不同 workload 形態的控制器。**
