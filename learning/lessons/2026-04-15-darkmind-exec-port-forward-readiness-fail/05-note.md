@@ -19,7 +19,17 @@
 
 ## Notes
 
-<!-- lesson 過程中若出現延伸問答，再補在這裡 -->
+### 為什麼今天先用 Darkmind 練 `port-forward`
+
+- 使用者之前沒有真正操作過 `kubectl port-forward`，這次是第一次把它正式放進 W6 command drill。
+- 今天先用 `darkmind-healthy` 這種低風險、輸出面小的情境練，目標不是模擬正式 WeaMind 流量，而是先把 **工具邊界** 練清楚：它是在建立 debug 用的臨時 tunnel，不是在驗證 Ingress / LB / 正式外部流量是否健康。
+- 這樣做的好處是可以先把 `exec`、`port-forward`、`readiness`、`endpoints` 四者分清楚，再決定是否把這個技能延伸到真正的 WeaMind Service。
+
+### 後續可延伸的 `port-forward` 練習
+
+- 若今天的 Darkmind 練習順利，後續可安排一輪延伸操作：對真實 WeaMind 的 line-bot Service 做 `kubectl port-forward`，再從本機用 `curl` 驗證應用回應。
+- 那一輪延伸練習的重點不在「取代正式流量驗證」，而在 **快速確認某個 Service / Pod port 本身是否有回應**，並體會它和 Ingress 路徑驗證是兩件不同的事。
+- 之後若進到 Phase 2 安裝 Grafana，`port-forward` 也會變成實用操作，而不只是 command drill 題材。
 
 ## Flashcards
 
