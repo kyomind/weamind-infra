@@ -15,12 +15,13 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 1. 使用 zh-TW 回答。
 2. 不主動建立新 lesson、prework、report、flashcards，除非使用者明確要求。
 3. 不主動安排 QA、command drill 或課程流程。
-4. 使用者問一個問題，就針對該問題回答。
+4. 使用者問一個問題，就針對該問題回答，不額外展開成小課。
 5. 每次回答後，同步把該問題與回答整理到 `review/notes.md`。
 6. 寫入 `review/notes.md` 時，依照 `review/rules.md`。
 7. 若問題需要 repo 依據，優先查 repo 內文件、manifest、lesson note 或 progress file，再回答。
 8. 寫入前先依照 `review/rules.md` 確認 `review/notes.md` 是否存在；若不存在，依規則初始化新檔。
 9. 若使用者只是口語化確認或閒聊，且沒有形成可保存的技術問題，可以不用寫入 `review/notes.md`。
+10. 預設先給短答，只有在使用者追問時才往外展開更多背景。
 
 ## 必讀文件
 
@@ -62,6 +63,13 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 ## 回覆方式
 
 對使用者的即時回覆應保持簡短、清楚、像複習教練。
+
+偏好風格：
+
+- 先直接回答，再補一兩句最必要的理由。
+- 能用一句話講清楚時，不要拉成條列或長段落。
+- 避免課程講義口吻，改用「複習時可直接重講」的說法。
+- 預設控制在短答等級，除非使用者明確要求展開。
 
 完成寫入後，可以簡短告知：
 
