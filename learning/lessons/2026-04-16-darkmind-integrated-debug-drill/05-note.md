@@ -42,6 +42,26 @@
 - 這條順序的核心不是每次都要從 1 走到 7，而是：**先從最便宜、最外層、最能縮圈的證據開始，再逐步往內層走。**
 - 所以更短版可以記成：**先看外部症狀，再看 `get` / `describe` / `events`，之後才決定要不要接 `logs`、`exec`、`rollout` 或 `port-forward`。**
 
+### 問題雖然表現在 Pod，但真正切點不一定在 Pod
+
+- **Deployment 類最常見例子**：新版本 rollout 後，畫面開始壞掉，你用 `kubectl get pods` 看到新 Pod 不健康，表面上像是 Pod 壞了；但真正切點常常是 **Deployment 的新 revision 本身有問題**，例如 image tag 寫錯、command 改壞、環境變數改壞，或 rollout 交接卡住。這類問題真正要回答的是「這次版本交接是不是壞版本」，所以常要看 `rollout status`、`rollout history`，必要時 `rollout undo`，而不是只盯著單顆 Pod。
+- **Service 類最常見例子**：UI timeout 或 API 打不通時，你可能看到 Pod 其實還在 `Running`，甚至 app 自己也活著；但真正切點可能在 **Service 沒有正確把流量送進去**，例如 selector 對不到、Pod 不 Ready 導致 `endpoints` 是空的，或 targetPort 對錯。這時表面上像 Pod 沒反應，實際上更像是 **Service backend membership** 問題。
+- **Ingress 類最常見例子**：外部打進來拿到 `404`，第一眼很容易誤以為是 app route 壞了，因為最後請求沒成功；但真正切點可能在 **Ingress 的 host / path 規則**，例如 host 不對、path 填錯、Prefix 規則沒對上，或 request 根本還沒正確進到後面的 Service。WeaMind 真實脈絡裡，像 webhook path 寫錯，或 health check 沒帶對 host header，這種都更像入口 routing 層問題，不是 Pod 內部邏輯先壞掉。
+- 所以這句話要記成：**Pod 常常只是症狀承載點，不一定是根因所在。** 真正排查時，要問的是「我現在看到的是 Pod 上的症狀，還是 Deployment / Service / Ingress 這些上游物件造成的結果」。
+
+### 同一份 Deployment YAML 連續 apply，revision 會怎麼變
+
+- 一般而言，**如果你連續 apply 同一份 Deployment YAML，而且 `spec.template` 沒有任何實質變化，Deployment controller 不會新增新的 rollout revision。**
+- 原因不是它單純記得「這是同一個檔案」，而是 Deployment 真正拿來判斷要不要建立新 ReplicaSet / 新 revision 的核心，主要是 **Pod template 是否改變**，也就是 `spec.template.metadata` 與 `spec.template.spec` 這一塊。
+- 所以最常見的行為是：
+
+1. **若只有重新 apply、內容沒變**：API server 仍可能接受這次 apply，但 Deployment 不會因此產生新的 ReplicaSet，也通常不會多一個新的 rollout revision。
+2. **若改到 Deployment 本身但沒改到 Pod template**：例如部分不影響 `spec.template` 的欄位，通常也不會觸發新 Pod rollout。
+3. **若改到 `spec.template`**：例如 image tag、command、env、labels（長在 template 上）、probe、container port 等，這才會被視為新的 Pod template，Deployment 會建立新的 ReplicaSet，並形成新的 rollout revision。
+
+- 更實務地記：**Deployment 的 revision 不是看你 apply 幾次，而是看你有沒有改出一個新的 Pod template。**
+- 所以你這次前置建立裡，`bad-rollout-01-good.yaml` 先成功 rollout，之後再 apply `bad-rollout-02-bad.yaml`，會形成新狀態，就是因為第二次 apply 實際上改動了 deployment 對應的 Pod template，而不只是重送同一份內容。
+
 ## Flashcards
 
 <!-- 初始化時保持空白；若需要佔位，可只保留這類特殊註記。等 lesson 過程中真的整理出卡片素材後再填。 -->
