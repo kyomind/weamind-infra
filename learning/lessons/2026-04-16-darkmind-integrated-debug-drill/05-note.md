@@ -153,4 +153,53 @@ kubectl rollout history deployment/darkmind-rollout -n darkmind --revision=2
 
 ## Flashcards
 
-<!-- 初始化時保持空白；若需要佔位，可只保留這類特殊註記。等 lesson 過程中真的整理出卡片素材後再填。 -->
+- 壞 Pod 的第一步真正目標是什麼？ #DevOps #card
+	- 不是直接找完整答案
+	- 而是先選最能縮圈的證據入口
+	- 預設常先看 `get`、`describe`、`events`
+
+- image pull 類問題第一輪為什麼不先看 `logs`？ #DevOps #card
+	- 因為 container 根本還沒成功啟動
+	- 這時重點是 Pod 狀態、waiting reason、events
+	- 要先證明問題卡在 image 下載 / back-off 階段
+
+- `ErrImagePull` 和 `ImagePullBackOff` 差在哪裡？ #DevOps #card
+	- `ErrImagePull` 比較像這次拉 image 失敗
+	- `ImagePullBackOff` 比較像連續失敗後進入退避重試
+	- 它們常是同一條失敗流程的不同時間點
+
+- crash loop 類問題為什麼先看 `kubectl logs --previous`？ #DevOps #card
+	- 因為要回答上一輪 container 啟動後吐了什麼
+	- 它直接對到已終止的前一個 container instance
+	- 比只看一般 events 更接近 app / process 的死因
+
+- 什麼時候不該直接用 selector 加 `logs --previous`？ #DevOps #card
+	- 當符合條件的 Pod 可能不只一顆時
+	- 因為有些 Pod 沒有 previous instance 會直接報錯
+	- 最穩做法是先鎖定單一壞 Pod 再指定名稱
+
+- rollout 類問題第一輪最穩的判讀組合是什麼？ #DevOps #card
+	- 先看 `rollout status` 確認 deployment 是否卡住
+	- 再看 `rollout history` 確認 revision 脈絡
+	- 若要看真正失敗證據，再補 `describe deployment`
+
+- 為什麼有些問題雖然表現在 Pod，切點卻不在 Pod？ #DevOps #card
+	- Pod 常常只是症狀承載點
+	- 根因可能在 Deployment、Service、Ingress 這些上游物件
+	- 排查時要問是 Pod 自己壞了，還是上游造成的結果
+
+- `port-forward` 在整條排查 sequence 裡的定位是什麼？ #DevOps #card
+	- 它是局部驗證工具，不是整條主線
+	- 比較適合驗證某個 Pod / Service port 能不能被 debug tunnel 打到
+	- 不等於正式外部流量已經健康
+
+- 同一份 Deployment YAML 重複 apply，什麼情況才會長新 revision？ #DevOps #card
+	- 關鍵不是 apply 幾次
+	- 而是 `spec.template` 有沒有實質變化
+	- 只有新的 Pod template 才會形成新 ReplicaSet / revision
+
+- 1 分鐘口頭排查稿最少要保住哪四個轉折點？ #DevOps #card
+	- 先講外部症狀怎麼被發現
+	- 再講 `get` / `describe` / `events` 如何縮圈
+	- 再講 image、crash、rollout 三種分流
+	- 最後講修復邊界與 `port-forward` 的定位
