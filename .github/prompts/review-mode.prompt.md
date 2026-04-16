@@ -36,6 +36,8 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 - `docs/WeaMind-README.md`
 - `PROGRESS.md`
 - `learning/lessons/`
+- `.privatedocs/12週計畫.md`
+- `.privatedocs/Phase2三週計畫.md`
 - `.privatedocs/六週版學習計畫.md`
 
 不要因為啟用 Review 模式就自動讀完整 learning workflow，也不要把 Review 模式切回正式 lesson flow。

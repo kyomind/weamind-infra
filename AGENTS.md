@@ -143,9 +143,10 @@ If the user asks to continue in a new conversation, do not advance by date alone
 
 Instead:
 
-1. read `.privatedocs/六週版學習計畫.md` and use the "Current Execution Tracking" section as the only formal progress anchor
-2. read the current lesson's `02-qa.md`
-3. continue unfinished work before opening a new topic
+1. read `.privatedocs/12週計畫.md` and determine the current phase first
+2. read the detailed plan for the active phase: Phase 1 uses `.privatedocs/六週版學習計畫.md`, Phase 2 uses `.privatedocs/Phase2三週計畫.md`
+3. if there is an in-progress lesson, read the current lesson's `02-qa.md`
+4. continue unfinished work before opening a new topic
 
 ## Source of Truth and Memory
 
@@ -153,14 +154,16 @@ Use the following source hierarchy.
 
 ### Formal Progress Anchor
 
-`.privatedocs/六週版學習計畫.md` is the only formal source for current progress and next-step sequencing.
+`.privatedocs/12週計畫.md` is the cross-phase source for overall sequencing.
 
-If anything conflicts with it, trust the "Current Execution Tracking" section in that file.
+Within an active phase, trust the detailed phase plan's "Current Execution Tracking" section for day-to-day progress and next-step sequencing.
 
 ### Supporting Files
 
 - `.privatedocs/28day-progress.md`: records what the user actually learned and can now explain; not the formal sequence anchor
 - `.privatedocs/ai-memories.md`: high-level handoff notes and stable interaction preferences; not daily lesson detail
+- `.privatedocs/Phase2三週計畫.md`: authoritative detailed plan when Phase 2 is active
+- `.privatedocs/六週版學習計畫.md`: authoritative detailed plan for historical Phase 1 context
 - `.privatedocs/weamind/`: archive of historical implementation and external AI conversations; use it when you need deeper debug context or decision history, not as the default daily entry point
 - `learning/lessons/`: authoritative per-lesson scope, QA, notes, and report files
 
@@ -213,6 +216,8 @@ Use these as the primary references when you need repo-grounded context:
 - `PROGRESS.md`
 - `.env.example`
 - `learning/`
+- `.privatedocs/12週計畫.md`
+- `.privatedocs/Phase2三週計畫.md`
 - `.privatedocs/六週版學習計畫.md`
 - `.privatedocs/28day-progress.md`
 - `.privatedocs/ai-memories.md`

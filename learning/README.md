@@ -176,7 +176,7 @@
 
 ### 當使用者只說「繼續」
 
-這份 README 只負責提醒閱讀順序；正式進度錨點仍回到 `.privatedocs/六週版學習計畫.md`，再依當前情況進 lesson 或 prework。
+這份 README 只負責提醒閱讀順序；正式進度應先回到 `.privatedocs/12週計畫.md` 判斷當前 phase，再讀該 phase 的詳細計畫（Phase 1 用 `.privatedocs/六週版學習計畫.md`，Phase 2 用 `.privatedocs/Phase2三週計畫.md`），之後才依當前情況進 lesson 或 prework。
 
 ---
 

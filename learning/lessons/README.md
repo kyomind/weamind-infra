@@ -424,7 +424,7 @@ lesson 應優先回答：
 
 1. 視需要更新 `.privatedocs/28day-progress.md`，記錄這次實際學到什麼。
 2. 視需要更新 `.privatedocs/ai-memories.md`，只保留 AI 接手需要的高階摘要。
-3. 正式進度仍以 `.privatedocs/六週版學習計畫.md` 的「當前執行追蹤」區為準。
+3. 正式進度先以 `.privatedocs/12週計畫.md` 判斷當前 phase，再以該 phase 的詳細計畫之「當前執行追蹤」區為準。
 
 ---
 
@@ -434,8 +434,9 @@ lesson 應優先回答：
 
 接手原則：
 
-1. 先看 `.privatedocs/六週版學習計畫.md` 的「當前執行追蹤」。
-2. 再看當前 lesson 的 `02-qa.md`，確認是否還有未完成的小題。
-3. 需要補範圍時再看 `01-outline.md`；要收斂已學內容時再看 `04-report.md`。
+1. 先看 `.privatedocs/12週計畫.md`，確認目前在哪一個 phase。
+2. 再看該 phase 的詳細計畫之「當前執行追蹤」：Phase 1 用 `.privatedocs/六週版學習計畫.md`，Phase 2 用 `.privatedocs/Phase2三週計畫.md`。
+3. 再看當前 lesson 的 `02-qa.md`，確認是否還有未完成的小題。
+4. 需要補範圍時再看 `01-outline.md`；要收斂已學內容時再看 `04-report.md`。
 
-一句話原則：進度先看主計畫，執行先看 `02-qa.md`。
+一句話原則：先看 12 週總計畫，再看當前 phase 詳計畫；執行層則先看 `02-qa.md`。

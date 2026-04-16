@@ -76,6 +76,8 @@ kubectl describe ingress -n weamind
 - `docs/WeaMind-README.md`
 - `PROGRESS.md`
 - `learning/lessons/`
+- `.privatedocs/12週計畫.md`
+- `.privatedocs/Phase2三週計畫.md`
 - `.privatedocs/六週版學習計畫.md`
 - `.privatedocs/28day-progress.md`
 - `.privatedocs/ai-memories.md`
