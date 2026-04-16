@@ -42,6 +42,16 @@
 - 這條順序的核心不是每次都要從 1 走到 7，而是：**先從最便宜、最外層、最能縮圈的證據開始，再逐步往內層走。**
 - 所以更短版可以記成：**先看外部症狀，再看 `get` / `describe` / `events`，之後才決定要不要接 `logs`、`exec`、`rollout` 或 `port-forward`。**
 
+### 1 分鐘口頭收斂版本
+
+- 如果我在測試環境或 production 先從外部發現異常，例如 API timeout、回 `4xx` / `5xx`、頁面壞掉，或 webhook 沒正常進來，我不會一開始就直接 `exec` 進 Pod。
+- 我的第一步通常是先進 cluster 做縮圈，先用 `kubectl get` 看 Deployment、Pod、Service 這些資源目前的狀態，再用 `describe`，必要時加 `events`，去確認問題大概落在哪一層。
+- 如果我看到的是 image pull 類錯誤，我就知道 container 根本還沒成功啟動，這時重點是看 Pod 狀態和 events，不是看 app logs。
+- 如果是 crash loop 類，我就會先看 `kubectl logs --previous`，因為我要知道上一輪 container 啟動後到底吐了什麼、為什麼死掉。
+- 如果我懷疑不是單顆 Pod 壞掉，而是 deployment 切版失敗，我就會看 `rollout status`、`rollout history`，必要時補 `describe deployment`，確認是不是 rollout 卡住或 revision 有問題。
+- 等我確認問題層級後，才決定要不要進一步 `exec` 看 container 內部，或在 production 先保留證據後 `rollout undo`。
+- `port-forward` 對我來說比較像局部驗證工具，不是整條排查主線。
+
 ### 問題雖然表現在 Pod，但真正切點不一定在 Pod
 
 - **Deployment 類最常見例子**：新版本 rollout 後，畫面開始壞掉，你用 `kubectl get pods` 看到新 Pod 不健康，表面上像是 Pod 壞了；但真正切點常常是 **Deployment 的新 revision 本身有問題**，例如 image tag 寫錯、command 改壞、環境變數改壞，或 rollout 交接卡住。這類問題真正要回答的是「這次版本交接是不是壞版本」，所以常要看 `rollout status`、`rollout history`，必要時 `rollout undo`，而不是只盯著單顆 Pod。
