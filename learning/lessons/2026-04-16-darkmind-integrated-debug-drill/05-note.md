@@ -62,6 +62,85 @@
 - 更實務地記：**Deployment 的 revision 不是看你 apply 幾次，而是看你有沒有改出一個新的 Pod template。**
 - 所以你這次前置建立裡，`bad-rollout-01-good.yaml` 先成功 rollout，之後再 apply `bad-rollout-02-bad.yaml`，會形成新狀態，就是因為第二次 apply 實際上改動了 deployment 對應的 Pod template，而不只是重送同一份內容。
 
+### `kubectl logs` 用 selector 與 `--previous` 時的實務邊界
+
+- 若你要指定 **單一 Pod**，最穩的寫法通常是直接寫 Pod 名稱，例如：
+
+```bash
+kubectl logs -n darkmind darkmind-crash-loop-f6dfb6fdd-dwv22 --previous
+```
+
+- 也可以顯式寫成資源型別加名稱，例如：
+
+```bash
+kubectl logs -n darkmind pod/darkmind-crash-loop-f6dfb6fdd-dwv22 --previous
+```
+
+- 若你用的是 label selector，例如：
+
+```bash
+kubectl logs -n darkmind -l app=darkmind-crash-loop --previous
+```
+
+這代表 `kubectl` 會先找出所有符合 selector 的 Pods，再對它們嘗試取 logs；所以它比較像 **批次選取**，不是在保證只看單一目標。
+- 若 selector 剛好只命中一個 Pod，體感上會像單一 Pod 指令；但這只是因為當下符合條件的目標剛好只有一個，不代表 selector 本身只會看一個。
+- 若 selector 命中多個 Pod，輸出可能會變得比較難讀。實務上通常會搭配 `--prefix` 幫每行加上 Pod / container 來源，或乾脆先用 `kubectl get pods -l ...` 找出目標，再指定單一 Pod 名稱。
+- 這次用現場驗證 `kubectl logs -n darkmind -l app=darkmind-rollout --tail=1 --prefix --max-log-requests=10`，當 selector 命中多個 Pod 而其中某顆 Pod 甚至還卡在 image pull、沒有可讀 logs 時，指令會直接回：
+
+```bash
+Error from server (BadRequest): container "app" in pod "darkmind-rollout-..." is waiting to start: trying and failing to pull image
+```
+
+- 也就是說，**selector 命中多個 Pod 時，不保證你會拿到一份乾淨、完整、好判讀的聚合輸出；有時候其中一顆 Pod 的錯誤就足以讓整個命令直接失敗。**
+- `--previous` 更要小心。它的語意是：**我要看這顆 Pod 裡「上一個已終止 container instance」的 logs。** 所以如果某顆 Pod 根本沒有 previous instance，例如它從沒成功啟動過、或從未重啟過，就可能直接回：
+
+```bash
+Error from server (BadRequest): previous terminated container "app" in pod "..." not found
+```
+
+- 這表示若 selector 命中兩個 replicas，其中一個曾 crash 過、另一個從沒重啟過，那你用 selector 加 `--previous` 很可能會因為「沒有 previous 的那顆 Pod」直接報錯，讓整體輸出變得不穩。
+- 所以最實務的規則是：**`logs --previous` 幾乎都應該在你已經先鎖定特定壞 Pod 之後，再直接指定 Pod 名稱來用；不要把 selector + --previous 當成預設主力。**
+
+### `kubectl logs` 能不能打其他資源
+
+- `kubectl logs` 最終看的當然還是 **Pod 裡某個 container 的 logs**，所以它不是像 `describe` 那樣幾乎任何資源都能看一份物件描述。
+- 但在 CLI 用法上，`kubectl logs` 不只接受 Pod 名稱，也能接受某些 **會對應到 Pods 的 workload 資源**，例如 `deployment/...`、`job/...`。
+- 例如：
+
+```bash
+kubectl logs deployment/nginx
+kubectl logs deployment/nginx --all-pods=true
+kubectl logs job/hello
+```
+
+- 這時它並不是去看 Deployment 或 Job 物件本身有自己的 logs，而是 **先從這些 workload 資源找出對應 Pods，再去抓那些 Pods 的 container logs**。
+- 所以更精確地說：**`kubectl logs` 真正能看的永遠是 Pod / container logs；只是它有些方便寫法，可以從 Deployment、Job 這類會管理 Pods 的資源出發去幫你找 Pod。**
+- 相對地，像 `Service`、`Ingress` 這種本身不承載 container 的資源，就沒有「自己的 logs」可以直接用 `kubectl logs service/...` 這樣去看。
+
+### 為什麼 `rollout status` / `history` 看起來資訊不多
+
+- `kubectl rollout status` 的責任很單純：它主要是回答 **這次 rollout 有沒有完成、是否卡住**，不是完整診斷報表。
+- 所以它最重要的參數通常是：
+
+```bash
+kubectl rollout status deployment/darkmind-rollout -n darkmind
+kubectl rollout status deployment/darkmind-rollout -n darkmind --watch=false
+kubectl rollout status deployment/darkmind-rollout -n darkmind --revision=2
+```
+
+- 其中 `--watch=false` 只是不要持續等待，`--revision=N` 則是把觀察固定在特定 revision；它們都不是在多印很多診斷欄位。
+- `kubectl rollout history` 的責任也偏窄：它主要是回答 **目前有哪些 revision**。若你有額外維護 `CHANGE-CAUSE` annotation，它才會更有說明性；否則常常只會看到 revision 編號而已。
+- 所以當你真的想看「到底成功還是失敗、卡在哪裡、哪些副本可用、舊版和新版 ReplicaSet 各是誰」時，更高價值的通常是：
+
+```bash
+kubectl describe deployment darkmind-rollout -n darkmind
+kubectl get rs -n darkmind
+kubectl get pods -n darkmind
+kubectl rollout history deployment/darkmind-rollout -n darkmind --revision=2
+```
+
+- 這次現場最有價值的訊號，其實就出現在 `describe deployment`：`Progressing=False`、`Reason=ProgressDeadlineExceeded`、`OldReplicaSets`、`NewReplicaSet`，以及 `1 available | 2 unavailable`。這些比單看 `rollout history` 更接近真正的失敗證據。
+
 ## Flashcards
 
 <!-- 初始化時保持空白；若需要佔位，可只保留這類特殊註記。等 lesson 過程中真的整理出卡片素材後再填。 -->
