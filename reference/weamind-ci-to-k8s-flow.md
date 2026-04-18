@@ -2,6 +2,10 @@
 
 這份文件只整理 WeaMind 目前真實存在的最小路徑，不把尚未存在的自動化腦補進來。
 
+它的角色偏向「現況證據與邊界確認」，不是 W8 實作時的主要施工藍圖。
+
+若 W8 要做 CD 設計或最小實作，這份文件主要負責回答：現在已經有什麼、還沒有什麼；真正的實作方向與方案邊界則應回到 `reference/w8-cd-minimum-spec.md`。
+
 ## 先說結論
 
 - WeaMind app repo 目前有 `CI` 與 `publish-ghcr` 這兩段自動化。
@@ -63,6 +67,7 @@ imagePullPolicy: Always
 
 - 幫助在 infra repo 內理解 app repo 的 CI / image publishing 證據
 - 讓 W5 的 CI/CD lesson 可以直接對照真實 workflow，而不是只看抽象說明
+- 在 W8 實作時，作為「現況證據」文件使用，而不是直接拿來當施工規格
 - 後續若要學「K8s 到底什麼時候會真的拉到新 image」，可以直接從 Deployment 與 rollout 行為往下追
 
 ## 後續最值得補的題目
