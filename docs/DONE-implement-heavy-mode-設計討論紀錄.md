@@ -8,6 +8,8 @@
 
 它的角色是先把這次討論收斂成可回看的設計紀錄，讓之後真的要落成文件時，不需要再從零回想「當初到底想解什麼問題、打算怎麼改」。
 
+補記：後續已正式落成 `reference/lesson-plugins/implement-heavy-mode.md`，並同步更新 `learning/lessons/README.md` 與 `learning/lessons/lesson-template.md`。本檔保留的是設計討論脈絡，不是最新規則本體。
+
 ## 討論背景
 
 在目前 lessons 的常態規則裡，內部預設流程是：

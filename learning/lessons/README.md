@@ -122,10 +122,11 @@
 1. 今天是否已先在 `learning/README.md` 完成流程判斷；若需要 prework，應先完成 prework，再進入 lesson。
 2. lesson 檔案結構是否符合本檔與 `lesson-template.md` 的骨架。
 3. 若今天明確屬於 command-heavy mode，是否已另外讀取 `reference/lesson-plugins/command-heavy-mode.md`，而不是把例外規格混在本檔內一起看。
-4. 內部流程是否仍是 QA → command → report；若要例外，是否已在 `01-outline.md` 寫明原因。
-5. `03-command.md` 若存在，是否真的符合 command drill 的節奏，而不是單純指令清單。
-6. `04-report.md` 是否保留回填空間，而不是一開始就預寫完整答案。
-7. 若這次是新建 lesson 骨架，`05-note.md` 是否仍符合初始化狀態：只有 `學習注意事項` 可以先有內容，`Notes` 與 `Flashcards` 必須保持空白，最多只留 HTML comment 這類特殊註記作為佔位。
+4. 若今天明確屬於 implement-heavy mode，是否已另外讀取 `reference/lesson-plugins/implement-heavy-mode.md`，並確認 `06-implementation.md`、`07-implementation-note.md` 的初始化規則。
+5. 內部流程是否仍是 QA → command → report；若要例外，是否已在 `01-outline.md` 寫明原因。
+6. `03-command.md` 若存在，是否真的符合 command drill 的節奏，而不是單純指令清單。
+7. `04-report.md` 是否保留回填空間，而不是一開始就預寫完整答案。
+8. 若這次是新建 lesson 骨架，`05-note.md` 是否仍符合初始化狀態：只有 `學習注意事項` 可以先有內容，`Notes` 與 `Flashcards` 必須保持空白，最多只留 HTML comment 這類特殊註記作為佔位。
 
 ---
 
@@ -154,6 +155,8 @@
 
 5. `03-command.md`
 
+若今天明確屬於 implement-heavy mode，請不要自行發明骨架，直接改讀 `reference/lesson-plugins/implement-heavy-mode.md`，並一次建立 `01-07` 全部七份檔案。
+
 範例：
 
 - `learning/lessons/2026-03-10-weamind-traffic-path/01-outline.md`
@@ -161,6 +164,8 @@
 - `learning/lessons/2026-03-10-weamind-traffic-path/03-command.md`
 - `learning/lessons/2026-03-10-weamind-traffic-path/04-report.md`
 - `learning/lessons/2026-03-10-weamind-traffic-path/05-note.md`
+
+implement-heavy mode 的 7 檔骨架與 `06` / `07` 自檢規則，不在本節展開，改由 `reference/lesson-plugins/implement-heavy-mode.md` 維護。
 
 ---
 
