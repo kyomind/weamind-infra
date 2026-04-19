@@ -68,10 +68,8 @@
 因此：
 
 1. 若問題是「今天該不該建 `03-command.md`」、「QA 能不能先放答題引導」、「`05-note.md` 初始化能先放什麼」，應以本檔為準。
-2. 若問題是「今天新 lesson 要先開哪些檔案」、「每份檔案最小空殼長什麼樣」，才看 `lesson-template.md`。
+2. 若問題是「今天新 lesson 要先開哪些檔案」、「每份檔案最小空殼長什麼樣」，才看對應 template：常態 lesson 看 `lesson-template.md`，implement-heavy mode 看 `reference/lesson-plugins/implement-heavy-lesson-template.md`。
 3. 模板裡若出現較長的規則段落，應優先檢查是否其實該搬回本檔，而不是讓 template 自己長成第二份 README。
-
-若今天明確屬於 implement-heavy mode，常態模板不再承接 `06` / `07`；改讀 `reference/lesson-plugins/implement-heavy-lesson-template.md`。
 
 一句話原則：README 管規則，template 管骨架。
 
@@ -90,12 +88,11 @@
 
 如果今天只有純知識預習、沒有碰 repo，通常不需要在這裡新增 lesson。
 
-建立新 lesson 時，先看今天是否已在 `01-outline.md` 或當天計畫中宣告使用某個 mode。
+建立新 lesson 時，入口順序如下：
 
-1. 若沒有宣告 mode，建議直接對照 `lesson-template.md`，不要每次從零決定檔案結構。
-2. 若已宣告 implement-heavy mode，改讀 `reference/lesson-plugins/implement-heavy-mode.md` 與 `reference/lesson-plugins/implement-heavy-lesson-template.md`。
-
-順序仍應是：先看本檔，再依今天是否有 mode 宣告，決定要讀常態 template 或 mode 專用 template。
+1. 先看本檔，確認今天已經進入 lesson，而不是還停在 prework 判斷。
+2. 再看今天是否已在 `01-outline.md` 或當天計畫中宣告使用某個 mode。
+3. 若沒有宣告 mode，改讀 `lesson-template.md`；若已宣告 implement-heavy mode，改讀 `reference/lesson-plugins/implement-heavy-mode.md` 與 `reference/lesson-plugins/implement-heavy-lesson-template.md`。
 
 ---
 
@@ -125,7 +122,7 @@
 正式開始 lesson 前，建議至少確認：
 
 1. 今天是否已先在 `learning/README.md` 完成流程判斷；若需要 prework，應先完成 prework，再進入 lesson。
-2. lesson 檔案結構是否符合本檔與 `lesson-template.md` 的骨架。
+2. lesson 檔案結構是否符合本檔與對應骨架；常態 lesson 看 `lesson-template.md`，implement-heavy mode 看 `reference/lesson-plugins/implement-heavy-lesson-template.md`。
 3. 若今天明確屬於 command-heavy mode，是否已另外讀取 `reference/lesson-plugins/command-heavy-mode.md`，而不是把例外規格混在本檔內一起看。
 4. 若今天明確屬於 implement-heavy mode，是否已另外讀取 `reference/lesson-plugins/implement-heavy-mode.md`，並同步讀取 `reference/lesson-plugins/implement-heavy-lesson-template.md`。
 5. 若今天沒有宣告 mode，內部流程是否仍是 QA → command → report；若今天已宣告 mode，`01-outline.md` 是否已寫明實際流程順序。
@@ -160,7 +157,7 @@
 
 5. `03-command.md`
 
-若今天明確屬於 implement-heavy mode，請不要自行發明骨架，直接改讀 `reference/lesson-plugins/implement-heavy-mode.md` 與 `reference/lesson-plugins/implement-heavy-lesson-template.md`，並一次建立 `01-07` 全部七份檔案。
+若今天明確屬於 implement-heavy mode，請直接改讀 `reference/lesson-plugins/implement-heavy-mode.md` 與 `reference/lesson-plugins/implement-heavy-lesson-template.md`，並一次建立 `01-07` 全部七份檔案。
 
 範例：
 
@@ -170,7 +167,7 @@
 - `learning/lessons/2026-03-10-weamind-traffic-path/04-report.md`
 - `learning/lessons/2026-03-10-weamind-traffic-path/05-note.md`
 
-implement-heavy mode 的正式流程、7 檔骨架、`06` / `07` 綁定關係與自檢規則，不在本節展開，改由 `reference/lesson-plugins/implement-heavy-mode.md` 與 `reference/lesson-plugins/implement-heavy-lesson-template.md` 維護。
+implement-heavy mode 的正式流程與 `06` / `07` 規則，不在本節展開，改由上述兩份 plugin 文件維護。
 
 ---
 
@@ -355,9 +352,7 @@ implement-heavy mode 的正式流程、7 檔骨架、`06` / `07` 綁定關係與
 
 lesson 的執行順序，預設採 QA → command → report 收斂。
 
-這個流程是 lesson 內部流程，不是 learning 全域入口流程。
-
-也就是說：
+若今天已在 `01-outline.md` 宣告使用某個 mode，則以該 mode 文件定義的流程為準，不套用本節的常態順序。
 
 1. 先由 `learning/README.md` 決定是否進 lesson。
 2. 一旦確定進入 lesson，才在這裡使用 QA → command → report。
@@ -370,9 +365,7 @@ lesson 的執行順序，預設採 QA → command → report 收斂。
 4. 若當天有延伸問題、暫時結論或卡片素材，過程中同步整理進 `05-note.md`。
 5. lesson 結束後，把重點收斂進 `04-report.md`。
 
-若今天有外部預習，完整順序應是先完成 `learning/prework/` 的外部預習，再進入上面這套 lesson 流程。
-
-一句話原則：有外部預習時，一定是外部先、內部後；進入內部後，預設就是 QA → command → report。
+若今天有外部預習，仍是外部先、內部後；進入內部後，常態流程才是 QA → command → report。
 
 ---
 
