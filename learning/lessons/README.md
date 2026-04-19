@@ -90,9 +90,12 @@
 
 如果今天只有純知識預習、沒有碰 repo，通常不需要在這裡新增 lesson。
 
-建立新 lesson 時，建議直接對照 `lesson-template.md`，不要每次從零決定檔案結構。
+建立新 lesson 時，先看今天是否已在 `01-outline.md` 或當天計畫中宣告使用某個 mode。
 
-但順序仍應是：先看本檔，再看 `lesson-template.md`。
+1. 若沒有宣告 mode，建議直接對照 `lesson-template.md`，不要每次從零決定檔案結構。
+2. 若已宣告 implement-heavy mode，改讀 `reference/lesson-plugins/implement-heavy-mode.md` 與 `reference/lesson-plugins/implement-heavy-lesson-template.md`。
+
+順序仍應是：先看本檔，再依今天是否有 mode 宣告，決定要讀常態 template 或 mode 專用 template。
 
 ---
 
@@ -125,7 +128,7 @@
 2. lesson 檔案結構是否符合本檔與 `lesson-template.md` 的骨架。
 3. 若今天明確屬於 command-heavy mode，是否已另外讀取 `reference/lesson-plugins/command-heavy-mode.md`，而不是把例外規格混在本檔內一起看。
 4. 若今天明確屬於 implement-heavy mode，是否已另外讀取 `reference/lesson-plugins/implement-heavy-mode.md`，並同步讀取 `reference/lesson-plugins/implement-heavy-lesson-template.md`。
-5. 內部流程是否仍是 QA → command → report；若要例外，是否已在 `01-outline.md` 寫明原因。
+5. 若今天沒有宣告 mode，內部流程是否仍是 QA → command → report；若今天已宣告 mode，`01-outline.md` 是否已寫明實際流程順序。
 6. `03-command.md` 若存在，是否真的符合 command drill 的節奏，而不是單純指令清單。
 7. `04-report.md` 是否保留回填空間，而不是一開始就預寫完整答案。
 8. 若這次是新建 lesson 骨架，`05-note.md` 是否仍符合初始化狀態：只有 `學習注意事項` 可以先有內容，`Notes` 與 `Flashcards` 必須保持空白，最多只留 HTML comment 這類特殊註記作為佔位。
