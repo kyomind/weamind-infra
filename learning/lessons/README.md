@@ -58,18 +58,20 @@
 
 ## 和 lesson-template 的分工
 
-`lesson-template.md` 是骨架工具，不是第二份規則手冊。
+`lesson-template.md` 是常態 lesson 的骨架工具，不是第二份規則手冊。
 
 兩者分工應固定如下：
 
 1. `README.md` 負責規則、流程、判斷條件與欄位邊界。
-2. `lesson-template.md` 只負責快速建立檔案骨架與最小範例。
+2. `lesson-template.md` 只負責快速建立常態 lesson 的檔案骨架與最小範例。
 
 因此：
 
 1. 若問題是「今天該不該建 `03-command.md`」、「QA 能不能先放答題引導」、「`05-note.md` 初始化能先放什麼」，應以本檔為準。
 2. 若問題是「今天新 lesson 要先開哪些檔案」、「每份檔案最小空殼長什麼樣」，才看 `lesson-template.md`。
 3. 模板裡若出現較長的規則段落，應優先檢查是否其實該搬回本檔，而不是讓 template 自己長成第二份 README。
+
+若今天明確屬於 implement-heavy mode，常態模板不再承接 `06` / `07`；改讀 `reference/lesson-plugins/implement-heavy-lesson-template.md`。
 
 一句話原則：README 管規則，template 管骨架。
 
@@ -122,7 +124,7 @@
 1. 今天是否已先在 `learning/README.md` 完成流程判斷；若需要 prework，應先完成 prework，再進入 lesson。
 2. lesson 檔案結構是否符合本檔與 `lesson-template.md` 的骨架。
 3. 若今天明確屬於 command-heavy mode，是否已另外讀取 `reference/lesson-plugins/command-heavy-mode.md`，而不是把例外規格混在本檔內一起看。
-4. 若今天明確屬於 implement-heavy mode，是否已另外讀取 `reference/lesson-plugins/implement-heavy-mode.md`，並確認 `06-implementation.md`、`07-implementation-note.md` 的初始化規則。
+4. 若今天明確屬於 implement-heavy mode，是否已另外讀取 `reference/lesson-plugins/implement-heavy-mode.md`，並同步讀取 `reference/lesson-plugins/implement-heavy-lesson-template.md`。
 5. 內部流程是否仍是 QA → command → report；若要例外，是否已在 `01-outline.md` 寫明原因。
 6. `03-command.md` 若存在，是否真的符合 command drill 的節奏，而不是單純指令清單。
 7. `04-report.md` 是否保留回填空間，而不是一開始就預寫完整答案。
@@ -155,7 +157,7 @@
 
 5. `03-command.md`
 
-若今天明確屬於 implement-heavy mode，請不要自行發明骨架，直接改讀 `reference/lesson-plugins/implement-heavy-mode.md`，並一次建立 `01-07` 全部七份檔案。
+若今天明確屬於 implement-heavy mode，請不要自行發明骨架，直接改讀 `reference/lesson-plugins/implement-heavy-mode.md` 與 `reference/lesson-plugins/implement-heavy-lesson-template.md`，並一次建立 `01-07` 全部七份檔案。
 
 範例：
 
@@ -165,7 +167,7 @@
 - `learning/lessons/2026-03-10-weamind-traffic-path/04-report.md`
 - `learning/lessons/2026-03-10-weamind-traffic-path/05-note.md`
 
-implement-heavy mode 的 7 檔骨架與 `06` / `07` 自檢規則，不在本節展開，改由 `reference/lesson-plugins/implement-heavy-mode.md` 維護。
+implement-heavy mode 的正式流程、7 檔骨架、`06` / `07` 綁定關係與自檢規則，不在本節展開，改由 `reference/lesson-plugins/implement-heavy-mode.md` 與 `reference/lesson-plugins/implement-heavy-lesson-template.md` 維護。
 
 ---
 
@@ -186,9 +188,9 @@ implement-heavy mode 的 7 檔骨架與 `06` / `07` 自檢規則，不在本節�
 
 補充原則：
 
-1. 預設把流程寫成「先 QA，再 command，最後回 report 收斂」。
-2. 若當天主題非常明確適合先做操作觀察，再回頭用 QA 收斂，才標示成例外。
-3. 重點是交代今天要先解哪些問題，以及 command drill 要驗證哪條路徑，不需要把流程寫得過細。
+1. 常態 lesson 預設把流程寫成「先 QA，再 command，最後回 report 收斂」。
+2. 若今天套用了 command-heavy mode 或 implement-heavy mode，應在 `01-outline.md` 明確宣告今天使用了哪個 mode，以及今天的實際流程順序。
+3. 重點是交代今天要先解哪些問題，以及 command drill 或 implementation 要驗證哪條路徑，不需要把流程寫得過細。
 
 ### `02-qa.md`
 

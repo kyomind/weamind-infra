@@ -4,7 +4,7 @@
 > 使用方式：先讀 `README.md`，確認今天已經要進入 lesson 流程，再用本檔建立骨架。
 > 原則：規則、判斷條件與正式格式一律以 `README.md` 為準；本檔只保留骨架，不重複維護規則。
 
-補充：若今天明確屬於 command-heavy mode 或 implement-heavy mode，先回對應外掛檔；本模板只負責提供骨架，不取代 mode 規格。
+補充：若今天明確屬於 command-heavy mode 或 implement-heavy mode，先回對應外掛檔；本模板只負責常態骨架，不取代 mode 規格。
 
 ---
 
@@ -23,17 +23,11 @@
 
 1. `03-command.md`
 
-### implement-heavy mode 例外
+### mode 例外
 
-若今天明確屬於 implement-heavy mode，請改讀 `reference/lesson-plugins/implement-heavy-mode.md`，並直接建立：
-
-1. `01-outline.md`
-2. `02-qa.md`
-3. `03-command.md`
-4. `04-report.md`
-5. `05-note.md`
-6. `06-implementation.md`
-7. `07-implementation-note.md`
+1. 若今天明確屬於 command-heavy mode，先讀 `reference/lesson-plugins/command-heavy-mode.md`。
+2. 若今天明確屬於 implement-heavy mode，先讀 `reference/lesson-plugins/implement-heavy-mode.md`。
+3. implement-heavy mode 的專用骨架不放在本檔，改讀 `reference/lesson-plugins/implement-heavy-lesson-template.md`。
 
 ---
 
@@ -340,86 +334,6 @@
 
 <!-- 初始化時保持空白；若需要佔位，可只保留這類特殊註記。等 lesson 過程中真的整理出卡片素材後再填。 -->
 </template example 05-note.md>
-
----
-
-## `06-implementation.md` 模板
-
-只在 implement-heavy mode 使用；正式規則、初始化邊界與自檢條件以 `reference/lesson-plugins/implement-heavy-mode.md` 為準。
-
-<template example 06-implementation.md>
-# YYYY-MM-DD Lesson Title Implementation
-
-## 這份文件的角色
-
-- 這份檔案用來記錄今天實作主體的每輪閉環，不是一般 command drill。
-
-## 今日實作主題
-
--
-
-## 今日實作順序
-
-1.
-2.
-3.
-
-## 驗收訊號與回退點
-
-### 驗收訊號
-
--
-
-### 回退點
-
--
-
-### Round 1
-
-#### 這一輪要驗證什麼
-
--
-
-#### 預計操作
-
-```bash
-
-```
-
-#### 實際輸出 / 操作結果
-
-- 待回填
-
-#### AI 判讀與收斂
-
-- 待回填
-
-#### 目前狀態
-
-- 未開始
-</template example 06-implementation.md>
-
----
-
-## `07-implementation-note.md` 模板
-
-只在 implement-heavy mode 使用；這份檔案承接 implementation-specific 的補充理解，不取代 `05-note.md`。
-
-<template example 07-implementation-note.md>
-# YYYY-MM-DD Lesson Title Implementation Notes
-
-## 實作前邊界
-
-<!-- 初始化時保持空白；若需要佔位，可只保留這類特殊註記。 -->
-
-## 實作中觀察
-
-<!-- 初始化時保持空白；若需要佔位，可只保留這類特殊註記。 -->
-
-## 後續待驗證
-
-<!-- 初始化時保持空白；若需要佔位，可只保留這類特殊註記。 -->
-</template example 07-implementation-note.md>
 
 ---
 
