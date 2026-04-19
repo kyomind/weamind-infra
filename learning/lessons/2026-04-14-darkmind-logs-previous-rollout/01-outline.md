@@ -32,7 +32,7 @@
 
 ## 今日 command 練習
 
-- 今天建立 `03-command.md`，採 command-heavy workshop 的 6 輪微情境。
+- 今天建立 `03-command.md`，採 command-heavy mode 的 6 輪微情境。
 - 這不是 command 先於 QA 的例外日；仍先做短 QA，再進 command drill。
 - 今天的 command 重點是把兩條觀察鏈分清楚：`crash-loop` 用 `logs` / `logs --previous`，`bad-rollout` 用 `rollout status` / `history` / `undo`。
 

@@ -1,8 +1,8 @@
-# Command-Heavy Workshop Supplement
+# Command-Heavy Mode
 
 ## 用途
 
-這份文件只處理 lesson 流程中的 command-heavy 例外規格。
+這份文件只處理 lesson 流程中的 command-heavy mode 例外規格。
 
 它不是 lessons 的常態 README，而是按需讀取的補充說明。
 
@@ -12,7 +12,7 @@
 2. 今天需要把練習單位切得更小、判讀次數更高。
 3. 今天雖然仍維持 QA → command → report，但 QA 只負責操作前定位，不負責展開大塊概念。
 
-若今天不是這種 workshop，則不需要讀本檔。
+若今天不是這種 mode，則不需要讀本檔。
 
 ---
 
@@ -28,13 +28,13 @@
 換句話說：
 
 1. 常態規則仍以 `README.md` 為準。
-2. 只有當天已判定為 command-heavy workshop，才把本檔當成額外增量規則來讀。
+2. 只有當天已判定為 command-heavy mode，才把本檔當成額外增量規則來讀。
 
 ---
 
 ## QA 的例外規格
 
-若今天明確屬於 command-heavy workshop，`02-qa.md` 仍應保留，但改成短版定位題。
+若今天明確屬於 command-heavy mode，`02-qa.md` 仍應保留，但改成短版定位題。
 
 建議調整為 2 到 3 題，角色是先對齊：
 
@@ -52,7 +52,7 @@
 
 ## Command Drill 的例外規格
 
-若今天明確屬於 command-heavy workshop，`03-command.md` 的骨架不再用常態的 2 到 4 輪，而改成固定 5 到 6 輪微情境。
+若今天明確屬於 command-heavy mode，`03-command.md` 的骨架不再用常態的 2 到 4 輪，而改成固定 5 到 6 輪微情境。
 
 這 5 到 6 輪的重點不是把每輪做大，而是：
 
@@ -71,7 +71,7 @@
 
 ## 不變的部分
 
-即使今天是 command-heavy workshop，下列常態規則仍然不變：
+即使今天是 command-heavy mode，下列常態規則仍然不變：
 
 1. lesson 的內部預設流程仍是 QA → command → report；若要例外，仍需在 `01-outline.md` 寫明原因。
 2. command drill 預設仍由使用者親手操作，AI 代跑只算輔助驗證。
@@ -82,7 +82,7 @@
 
 ## 使用方式
 
-若今天判定為 command-heavy workshop，建議讀取順序為：
+若今天判定為 command-heavy mode，建議讀取順序為：
 
 1. 先讀 `learning/README.md`，確認今天確實要進 lesson。
 2. 再讀 `learning/lessons/README.md`，確認 lesson 的通用結構與檔案分工。

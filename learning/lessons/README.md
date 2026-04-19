@@ -73,7 +73,7 @@
 
 一句話原則：README 管規則，template 管骨架。
 
-補充原則：若某天有明確的例外節奏，例如 command-heavy workshop，優先採獨立補充文件做按需揭露，不把短期例外直接堆回本檔。
+補充原則：若某天有明確的例外節奏，例如 command-heavy mode 或 implement-heavy mode，優先採獨立補充文件做按需揭露，不把短期例外直接堆回本檔。
 
 ---
 
@@ -121,7 +121,7 @@
 
 1. 今天是否已先在 `learning/README.md` 完成流程判斷；若需要 prework，應先完成 prework，再進入 lesson。
 2. lesson 檔案結構是否符合本檔與 `lesson-template.md` 的骨架。
-3. 若今天明確屬於 command-heavy workshop，是否已另外讀取 `command-heavy-workshop.md`，而不是把例外規格混在本檔內一起看。
+3. 若今天明確屬於 command-heavy mode，是否已另外讀取 `reference/lesson-plugins/command-heavy-mode.md`，而不是把例外規格混在本檔內一起看。
 4. 內部流程是否仍是 QA → command → report；若要例外，是否已在 `01-outline.md` 寫明原因。
 5. `03-command.md` 若存在，是否真的符合 command drill 的節奏，而不是單純指令清單。
 6. `04-report.md` 是否保留回填空間，而不是一開始就預寫完整答案。
@@ -197,7 +197,7 @@
 4. AI 修正或補充。
 5. 每題狀態，例如：未開始、進行中、已完成。
 
-若今天明確屬於 command-heavy workshop，QA 的短版定位題規格請另外參考 `command-heavy-workshop.md`，不要把那套例外節奏當成常態規則。
+若今天明確屬於 command-heavy mode，QA 的短版定位題規格請另外參考 `reference/lesson-plugins/command-heavy-mode.md`，不要把那套例外節奏當成常態規則。
 
 格式建議：
 
@@ -240,7 +240,7 @@
 
 1. 先判斷今天主題是否真的需要 command drill；若不需要，則不要建立 `03-command.md`。
 2. 若今天決定需要 command drill，建立 lesson 骨架時就應一次把整份 `03-command.md` 的主要題目骨架先建好，而不是等互動進行到哪一輪才只補哪一輪。
-3. 這裡所說的「先建好題目骨架」，預設是先寫出今天預計的 2 到 4 輪情境、每輪要驗證的問題，以及候選指令區塊。若今天明確是 command-heavy workshop，請另外讀 `command-heavy-workshop.md` 的增量規格。
+3. 這裡所說的「先建好題目骨架」，預設是先寫出今天預計的 2 到 4 輪情境、每輪要驗證的問題，以及候選指令區塊。若今天明確是 command-heavy mode，請另外讀 `reference/lesson-plugins/command-heavy-mode.md` 的增量規格。
 4. 若 lesson 一開始已判斷今天主題不適合 command drill，就不要為了形式完整而保留空白或半成品的 `03-command.md`。
 
 建議包含：
@@ -271,7 +271,7 @@
 1. `03-command.md` 的練習預設應由使用者親手操作，不應只由 AI 代跑後就記成已完成。
 2. `03-command.md` 預設應以「一輪觀察、一個閉環」來寫；若某個結論需要兩個指令一起看，可併成同一輪，但不要把整天過程混成一大段流水帳。
 3. 若今天已決定要做 command drill，預設應在初始化時先把所有預計輪次都建成骨架，再於互動中逐輪回填，不採「做到哪一輪才新長出哪一輪」的方式。
-4. 若今天是 command-heavy workshop，輪次密度、切分方式與 QA 短版定位題規格，請另外參考 `command-heavy-workshop.md`。
+4. 若今天是 command-heavy mode，輪次密度、切分方式與 QA 短版定位題規格，請另外參考 `reference/lesson-plugins/command-heavy-mode.md`。
 5. 每一輪若需要保留當時的情境、三個選項或 AI 給的最小提示，應直接放進該輪 command 區塊內，不另外插一層獨立的互動題區塊。
 6. `03-command.md` 裡的指令與輸出都統一使用 `bash` code block，不再混用 `text` 或其他標記。
 7. `03-command.md` 的首要目標是降低複習阻力，因此只保留關鍵輸出與必要上下文；若原始輸出很長，預設只摘錄最有判讀價值的 3 到 8 行。
