@@ -4,7 +4,7 @@
 
 它的角色偏向「現況證據與邊界確認」，不是 W8 實作時的主要施工藍圖。
 
-若 W8 要做 CD 設計或最小實作，這份文件主要負責回答：現在已經有什麼、還沒有什麼；真正的實作方向與方案邊界則應回到 `reference/w8-cd-minimum-spec.md`。
+若 W8 要做 CD 設計或最小實作，這份文件主要負責回答：現在已經有什麼、還沒有什麼；真正的實作方向與方案邊界則應回到 `references/w8-cd-minimum-spec.md`。
 
 ## 先說結論
 
@@ -18,8 +18,8 @@
 
 ### App repo：CI 與 image publishing
 
-- `reference/weamind-app-ci.yml`
-- `reference/weamind-app-publish-ghcr.yml`
+- `references/weamind-app-ci.yml`
+- `references/weamind-app-publish-ghcr.yml`
 
 這兩份是從 app repo 帶回來的 workflow 快照，用來理解真正的 build / push 路徑。
 

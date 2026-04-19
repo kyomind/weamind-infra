@@ -222,6 +222,6 @@ Use these as the primary references when you need repo-grounded context:
 - `.privatedocs/28day-progress.md`
 - `.privatedocs/ai-memories.md`
 - `.privatedocs/weamind/`
-- `reference/`
+- `references/`
 
 Treat `AGENTS.md` as the project's main prompt and update it directly when stable instruction-level changes are needed.

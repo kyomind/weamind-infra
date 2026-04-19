@@ -38,15 +38,15 @@
 
 Phase 2 三週各自有一份對應的穩定規格 reference：
 
-- `reference/w7-observability-minimum-spec.md`
-- `reference/w8-cd-minimum-spec.md`
-- `reference/w9-iac-minimum-spec.md`
+- `references/w7-observability-minimum-spec.md`
+- `references/w8-cd-minimum-spec.md`
+- `references/w9-iac-minimum-spec.md`
 
 這三份文件現在的命名邏輯是故意以 `w7`、`w8`、`w9` 開頭，避免 `weamind-...` 連續重複造成辨識成本。
 
 ### 3. 現況證據檔
 
-- `reference/weamind-ci-to-k8s-flow.md`
+- `references/weamind-ci-to-k8s-flow.md`
 
 這份文件沒有改成 W8 前綴，因為它的角色不是單純某一週的 minimum spec，而是 WeaMind 目前 CI / image publishing / Deployment 引用方式的證據檔。
 
@@ -65,7 +65,7 @@ Phase 2 三週各自有一份對應的穩定規格 reference：
 最後採用的做法是：
 
 - 週計畫只保留日程、主題、implement 與驗收
-- 穩定規格與可重複引用內容移到 `reference/`
+- 穩定規格與可重複引用內容移到 `references/`
 
 這樣做的原因很簡單：
 
@@ -77,8 +77,8 @@ Phase 2 三週各自有一份對應的穩定規格 reference：
 
 W8 目前有兩份相關文件，但角色不同：
 
-- `reference/weamind-ci-to-k8s-flow.md`：現況證據檔
-- `reference/w8-cd-minimum-spec.md`：W8 的最小 CD 規格檔
+- `references/weamind-ci-to-k8s-flow.md`：現況證據檔
+- `references/w8-cd-minimum-spec.md`：W8 的最小 CD 規格檔
 
 前者回答「現在已經有什麼、沒有什麼」，後者回答「如果 W8 要開始做，第一版應該怎麼收斂」。
 
@@ -96,7 +96,7 @@ W9 最後被收斂成：
 
 ### 決策 4：W9 reference 要內化文章規格，不只是叫人回去看文章
 
-最後 `reference/w9-iac-minimum-spec.md` 裡已補上：
+最後 `references/w9-iac-minimum-spec.md` 裡已補上：
 
 - 教學規格內化版
 - 手動教學到 Terraform 的對照方式
@@ -111,7 +111,7 @@ W9 最後被收斂成：
 
 ### W7：Observability
 
-`reference/w7-observability-minimum-spec.md` 已整理出：
+`references/w7-observability-minimum-spec.md` 已整理出：
 
 - Node 3
 - App 4
@@ -125,7 +125,7 @@ W9 最後被收斂成：
 
 ### W8：CD
 
-`reference/w8-cd-minimum-spec.md` 已整理出：
+`references/w8-cd-minimum-spec.md` 已整理出：
 
 - 為什麼現況還不算完整 CD
 - 正式 deploy source 為什麼不應追 `latest`
@@ -133,11 +133,11 @@ W9 最後被收斂成：
 - 最小自動化鏈路
 - 第一版最推薦方案
 
-而 `reference/weamind-ci-to-k8s-flow.md` 則保留現況證據。
+而 `references/weamind-ci-to-k8s-flow.md` 則保留現況證據。
 
 ### W9：IaC / Terraform
 
-`reference/w9-iac-minimum-spec.md` 已整理出：
+`references/w9-iac-minimum-spec.md` 已整理出：
 
 - W9 的最小目標
 - Free Tier VM 目標規格
@@ -152,13 +152,13 @@ W9 最後被收斂成：
 
 這次明確做了週次前綴命名調整：
 
-- `reference/weamind-observability-minimum-spec.md` -> `reference/w7-observability-minimum-spec.md`
-- `reference/weamind-cd-minimum-spec.md` -> `reference/w8-cd-minimum-spec.md`
-- `reference/weamind-iac-minimum-spec.md` -> `reference/w9-iac-minimum-spec.md`
+- `references/weamind-observability-minimum-spec.md` -> `references/w7-observability-minimum-spec.md`
+- `references/weamind-cd-minimum-spec.md` -> `references/w8-cd-minimum-spec.md`
+- `references/weamind-iac-minimum-spec.md` -> `references/w9-iac-minimum-spec.md`
 
 調整原因：
 
-- `weamind-...` 作為前綴雖然正確，但在 `reference/` 場景下資訊密度偏低
+- `weamind-...` 作為前綴雖然正確，但在 `references/` 場景下資訊密度偏低
 - `w7`、`w8`、`w9` 更能直接對應 Phase 2 的閱讀入口
 
 相關引用也已同步更新到 `.privatedocs/Phase2三週計畫.md` 與其他需要的文件中。
@@ -170,10 +170,10 @@ W9 最後被收斂成：
 1. 先看 `.privatedocs/12週計畫.md`
 2. 再看 `.privatedocs/Phase2三週計畫.md`
 3. 依當週主題進對應 reference：
-   - W7 -> `reference/w7-observability-minimum-spec.md`
-   - W8 -> `reference/w8-cd-minimum-spec.md`
-   - W9 -> `reference/w9-iac-minimum-spec.md`
-4. 若 W8 需要理解現況證據，再讀 `reference/weamind-ci-to-k8s-flow.md`
+   - W7 -> `references/w7-observability-minimum-spec.md`
+   - W8 -> `references/w8-cd-minimum-spec.md`
+   - W9 -> `references/w9-iac-minimum-spec.md`
+4. 若 W8 需要理解現況證據，再讀 `references/weamind-ci-to-k8s-flow.md`
 
 ## 這次整理後的判斷
 

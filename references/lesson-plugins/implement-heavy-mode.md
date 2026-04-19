@@ -57,7 +57,7 @@
 
 建立骨架時：
 
-1. `01-outline.md`、`06-implementation.md`、`07-implementation-note.md` 應優先參考 `reference/lesson-plugins/implement-heavy-lesson-template.md`。
+1. `01-outline.md`、`06-implementation.md`、`07-implementation-note.md` 應優先參考 `references/lesson-plugins/implement-heavy-lesson-template.md`。
 2. `02-qa.md`、`03-command.md`、`04-report.md`、`05-note.md` 仍沿用 `learning/lessons/lesson-template.md` 的常態模板。
 
 ---
@@ -213,7 +213,7 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 1. 先讀 `learning/README.md`，確認今天確實要進 lesson，且 prework 判斷已完成。
 2. 再讀 `learning/lessons/README.md`，確認 lesson 的通用結構與檔案分工。
 3. 再讀本檔，套用 implement-heavy mode 的正式流程、7 檔骨架與 06 / 07 初始化規則。
-4. 建骨架時再讀 `reference/lesson-plugins/implement-heavy-lesson-template.md`，建立 implement-heavy 專用骨架。
+4. 建骨架時再讀 `references/lesson-plugins/implement-heavy-lesson-template.md`，建立 implement-heavy 專用骨架。
 5. `02-qa.md`、`03-command.md`、`04-report.md`、`05-note.md` 的共通骨架，仍回 `learning/lessons/lesson-template.md`。
 
 一句話原則：常態規則留在 `README.md`，實作型 lesson 的重心與 06 / 07 規格留在本檔，按需揭露。

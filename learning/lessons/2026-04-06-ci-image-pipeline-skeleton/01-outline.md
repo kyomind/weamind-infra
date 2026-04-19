@@ -19,17 +19,17 @@
 
 ## 要對照的 repo 檔案
 
-1. reference/weamind-app-ci.yml
-2. reference/weamind-app-publish-ghcr.yml
-3. reference/weamind-ci-to-k8s-flow.md
+1. references/weamind-app-ci.yml
+2. references/weamind-app-publish-ghcr.yml
+3. references/weamind-ci-to-k8s-flow.md
 4. manifests/deployment.yaml
 5. README.md
 
 ## 建議學習順序
 
-1. 先讀 reference/weamind-app-ci.yml，確認 push 後第一段自動化在驗證什麼。
-2. 再讀 reference/weamind-app-publish-ghcr.yml，確認 publish 是如何被觸發、何時會真的 push image。
-3. 接著讀 reference/weamind-ci-to-k8s-flow.md，把兩段 workflow 與 Deployment 引用方式接起來。
+1. 先讀 references/weamind-app-ci.yml，確認 push 後第一段自動化在驗證什麼。
+2. 再讀 references/weamind-app-publish-ghcr.yml，確認 publish 是如何被觸發、何時會真的 push image。
+3. 接著讀 references/weamind-ci-to-k8s-flow.md，把兩段 workflow 與 Deployment 引用方式接起來。
 4. 然後回到 manifests/deployment.yaml，回答 K8s 端實際引用哪個 image/tag，以及 imagePullPolicy 在這裡的真正含義。
 5. 最後回 04-report.md，收斂成可口述的最小答題稿。
 

@@ -6,9 +6,9 @@
 
 它的角色是：當 W8 要做 CD 設計對照、最小實作或 skeleton 驗收時，提供一份穩定、可公開、可對照的 reference。
 
-與 `reference/weamind-ci-to-k8s-flow.md` 的分工應明確切開：
+與 `references/weamind-ci-to-k8s-flow.md` 的分工應明確切開：
 
-- `reference/weamind-ci-to-k8s-flow.md` 負責描述目前真實存在的流程證據
+- `references/weamind-ci-to-k8s-flow.md` 負責描述目前真實存在的流程證據
 - 本文件負責收斂 W8 實作時應採用的方案邊界與最小落地方向
 
 ## 先說結論

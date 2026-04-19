@@ -1,6 +1,6 @@
-- `learning/lessons/README.md` 只放常態 lesson 規則；`reference/lesson-plugins/command-heavy-mode.md` 承接 command-heavy 的按需例外規格。
-- `reference/lesson-plugins/implement-heavy-mode.md` 承接 implement-heavy 的 7 檔骨架、06/07 初始化與自檢規則。
-- `reference/lesson-plugins/implement-heavy-lesson-template.md` 承接 implement-heavy 的 mode 專用骨架；常態 `learning/lessons/lesson-template.md` 回到 01-05。
+- `learning/lessons/README.md` 只放常態 lesson 規則；`references/lesson-plugins/command-heavy-mode.md` 承接 command-heavy 的按需例外規格。
+- `references/lesson-plugins/implement-heavy-mode.md` 承接 implement-heavy 的 7 檔骨架、06/07 初始化與自檢規則。
+- `references/lesson-plugins/implement-heavy-lesson-template.md` 承接 implement-heavy 的 mode 專用骨架；常態 `learning/lessons/lesson-template.md` 回到 01-05。
 - command drill 的價值判準優先看「代表性」與「判讀閉環」，不優先看指令總數。
 - 輪次增加(command-heavy)可以約比平常多 50%，但每一輪都應有**可獨立描述的切入視角**，避免只是換指令重複看同一件事。
 - 設計 command 題目時，優先檢查：每輪是否**對應不同觀察目的**、是否能支撐下一步縮圈、後半段判讀品質是否下降。
