@@ -10,6 +10,8 @@
 
 補記：後續已正式落成 `reference/lesson-plugins/implement-heavy-mode.md`，並同步更新 `learning/lessons/README.md` 與 `learning/lessons/lesson-template.md`。本檔保留的是設計討論脈絡，不是最新規則本體。
 
+再補記：這次討論之後，實際落地結果又往前推了一步，已不只是一份 mode 規格文件，而是連 mode enum、計畫層決策來源與 implement-heavy 專用 template 都已補齊。詳見下方「後續實際落地結果」。
+
 ## 討論背景
 
 在目前 lessons 的常態規則裡，內部預設流程是：
@@ -175,6 +177,10 @@ implement-heavy 很可能也會需要類似處理，只是定位的內容會不�
 
 ## 目前還沒正式落下來的地方
 
+下面這一節保留的是當時討論進行中的狀態。
+
+後續實際已落地的結果，請以下方「後續實際落地結果」為準。
+
 雖然方向已經清楚，但這次討論仍刻意停在「先討論、先不改」。
 
 所以目前還沒有正式落檔的，是下面幾件事：
@@ -233,6 +239,8 @@ command-heavy mode 目前仍維持：
 
 ## 這次討論後的狀態判斷
 
+下面這段同樣保留的是當時討論收尾時的狀態，不是現在 repo 的最新結果。
+
 目前可以說：
 
 - 這個需求是成立的
@@ -246,6 +254,76 @@ command-heavy mode 目前仍維持：
 - 已確認它適合沿用 command-heavy mode 的外掛模式
 - 已找到 repo 內最好的既有樣本
 - 下一步若要做，應進入規格落檔，而不是重新討論需求是否存在
+
+## 後續實際落地結果
+
+這份設計討論之後，repo 內實際又完成了幾件重要的收斂，這些已不再只是討論方向，而是正式規則的一部分。
+
+### 1. implement-heavy mode 已正式落成
+
+正式規則檔已建立為：
+
+- `reference/lesson-plugins/implement-heavy-mode.md`
+
+目前 implement-heavy 已不再只是概念補充，而是有明確流程、檔案角色、初始化規格與自檢條件的正式 plugin 文件。
+
+### 2. implement-heavy 專用 template 已從常態 template 抽離
+
+後續沒有把 `06-implementation.md` 與 `07-implementation-note.md` 長期留在 `learning/lessons/lesson-template.md`。
+
+實際採用的做法是：
+
+- 常態 template 回到 `01-05`
+- implement-heavy 另有自己的專用骨架：`reference/lesson-plugins/implement-heavy-lesson-template.md`
+
+這樣可避免一般 lesson 每次都被 `06` / `07` 的特殊骨架干擾。
+
+### 3. `07-implementation-note.md` 已被正式定義成 `06` 的 companion file
+
+後續已明確收斂：
+
+- `06-implementation.md` 是主戰場
+- `07-implementation-note.md` 只承接 `06` 過程中的 implementation-specific 補充觀察
+- `07` 不是獨立 phase，也不取代 `05-note.md`
+
+這個關係現在不只存在於討論裡，也已經寫進 mode 規格與 implement-heavy 專用 template。
+
+### 4. mode 的決策來源已上移到計畫層
+
+這次後續最重要的收斂之一是：
+
+- lesson 是否套用某個 mode，不再由 `01-outline.md` 決定
+- 正式決策來源改成當天計畫
+- `01-outline.md` 只負責把這個決策寫成 lesson 內的執行提醒
+
+也就是說，outline 現在是 reminder，不是 decision source。
+
+### 5. lesson mode 的 enum 與上位索引已補齊
+
+後續新增了：
+
+- `reference/lesson-plugins/lesson-modes.md`
+
+這份文件統一定義：
+
+- 合法 enum
+- mode 的決策來源
+- 各 mode 對應要讀的 plugin 文件
+
+目前合法的 `Lesson mode` 值已收斂為：
+
+- `not-applicable`
+- `normal`
+- `command-heavy`
+- `implement-heavy`
+
+### 6. Phase 2 計畫已開始正式使用 `Lesson mode`
+
+後續也同步回寫到：
+
+- `.privatedocs/Phase2三週計畫.md`
+
+目前每天的小節已加入固定的 `Lesson mode` 欄位，並明確使用上述 enum，讓 AI 在真正建立 lesson 前，就能先從計畫層知道今天是不是 normal、implement-heavy，或根本不進 lesson。
 
 ## 一句話總結
 
