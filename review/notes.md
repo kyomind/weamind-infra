@@ -368,3 +368,116 @@ kubectl rollout status deploy/weamind -n weamind
 # 或
 kubectl rollout status deploy weamind -n weamind
 ```
+
+## 同一個 /health 對 readiness、liveness 和 Load Balancer 有什麼不同？
+
+簡答：同一個 `/health` endpoint 可以被三種角色使用，但它們的「路徑、判斷語意、失敗後動作」都不同。
+
+在 WeaMind 的 `manifests/deployment.yaml` 裡，readiness probe 和 liveness probe 都是 ⭐️**kubelet 從節點上直接對 Pod 的 container port 發 HTTP GET**，目標是 Pod 自己的 `:8000/health`。
+
+差別不是 `/health` 回了不同內容，而是 kubelet 分別用兩組 probe 狀態機處理結果。
+
+⭐️readiness 失敗時，**Pod 會被標成 NotReady**，並從 Service 的 Endpoints / EndpointSlice 可導流**清單移除**。liveness 失敗時，kubelet 會判斷 container 壞到需要重啟。
+
+Load Balancer 的健康檢查則是外部入口視角。若它檢查的是對外的 `/health`，路徑會比較像：
+
+```bash
+Hetzner LB -> Traefik / Ingress -> Service weamind-line-bot:80 -> ready Pod:8000 -> /health
+```
+
+這代表 LB 檢查的不只是 app process 本身，也會受到外部入口、Traefik / Ingress、Service routing、TLS/443 設定與當下可用 endpoints **影響**。
+
+反過來說，kubelet 的 readiness / liveness probe **不需要經過 Ingress、Service 或 LB**，它是節點內部直接打 Pod。
+
+所以比較準的說法是：`/health` 是同一個 app endpoint，但三個角色看的問題不同。
+
+- readiness：這個 Pod 要不要接 Service 流量
+- liveness：這個 container 要不要重啟
+- Load Balancer health check：外部入口這條路是否看起來可用
+
+同一個端點讓三者容易對齊，但也會讓 app health、Pod lifecycle、外部入口健康度耦合在一起。
+
+## WeaMind 目前需要把 readiness 和 liveness 拆成兩個端點嗎？
+
+建議：**現在不需要拆。** 以 WeaMind 目前的規模、需求和面試敘事來看，維持同一個 `/health` 給 readiness、liveness 和外部健康檢查使用，是合理而且足夠的。
+
+原因是目前 `/health` 比較像最小存活檢查：app process 能不能正常回應。WeaMind 現階段重點不是設計複雜的 health system，而是能清楚解釋 Kubernetes 如何用 probe 控制導流與重啟。
+
+如果現在硬拆成 `/ready` 和 `/live`，但背後判斷邏輯其實一樣，只是路由名稱不同，工程價值不高，反而會讓系統看起來比實際需求更複雜。
+
+比較實務的說法是：先保留單一 `/health`，但面試時要能講出什麼情況會拆。
+
+- liveness：只檢查 process 是否還活著，避免因外部依賴短暫異常就重啟 container
+- readiness：可以檢查 app 是否真的準備好接流量，例如初始化、DB/Redis 必要連線、migration 狀態或 warm-up
+- 外部 LB health check：確認公開入口路徑是否能正常打進服務
+
+一句話收斂：**現在不拆是正確的，因為需求還不到；但要知道未來如果 readiness 需要納入外部依賴或啟動準備狀態，就應該和 liveness 拆開，避免短暫依賴問題變成不必要的 container restart。**
+
+## 當時 nodepool=worker 是用什麼指令加上的？
+
+查到建置期對話後，可以確認當時用的指令是這兩條：
+
+```bash
+kubectl label node weamind-002 nodepool=worker
+kubectl label node weamind-003 nodepool=worker
+```
+
+接著才是在 `manifests/deployment.yaml` 裡加入：
+
+```yaml
+nodeSelector:
+  nodepool: worker
+```
+
+然後套用並看 Pod 落點：
+
+```bash
+kubectl apply -f manifests/deployment.yaml
+kubectl -n weamind get pods -o wide
+```
+
+這和 `PROGRESS.md` 的記錄對得起來：當時是先發現 weamind Pods 預設跑到 control-plane `weamind-001`，原因是 K3s control-plane 沒有 taint，`Taints: <none>`。
+
+所以修正策略不是先 taint control-plane，而是用最小改動：**把兩台 worker 加上 `nodepool=worker` label，再讓 Deployment 用 `nodeSelector` 只選這批 nodes**。
+
+一句話收斂：`nodepool=worker` 不是 app repo 裡自動產生的東西，而是當時用 `kubectl label node` 手動加在 `weamind-002`、`weamind-003` 這兩台 node 上，Deployment 只是拿這個 label 來做排程限制。
+
+## Scheduler 是不是直接叫 kubelet 建 Pod？
+
+不是。比較好懂的版本是：**scheduler 只負責替 Pod 選座位，不負責親自叫 kubelet 開工。**
+
+以 WeaMind 的 Deployment 來看，流程大概是：
+
+```bash
+Deployment -> ReplicaSet -> 建立 Pod 物件 -> scheduler 選 node -> kubelet 在該 node 建 container
+```
+
+前面的 Deployment / ReplicaSet 會先讓 API Server 裡出現「**還沒被排到 node 的 Pod 物件**」。這時 Pod 已經是 Kubernetes API 裡的一筆物件，但還沒有真正落到某台機器上執行。
+
+scheduler 的工作，是看這些未排程 Pod，根據資源、node 狀態、`nodeSelector.nodepool=worker` 等條件，**決定**每個 Pod 要綁到哪個 node。
+
+**⭐️它做完決定後，會把這個綁定結果寫回 API Server**。比較精準地說，不是 scheduler 跑去對 kubelet 下指令，而是 API Server 裡的 **Pod 狀態被更新成「這個 Pod 指派給某台 node」**。
+
+接著，該 node 上的 kubelet **一直在 watch API Server**。當 kubelet 看到「有 Pod 被指派給我」時，才會去**協調 container runtime**，把 container、網路、volume 等實際建立起來。
+
+一句話收斂：scheduler 決定 Pod 去哪台 node，kubelet 看到自己 node 上被指派了 Pod，才在本機把它跑起來；**兩者是透過 API Server 狀態協作，不是 scheduler 直接命令 kubelet。**
+
+## Pod 要怎麼用更簡單的方式理解？
+
+可以先把 Pod 理解成：**Kubernetes 幫一組 container 準備好的最小執行房間。**
+
+它不是 VM，因為它沒有一套完整獨立的作業系統。**真正跑起來的仍然是 container 裡的 processes**。
+
+但 Pod 也不是純紙上概念。當 Pod 被排到某台 node 後，kubelet / container runtime 會**真的替它準備執行邊界**，例如**網路、namespace、volume 掛載**等。
+
+所以比較好懂的拆法是：
+
+- 在 API Server 裡，Pod 是一筆 Kubernetes 物件
+- 在 worker node 上，Pod 是一個執行邊界
+- 在這個邊界裡，container 才是真正跑起來的 process
+
+因此不要想成「先有一個叫 Pod 的程式，然後把 container 塞進去」。更貼近實際的是：Kubernetes 先定義一個 Pod 規格；等它被排到 node 後，**kubelet 和 container runtime 依照這個規格建立共享環境，再把 containers 跑起來**。
+
+用 WeaMind 來講，`line-bot` 的 Pod 就是 app container 的最小部署單位。Service、Endpoints、readiness probe、logs、rollout **都是以 Pod 作為主要觀察與管理邊界，而不是直接管理某個裸 container**。
+
+一句話收斂：Pod 是 Kubernetes 管理 container 的最小房間；container 是房間裡真正跑的程序，而 Pod 提供它們共享的網路、儲存與生命週期邊界。
