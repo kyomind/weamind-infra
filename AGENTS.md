@@ -10,6 +10,8 @@ This repository is not a greenfield build project. The implementation is already
 
 The current objective is learning deepening and interview preparation: turn the finished infra work into material the user can explain clearly, defend under follow-up questions, and debug step by step.
 
+Current working phase: Phase 2 (W7-W9). Treat new lesson requests, follow-ups, and phase-specific planning as Phase 2 work unless the official progress anchors say otherwise.
+
 When working in this repo, optimize for:
 
 - clear explanations of why the system is designed this way
@@ -166,6 +168,15 @@ Within an active phase, trust the detailed phase plan's "Current Execution Track
 - `.privatedocs/六週版學習計畫.md`: authoritative detailed plan for historical Phase 1 context
 - `.privatedocs/weamind/`: archive of historical implementation and external AI conversations; use it when you need deeper debug context or decision history, not as the default daily entry point
 - `learning/lessons/`: authoritative per-lesson scope, QA, notes, and report files
+
+### Daily Learning Record Rule
+
+After a day's learning is actually completed, update records in this order:
+
+1. update the active phase plan's execution-tracking section first
+2. then update `.privatedocs/28day-progress.md` with only what the user actually learned and can now explain
+
+Do not write planned work, file creation, or AI-side prep as if it were already learned content.
 
 ### Memory Principle
 
