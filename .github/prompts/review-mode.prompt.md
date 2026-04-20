@@ -22,6 +22,7 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 8. 寫入前先依照 `review/rules.md` 確認 `review/notes.md` 是否存在；若不存在，依規則初始化新檔。
 9. 若使用者只是口語化確認或閒聊，且沒有形成可保存的技術問題，可以不用寫入 `review/notes.md`。
 10. 預設先給短答，只有在使用者追問時才往外展開更多背景。
+11. 寫入筆記時避免長段落；複合概念應拆成短段或簡短 bullet，讓 `review/notes.md` 容易掃讀。
 
 ## 必讀文件
 
@@ -61,6 +62,7 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 3. 優先寫能幫使用者之後重講的版本。
 4. 不要過度展開旁支主題。
 5. 若當下答案有前提或不確定性，要明確寫出。
+6. 段落不要太長；同一題若有多個角色、路徑或失敗後行為，優先拆成短段或簡短 bullet。
 
 ## 回覆方式
 
