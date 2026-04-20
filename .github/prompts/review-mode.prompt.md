@@ -63,6 +63,7 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 4. 不要過度展開旁支主題。
 5. 若當下答案有前提或不確定性，要明確寫出。
 6. 段落不要太長；同一題若有多個角色、路徑或失敗後行為，優先拆成短段或簡短 bullet。
+7. 不主動使用 Markdown 加粗標記；重點標記由使用者後續自行處理。
 
 ## 回覆方式
 
@@ -74,6 +75,7 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 - 能用一句話講清楚時，不要拉成條列或長段落。
 - 避免課程講義口吻，改用「複習時可直接重講」的說法。
 - 預設控制在短答等級，除非使用者明確要求展開。
+- 不主動替回答加粗重點。
 
 完成寫入後，可以簡短告知：
 
