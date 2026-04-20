@@ -9,6 +9,13 @@
 - 目標：避免把 Prometheus、Grafana、Alertmanager 混成同一層工具，先理解誰負責收資料、誰負責展示、誰負責處理告警
 - 時間：控制在 25 到 35 分鐘
 
+### 這份在今天兩份 prework 裡的位置
+
+- 今天的外部預習被拆成兩份，這一份是第二份。
+- 預設應先完成第一份，也就是 Metrics Server、kubectl top、HPA 的基礎，再來做這一份；因為這一份需要建立在「Kubernetes 內建 metrics 鏈不等於完整 observability」這個前提上。
+- 這一份的角色是把 Prometheus、Grafana、Alertmanager 的最小分工切清楚，補上 metrics 收集、儲存、查詢、視覺化與告警通知這條鏈。
+- 教學時請明確把這一份和第一份對照，幫我理解 Prometheus observability 鏈不是在重講 Metrics Server / kubectl top / HPA，而是在解不同層級的需求。
+
 ### 這份 prework 要怎麼用
 
 - 這份文件是給外部 ChatGPT 類服務做今天的純知識預習。

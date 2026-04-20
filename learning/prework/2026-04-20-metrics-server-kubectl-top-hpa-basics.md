@@ -9,6 +9,13 @@
 - 目標：避免把 Metrics Server、kubectl top、HPA 混成三個彼此獨立的工具，而是先理解它們共用的資料路徑與限制
 - 時間：控制在 25 到 35 分鐘
 
+### 這份在今天兩份 prework 裡的位置
+
+- 今天的外部預習被拆成兩份，這一份是第一份。
+- 這一份的角色是先把 Kubernetes 內建 metrics 與 autoscaling 這條線切乾淨，也就是 Metrics Server、kubectl top、HPA 各自做什麼、彼此怎麼接起來、又有哪些限制。
+- 今天的第二份 prework 會再處理 Prometheus、Grafana、Alertmanager 這條 observability 鏈；那一份不是這一份的延伸功能，而是在解另一類問題。
+- 教學時請把這一份當成整天的第一個概念地基，幫我先建立「即時資源 metrics / autoscaling」與「完整 observability / dashboard / alerting」不是同一條鏈的認知。
+
 ### 這份 prework 要怎麼用
 
 - 這份文件是給外部 ChatGPT 類服務做今天的純知識預習。
