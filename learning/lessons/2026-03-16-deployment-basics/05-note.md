@@ -1,5 +1,5 @@
 # 2026-03-16 Deployment Basics Notes
-
+複習：2026-04-20
 ## Notes
 
 ### 1. Deployment 題裡，管理鏈和執行鏈要怎麼分？
@@ -8,9 +8,9 @@
 
 這題要先切成兩段：
 
-- 今天 Q1 要先收斂的是管理鏈，也就是 `Deployment → ReplicaSet → Pod`。
+- ⭐️今天 Q1 要先收斂的是**管理鏈**，也就是 `Deployment → ReplicaSet → Pod`。
 - 這條鏈回答的是：誰在宣告期望狀態、誰在維持副本數、誰是實際被建立出來的執行單位。
-- `Scheduler → Node / kubelet → container runtime` 則屬於 Pod 被建立之後的最小執行鏈，回答的是：這個 Pod 最後怎麼被放到某個節點上並啟動。
+- ⭐️`Scheduler → Node / kubelet → container runtime` 則屬於 Pod 被建立之後的**最小執行鏈**，回答的是：這個 Pod 最後怎麼被放到某個節點上並啟動。
 - 兩條鏈都重要，但如果在 Deployment 基礎題一開始就混在一起，很容易把「控制關係」和「執行流程」說成同一件事。
 
 一句話收斂：今天先把 Deployment 的管理鏈講穩，執行鏈保留到 Pod 管理、K3s 分工與後面的 debug 情境再補。
@@ -35,7 +35,7 @@
 這個理解方向接近，但要再修得更精準：
 
 - 不要把它講成 Service 自己在感知 Pod 狀態。
-- 比較準確的說法是：控制面會根據 Pod 狀態與 readiness 變化，更新對應的 Endpoints / EndpointSlice；Service 導流時依賴的是這份後端清單。
+- ⭐️比較準確的說法是：控制平面會根據 Pod 狀態與 readiness 變化，**更新對應的 Endpoints / EndpointSlice**；Service 導流時依賴的是這份後端清單。
 - 所以整體行為比較接近事件驅動或狀態變更後的快速收斂，而不是固定頻率輪詢某兩個 Pod。
 - 但也不要把它講成絕對零延遲的「瞬間」；從 Pod 異常、狀態更新、到後端清單改變，中間仍有一個很短的控制面收斂過程。
 - 在實務上，對 Deployment / Service 這種題目，只要先記住「不是手動刷新，也不是寫死 Pod 名單，而是後端清單會隨 Pod 狀態改變而更新」就夠了。
@@ -100,11 +100,17 @@ kubectl describe deployment weamind -n weamind
 
 - 這個輸出裡通常能直接看到 `NewReplicaSet` 與 `OldReplicaSets`，也就是最貼近「這個 Deployment 底下有哪些 ReplicaSets」的資訊。
 
+```bash
+OldReplicaSets:  weamind-c4864fbc4 (0/0 replicas created), weamind-75f5579c8 (0/0 replicas created), weamind-77dd8c5d49 (0/0 replicas created), weamind-f86bc7bdf (0/0 replicas created), weamind-7459f5854c (0/0 replicas created), weamind-59d4666fc4 (0/0 replicas created), weamind-6d7d894c59 (0/0 replicas created), weamind-5985b7f7f6 (0/0 replicas created), weamind-c7659784b (0/0 replicas created)
+NewReplicaSet:   weamind-677db84cc4 (2/2 replicas created)
+```
+
 - 如果目標是「仍想用 get rs 形式，只列出和這個 Deployment 相關的 ReplicaSets」，實務上常見做法是用 label selector，例如在 WeaMind 目前這個 repo 可先用：
 
 ```bash
 kubectl get rs -n weamind -l app=weamind
 ```
+🐱：⭐️重點是rs通常有對應的 labels，可以用來篩選
 
 - 但要注意，這其實是用 labels 篩選，不是直接按 owner deployment 精準查詢；若未來有多個 Deployment 共用同樣 label，就可能一起被列出來。
 
@@ -116,7 +122,7 @@ kubectl get rs -n weamind -l app=weamind
 
 使用者在 command 4 卡住：`kubectl get pods -n weamind --show-labels` 雖然看到 Pods 與 labels，但不確定這是否足以看出它們對應到哪個 ReplicaSet。
 
-這題先用最小版本理解即可：
+⭐️這題先用最小版本理解即可：
 
 - Pod 名稱 `weamind-5985b7f7f6-t2qpm`、`weamind-5985b7f7f6-wdptx` 的前半段 `weamind-5985b7f7f6`，已經和目前承接中的 ReplicaSet 名稱 `weamind-5985b7f7f6` 對上。
 - Pods 上的 label `pod-template-hash=5985b7f7f6`，也和這個 ReplicaSet 名稱尾段的 hash 一致。
@@ -144,7 +150,7 @@ kubectl get rs -n weamind -l app=weamind
 
 今天先用最小版本理解即可：
 
-- `rollout` 對 Deployment 來說，可以先理解成「把新的 Pod template 版本逐步推進到實際運行狀態」的更新過程。
+- ⭐️`rollout` 對 Deployment 來說，可以先理解成「把新的 Pod template 版本逐步推進到實際運行狀態」的更新過程。
 - `rollout status` 看的不是一般資源有沒有存在，而是這次更新流程有沒有完成收斂。
 - `deployment "weamind" successfully rolled out` 代表目前這個 Deployment 的最新版本已成功接手，新 ReplicaSet 已可用，更新流程沒有停在半套狀態。
 - 這不等於所有 deeper health 訊號都看完了，但至少表示 Deployment controller 看到這次 rollout 已完成，而不是還在等 Pod Ready 或卡在更新中。
