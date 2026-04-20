@@ -61,21 +61,35 @@
 
 ### 今日學到什麼
 
-- 待填
+- Metrics Server 是 Kubernetes 的 metrics provider，負責收集並提供即時的 CPU / memory 使用量。
+- kubectl top 只是讀取 Metrics Server 的 CLI 工具，本身不收集資料，也不參與自動化決策。
+- HPA 會根據 metrics 來調整 Deployment 的 replicas，但不會直接建立 Pod。
+- 當 replicas 被修改後，Deployment 會透過 ReplicaSet 建立或刪除 Pod，再由 Scheduler 幫新 Pod 選 node。
+- 這整條鏈是在解即時資源觀察與 autoscaling，不等於完整 observability。
 
 ### 已能白話講清楚什麼
 
-- 待填
+- Metrics Server 比較像 Kubernetes 的即時抄表員，不是長期監控系統。
+- kubectl top 是給人查看當前狀態的工具，不在自動流程裡。
+- HPA 的角色是自動改 replicas，不是直接創 Pod。
+- Scheduler 依據 requests 幫 Pod 選 node，不是依據即時 metrics 做決策。
+- kubectl top 與 Prometheus 的使用時機不同：前者偏現在的即時資源狀況，後者偏長期觀測與分析。
 
 ### 目前還卡住什麼
 
-- 待填
+- HPA 在實務上什麼情況真的值得導入。
+- HPA 的調整策略，例如 scaling 速度、觀察窗口與 cooldown 類概念。
+- 未來若接 Prometheus 或 custom metrics，HPA 可以如何擴充到不只 CPU / memory。
 
 ### 今日最重要的觀念
 
-- 待填
+- Metrics Server 只提供即時 metrics，不存歷史資料。
+- kubectl top 只是顯示工具，不是 metrics 系統。
+- HPA 根據 metrics 決定 replicas，但不直接創 Pod。
+- Scheduler 只看 requests 做資源配置，不看即時使用量。
+- 這條鏈是即時資源觀察加 autoscaling，不是完整 observability。
 
 ### 帶回 VS Code 的問題
 
-1. 待填
-2. 待填
+1. 我現在的 Deployment 有沒有設定 resources.requests？如果沒有，Scheduler 是怎麼分配的？
+2. 如果我在 WeaMind 加上 HPA（例如 CPU 80%），實際上會怎麼影響 Pod 數量？在什麼流量情境下會真的觸發？

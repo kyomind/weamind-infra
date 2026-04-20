@@ -61,21 +61,39 @@
 
 ### 今日學到什麼
 
-- 待填
+- Prometheus observability 鏈和 Kubernetes 內建 metrics（Metrics Server）是不同層級的解法。
+- Metrics Server 主要提供即時資源使用量，給 kubectl top 與 HPA 使用，不會儲存歷史資料。
+- Prometheus 的核心任務是透過 pull model / scrape 收集 metrics、把資料存成 time series，並提供查詢與 alert 判斷。
+- exporter 的角色是把各種系統資料轉成 Prometheus 可讀的 metrics 格式。
+- Grafana 不負責收集或儲存資料，只負責 dashboard 與視覺化。
+- Alertmanager 不負責判斷 alert，而是負責對 alert 做分群、路由與通知。
 
 ### 已能白話講清楚什麼
 
-- 待填
+- Metrics Server 是看現在，Prometheus 是看歷史趨勢。
+- Prometheus 會定期去抓各個服務的 metrics，並把資料存成時間序列。
+- time series 就是同一個指標在不同時間點的數值，可以用來看趨勢。
+- exporter 比較像翻譯器，把系統資料轉成 `/metrics` 格式給 Prometheus 抓。
+- 如果是自己開發的服務，例如 FastAPI，也可以直接 expose `/metrics`，不一定需要另外放 exporter。
+- Grafana 只是把 Prometheus 的資料畫成圖，本身不收資料。
+- Prometheus 決定要不要觸發 alert，Alertmanager 則負責把 alert 做分群、路由與通知。
 
 ### 目前還卡住什麼
 
-- 待填
+- exporter 在實務裡怎麼接進 Kubernetes，例如怎麼被 Prometheus 發現。
+- alert rule 會怎麼定義，Prometheus 是怎麼判斷告警條件。
+- Alertmanager 的 routing / grouping 在實務上怎麼配置。
+- Grafana 怎麼接 Prometheus，尤其是 data source 的實際概念。
 
 ### 今日最重要的觀念
 
-- 待填
+- Metrics Server 不等於 Prometheus；前者偏即時 metrics，後者偏完整 observability。
+- Prometheus 的核心是收集、儲存、查詢 time series，並根據規則判斷是否觸發 alert。
+- pull model、scrape、target 是理解 Prometheus 資料流的最小骨架。
+- Grafana 不收資料，它只做視覺化。
+- Alertmanager 不判斷 alert，它只負責通知與管理。
 
 ### 帶回 VS Code 的問題
 
-1. 待填
-2. 待填
+1. 在 WeaMind 架構中，如果我要讓 FastAPI 被 Prometheus 監控，我應該在哪一層加上 `/metrics` endpoint？需要修改 application 還是加 exporter？
+2. 如果我想監控 PostgreSQL 或 Redis，而它們目前在 VM 上，我應該怎麼把這些 metrics 接進 Prometheus？需要哪些 exporter？
