@@ -22,7 +22,7 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 8. 寫入前先依照 `review/rules.md` 確認 `review/notes.md` 是否存在；若不存在，依規則初始化新檔。
 9. 若使用者只是口語化確認或閒聊，且沒有形成可保存的技術問題，可以不用寫入 `review/notes.md`。
 10. 預設先給短答，只有在使用者追問時才往外展開更多背景。
-11. 寫入筆記時避免長段落；複合概念應拆成短段或簡短 bullet，讓 `review/notes.md` 容易掃讀。
+11. 筆記格式、段落長度、code block、加粗標記與完成前檢查，全部以 `review/rules.md` 為準，不在本 prompt 重複細節。
 
 ## 必讀文件
 
@@ -47,23 +47,7 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 
 `review/notes.md` 的每個 `##` 都代表使用者的一個問題。
 
-格式預設如下：
-
-```md
-## <使用者問題的精簡標題>
-
-<回答與解析。使用普通段落為主，必要時使用 bullet list、指令區塊或短表格。>
-```
-
-回答要偏向複習筆記，而不是完整課程講義：
-
-1. 精準回答問題。
-2. 保留必要背景與判斷理由。
-3. 優先寫能幫使用者之後重講的版本。
-4. 不要過度展開旁支主題。
-5. 若當下答案有前提或不確定性，要明確寫出。
-6. 段落不要太長；同一題若有多個角色、路徑或失敗後行為，優先拆成短段或簡短 bullet。
-7. 不主動使用 Markdown 加粗標記；重點標記由使用者後續自行處理。
+具體寫入格式、內容風格、長度、隱私邊界與完成前檢查，統一依照 `review/rules.md`。本 prompt 只負責要求你進入 Review 模式並把有效問答寫入目前的 `review/notes.md`。
 
 ## 回覆方式
 
@@ -75,7 +59,6 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 - 能用一句話講清楚時，不要拉成條列或長段落。
 - 避免課程講義口吻，改用「複習時可直接重講」的說法。
 - 預設控制在短答等級，除非使用者明確要求展開。
-- 不主動替回答加粗重點。
 
 完成寫入後，可以簡短告知：
 
