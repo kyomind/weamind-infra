@@ -1,0 +1,157 @@
+# 2026-04-21 Helm Kube Prometheus Stack Basics Implementation
+
+## 這份文件的角色
+
+- 這份檔案用來記錄今天實作主體的每輪閉環，不是一般 command drill。
+- 今天的主體是用 Helm 在 WeaMind 的 K3s 叢集完成 `kube-prometheus-stack` 最小安裝，並保留可複習的驗證脈絡。
+- `07-implementation-note.md` 與本檔綁定，只承接本檔過程中的 implementation-specific 補充觀察。
+
+## 今日實作主題
+
+- 用 Helm 安裝 `kube-prometheus-stack`，先完成一版最小可工作的 observability baseline，並確認 Prometheus、Grafana 與 supporting components 已在叢集中建立。
+
+## 今日實作順序
+
+1. 先確認本機 Helm / kubectl 對遠端 K3s 叢集的控制鏈正常。
+2. 確認 Helm repo、chart、release name、namespace 與最小安裝策略。
+3. 執行 `kube-prometheus-stack` install 或 upgrade-install。
+4. 驗證核心 workload 是否建立且狀態合理。
+5. 若有失敗 workload，再縮圈到 `helm status`、`kubectl describe`、`events` 做最小判讀。
+
+## 驗收訊號與回退點
+
+### 驗收訊號
+
+- Helm release 成功建立，且可由 `helm list` / `helm status` 觀察到。
+- 叢集內可看到 `kube-prometheus-stack` 對應的核心 workload 已建立。
+- 至少能辨識 Prometheus、Grafana、Prometheus Operator、Node Exporter、`kube-state-metrics` 這幾個元件的資源落點。
+
+### 回退點
+
+- 若本機 CLI 控制鏈不通，先回到 kubeconfig / SSH tunnel / Helm CLI 可用性，不進入 chart 問題。
+- 若 Helm repo 或 chart 解析失敗，先縮回 repo add / repo update / chart 名稱與版本，不急著改 values。
+- 若 release 建立但 workload 不健康，先補 Kubernetes runtime 證據，不急著把問題歸到 observability 設計層。
+
+### Round 1
+
+#### 這一輪要驗證什麼
+
+- 本機的 `kubectl` 與 Helm CLI 是否已能正確打到 WeaMind 的遠端 K3s 叢集，並具備今天 install 所需的最小前提。
+
+#### 預計操作
+
+```bash
+kubectl config current-context
+kubectl get ns
+helm version
+```
+
+#### 實際輸出 / 操作結果
+
+```bash
+$ kubectl config current-context
+default
+
+$ kubectl get ns
+NAME              STATUS   AGE
+cert-manager      Active   90d
+darkmind          Active   4d22h
+default           Active   105d
+kube-node-lease   Active   105d
+kube-public       Active   105d
+kube-system       Active   105d
+net-test          Active   100d
+weamind           Active   97d
+
+$ helm version
+version.BuildInfo{Version:"v4.1.3", GitCommit:"c94d381b03be117e7e57908edbf642104e00eb8f", GitTreeState:"clean", GoVersion:"go1.26.1", KubeClientVersion:"v1.35"}
+```
+
+#### AI 判讀與收斂
+
+- `kubectl` 與 Helm CLI 都可正常執行，代表本機工具本身沒有缺失，今天可以進入 Helm repo / chart 這一層。
+- `kubectl config current-context` 顯示 `default`，這代表目前 kubeconfig 至少有一個可用的 active context；雖然名稱不夠語意化，但它確實已經能對到正確叢集，因為後面的 namespace 列表明顯就是 WeaMind 這個 K3s 環境。
+- `kubectl get ns` 看到 `weamind`、`darkmind`、`cert-manager` 等既有 namespace，這是高價值證據，表示我們現在不是打到錯的 cluster，也不是只讀到某個空環境。
+- `helm version` 成功回傳 `v4.1.3`，表示 Helm CLI 已安裝可用；目前還沒看到 Helm 與 cluster 互動層的錯誤，因此下一輪可以直接檢查 repo 與 chart。
+- 這一輪的最小結論是：**本機到遠端 K3s 的控制鏈已成立，今天的 install 前提正常。**
+
+#### 目前狀態
+
+- 已完成
+
+### Round 2
+
+#### 這一輪要驗證什麼
+
+- 今天要用哪個 Helm repo / chart / release / namespace 組合來做最小安裝，並先確認 chart 基本資訊可正常取得。
+
+#### 預計操作
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm search repo kube-prometheus-stack
+```
+
+#### 實際輸出 / 操作結果
+
+- 待回填
+
+#### AI 判讀與收斂
+
+- 待回填
+
+#### 目前狀態
+
+- 未開始
+
+### Round 3
+
+#### 這一輪要驗證什麼
+
+- 能否以最小設定成功安裝 `kube-prometheus-stack` release，且安裝流程本身沒有在 Helm 層直接失敗。
+
+#### 預計操作
+
+```bash
+helm upgrade --install observability prometheus-community/kube-prometheus-stack \
+  -n observability --create-namespace
+```
+
+#### 實際輸出 / 操作結果
+
+- 待回填
+
+#### AI 判讀與收斂
+
+- 待回填
+
+#### 目前狀態
+
+- 未開始
+
+### Round 4
+
+#### 這一輪要驗證什麼
+
+- install 後，哪些核心 workload 真的起來了；若有異常，第一輪最小縮圈應該落在哪些資源。
+
+#### 預計操作
+
+```bash
+helm status observability -n observability
+kubectl get pods -n observability
+kubectl get deploy,sts,ds -n observability
+```
+
+#### 實際輸出 / 操作結果
+
+- 待回填
+
+#### AI 判讀與收斂
+
+- 待回填
+
+#### 目前狀態
+
+- 未開始

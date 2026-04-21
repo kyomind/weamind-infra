@@ -71,6 +71,8 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 1. 若今天需要 prework，仍先完成 prework。
 2. 進入 lesson 後，先用 `01-outline.md` 明確宣告今天套用了 implement-heavy mode，並寫明流程順序、實作邊界、驗收訊號、回退點。
 3. 互動主體預設先進 `06-implementation.md`，逐輪記錄改動、結果與判讀。
+4. 在 `06-implementation.md` 與 `07-implementation-note.md` 這個 implementation 階段，預設採協作模式，不採邊做邊考的節奏。AI 應先說清楚這一步在驗證什麼、為什麼現在做、看到什麼輸出要怎麼判讀，再由使用者執行並回報結果。
+5. implement 階段若需要提問，重點也應是為了確認操作前提、判讀現象或補足決策資訊，不是把 `02-qa.md` 的答題模式搬進來。
 4. 若 `06` 過程中出現 implementation-specific 補充觀察，同步整理到 `07-implementation-note.md`。
 5. 實作主體結束後，再回 `02-qa.md` 做實作後的短版定位題與理解收斂。
 6. `03-command.md` 用來承接實作前檢查、實作後驗證，或補最小觀察證據；它不是今天的主戰場。
@@ -80,8 +82,9 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 補充原則：
 
 1. implement-heavy mode 一旦套用，預設就是 implementation-first；這不是臨時例外，而是 mode 本身的正式流程。
-2. `01-outline.md` 應明確寫出今天套用了這個 mode，讓 AI 不需要自行猜測。
-3. implement-heavy mode 改的是 lesson 內部流程，不影響是否需要 prework 的上層判斷。
+2. `06` / `07` 階段預設採協作模式，不把實作主體做成答題測驗；短版 QA 收斂留到實作後的 `02-qa.md`。
+3. `01-outline.md` 應明確寫出今天套用了這個 mode，讓 AI 不需要自行猜測。
+4. implement-heavy mode 改的是 lesson 內部流程，不影響是否需要 prework 的上層判斷。
 
 ---
 
