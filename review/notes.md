@@ -542,3 +542,52 @@ nodeSelector:
 所以最適合 WeaMind 的收斂方式是：**`nodeSelector` 比較像明確導流，taint / toleration 比較像硬性門禁。** 如果目標只是把 `line-bot` 穩定放到 worker，而且不想動太多 cluster-level 規則，`nodeSelector` 很合理；如果目標是從制度上保證 control-plane 幾乎不會被一般 workload 碰到，那 taint / toleration 會更完整。
 
 一句話收斂：WeaMind 現在用 `nodeSelector` 的優點是輕量、直接、好解釋；缺點是它保護的是「這個 Deployment」，不是整個叢集。taint / toleration 則剛好相反，保護更硬，但複雜度也更高。
+
+## `darkmind` 的 Pod 為什麼剛好都在 worker？YAML 明明沒寫 `nodeSelector`
+
+先講結論：**`darkmind` 這份 YAML 沒有強制 Pod 一定去 worker。**
+
+我看了 `darkmind/healthy.yaml`，裡面沒有 `nodeSelector`、`affinity`、`tolerations` 或 `nodeName`。所以你現在看到 Pod 在 worker，比較只能解讀成「目前的排程結果」，不能直接解讀成「YAML 有規則限制」。
+
+這題最重要的邊界是：**Pod 在哪個 node 上，是觀察結果；為什麼會去那裡，才是排程規則。** 如果沒有再查 node 端條件，例如 taint、cordon、資源狀態，就不能只靠 `get pods -o wide` 反推原因。
+
+一句話收斂：`darkmind` Pod 現在在 worker，不等於它被設定成只能去 worker；這兩件事要分開看。
+
+## `darkmind` 這題我實際怎麼查？指令與結果是什麼？
+
+我這次實際查了四組資訊。
+
+先看 Pod 落點：
+
+```bash
+kubectl get pods -n darkmind -o wide
+```
+
+結果是 `darkmind` 目前的 Pods 的確都在 `weamind-002` 或 `weamind-003`，也就是兩台 worker。
+
+再看節點本身：
+
+```bash
+kubectl get nodes -o wide
+kubectl describe node weamind-001 | sed -n '/Taints:/,/Conditions:/p'
+```
+
+結果顯示 `weamind-001` 目前仍是：
+
+```bash
+Taints:        <none>
+Unschedulable: false
+```
+
+也就是說，至少從這次 live 狀態看，control-plane 並沒有被 taint 或 cordon 掉。
+
+再看 `darkmind` Deployment / Pod 規格本身：
+
+```bash
+kubectl get deploy -n darkmind -o yaml | rg "nodeSelector|affinity|tolerations"
+kubectl get pod darkmind-healthy-85c6dcf689-98tv5 -n darkmind -o yaml | sed -n '/tolerations:/,/volumes:/p'
+```
+
+結果是 Deployment 端看不到 `nodeSelector` 或 `affinity`；Pod 端只看到 Kubernetes 預設加上的 `not-ready` / `unreachable` tolerations，沒有那種用來指定 control-plane 或 worker 的 toleration。
+
+所以這次查完後，比較穩的結論是：**`darkmind` 目前在 worker 是事實，但 repo 與 live 證據都還不足以證明這是被 YAML 硬性限制的；更像是 scheduler 當下的實際選擇。**
