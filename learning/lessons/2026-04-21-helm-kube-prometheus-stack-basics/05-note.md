@@ -30,6 +30,13 @@
 - 更精準地說，大家真正擔心的不是「有狀態不能進 Pod」，而是「有狀態工作負載需要穩定身份、持久化儲存、升級策略與資料生命週期設計」。
 - 所以這題比較好的講法是：Prometheus 可以放在 Kubernetes，但前提是要用對 workload model，例如 `StatefulSet` 加持久化，而不是把它當成普通 web app 那樣處理。
 
+## Alertmanager 為什麼也常用 `StatefulSet`
+
+- Alertmanager 不像 Prometheus 那樣是完整的 time-series database，但它也不是完全無狀態的純 web app。
+- 它常被放在 `StatefulSet`，主要是因為它仍需要相對穩定的身份與資料邊界，例如 silences、notification log，以及高可用模式下的 peer 協調狀態。
+- 更白話一點說，Alertmanager 雖然通常比 Prometheus 輕，但它也不是那種可以任意漂移、完全不在意身份與持久化的元件，所以 chart 常直接把它放在 `StatefulSet` 這個較穩的工作負載模型裡。
+- 這題最好的收斂不是「它是不是資料庫」，而是「它有沒有穩定身份與狀態邊界需求」。用這個角度看，就比較能理解它為什麼不是單純的 `Deployment`。
+
 ## Grafana 和 Prometheus 在實務上更常 in-cluster，還是獨立部署
 
 - 單一 cluster、自己管 observability、想快速建立 baseline 的情境下，像今天這樣直接部署在 Kubernetes cluster 內，其實很常見。
@@ -64,6 +71,17 @@
 - Node usage 也支持同一個結論：三個節點目前大約落在 `3%` 到 `9%` CPU、`34%` 到 `38%` memory，沒有出現 install 後明顯被 observability stack 壓垮的跡象。
 - 所以這次比較準確的說法是：Prometheus / Grafana 確實有在吃資源，但以目前規模來看屬於**吃得起、而且合理**的範圍；還不到需要因為它們而改架構的程度。
 - 若之後要繼續追，下一輪才值得回頭看 `requests/limits`、retention、scrape interval 與 targets 數量，確認 Prometheus 不會在後續 lesson 裡逐步變胖。
+
+## 今天這套 observability stack 到底哪些元件已經可用
+
+- 從 high level 來看，今天已經不是「只有 chart 裝上去」，而是幾個核心元件都已進入可使用但尚未進一步展示或客製的狀態。
+- Prometheus 已經在運作，而且不是空殼。因為 Prometheus Pod / `StatefulSet` 都已 `Ready`，同時 Node Exporter、`kube-state-metrics`、多個 `ServiceMonitor` 與 `PrometheusRule` 也都已建立，表示它已具備開始收集 cluster / node / k8s objects metrics 的基礎。
+- Node Exporter 已經在運作，因為 `DaemonSet` 已 `READY 3/3`，代表每個 Linux node 上都已有一份 exporter 在提供 node 層 metrics。
+- `kube-state-metrics` 已經在運作，表示 Kubernetes objects / state 類型的 metrics 也已能被提供出來。
+- Prometheus Operator 也已在運作，表示這套 stack 的 operator 模型已成立，後續要講 `ServiceMonitor`、`PodMonitor`、Prometheus / Alertmanager CRD 等東西時，已經有 controller 在接手。
+- Alertmanager 也已部署完成並可用，但今天還沒有進一步設定通知路由，所以目前比較像「服務已在、後續再配置通知策略」的狀態。
+- Grafana 也已部署完成並可用，而且 chart 已替它準備資料來源與一批 dashboard 相關 `ConfigMap`；只是今天還沒有做登入、`port-forward` 與實際 UI 驗證，所以它目前是「可用但尚未展示」的狀態。
+- WeaMind app 自己的業務 metrics 還沒有接進來，所以今天能說的是：cluster / node / k8s 基礎觀測鏈已經成立，但 app-specific metrics 與 demo dashboard 會留到 W7 Day 3。
 
 ## Flashcards
 
