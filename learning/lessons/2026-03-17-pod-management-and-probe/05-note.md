@@ -36,12 +36,12 @@
 - 使用者在 Q1 後追問：readiness probe 與 liveness probe 都打同一個 `/health`，Kubernetes 到底怎麼分辨這次失敗該算 readiness fail 還是 liveness fail。
 - 這題的最小收斂是：差異不是由應用在 response 裡主動標記，而是 kubelet 本來就分別執行兩組不同的 probe 設定。即使 path 相同，kubelet 仍知道這次檢查屬於 readiness 還是 liveness，並套用不同後續處理。
 - readiness 失敗的直接後果是 Pod 被標成 NotReady，先從可導流後端清單移除；liveness 失敗的直接後果則是 kubelet 依探針結果觸發 container restart。
-- 同一路徑同時承擔 readiness 與 liveness，代表「停止導流」與「觸發重啟」兩種責任被綁在一起。對簡單服務可以接受，但系統變複雜後，常會拆成不同判斷邏輯以降低耦合。
+- 同一路徑同時承擔 readiness 與 liveness，代表「停止導流」與「觸發重啟」**兩種責任被綁在一起**。對簡單服務可以接受，但系統變複雜後，常會拆成不同判斷邏輯以降低耦合。
 
 ### `http://:http/health` 顯示格式補充
 
 - 使用者在 command drill 第一輪後追問：`kubectl describe deployment` 裡的 `http://:http/health` 看起來像重複寫了 HTTP，這段到底該怎麼讀。
-- 這段不是在顯示兩段網址，而是把 probe 的協定、host、port 與 path 壓縮成同一行。`http://` 是協定，空白的 host 代表沒有特別指定 host，`:http` 則是命名 port，不是 domain。
+- ⭐️這段不是在顯示兩段網址，而是**把 probe 的協定、host、port 與 path 壓縮成同一行**。`http://` 是協定，空白的 host 代表沒有特別指定 host，`:http` 則是命名 port，不是 domain。
 - 在 [manifests/deployment.yaml](manifests/deployment.yaml#L35-L45) 可以直接對到：container port 被命名為 `http`，而 readiness / liveness probe 的 `httpGet.port` 也都是填 `http`。
 - 所以比較好懂的人話是：probe 會用 HTTP 對這個 container 的 `http` port 發出 `/health` 請求；host 留白代表預設對 Pod 自己檢查，不是對外部網域發請求。
 
@@ -50,7 +50,8 @@
 - 使用者補問：container port 命名成 `http` 會不會太混淆，這是常見寫法還是代表 YAML 寫法不夠好。
 - 這個命名本身是常見且合理的，尤其在一個 container 只有單一 HTTP 服務埠時，直接命名為 `http` 很常見，也方便 Service、Probe 或 Ingress 以名稱而不是硬編碼數字 port 來引用。
 - 真正讓人第一次看覺得怪的，不是命名本身，而是 `kubectl describe` 的輸出格式會把它渲染成 `:http`，看起來有點像 host 或 domain 的一部分。
-- 若未來一個 Pod 裡有多個 port，或同時有 HTTP、metrics、admin 之類不同用途的端口，命名可以更語意化，例如 `web`、`http-api`、`metrics`。但在這份 WeaMind Deployment 裡，`http` 作為單一應用 port 名稱是正常做法，不算不妥。
+- ⭐️若未來一個 Pod 裡有多個 port，或同時有 HTTP、metrics、admin 之類不同用途的端口，命名可以更語意化，例如 `web`、`http-api`、`metrics`。但在這份 WeaMind Deployment 裡，`http` 作為單一應用 port 名稱是正常做法，不算不妥。
+- 🐱：反正重點是，這裡的 port 命名是為了語意化，區分情境，而不是表示 port 數字
 
 ### NodeSelector 問題補充
 

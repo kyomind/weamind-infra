@@ -164,7 +164,7 @@ weamind-003   Ready    <none>          69d   v1.34.3+k3s1   worker
 ### 使用者選擇理由
 
 - 使用者指出這一輪目標是直接驗證 node 物件上的 label 是否存在，因此入口應該直接放在 nodes，而不是 Deployment 或 Pods。
-- 使用者也進一步觀察到 `-L nodepool` 是在指定要額外顯示哪個 label key，並追問除了這種指定單一 label 的查法之外，是否也有更 general 的方式可以看所有 node labels。
+- ⭐️使用者也進一步觀察到 `-L nodepool` 是在指定要**額外顯示哪個 label key**，並追問除了這種指定單一 label 的查法之外，是否也有更 general 的方式可以看所有 node labels。
 
 ### AI 判讀與修正
 

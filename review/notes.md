@@ -481,3 +481,64 @@ scheduler 的工作，是看這些未排程 Pod，根據資源、node 狀態、`
 用 WeaMind 來講，`line-bot` 的 Pod 就是 app container 的最小部署單位。Service、Endpoints、readiness probe、logs、rollout **都是以 Pod 作為主要觀察與管理邊界，而不是直接管理某個裸 container**。
 
 一句話收斂：Pod 是 Kubernetes 管理 container 的最小房間；container 是房間裡真正跑的程序，而 Pod 提供它們共享的網路、儲存與生命週期邊界。
+
+## 為什麼 `kubectl describe` 會把 probe 顯示成 `http://:http/health`？
+
+簡答：這不是你少懂了什麼，主要是 `kubectl describe` 的輸出格式本來就偏維運導向，想用一行把 probe 的幾個欄位壓在一起，所以對初學者確實不太友善。
+
+Probe 的 `httpGet` 在 API 裡本來就是分開欄位：`scheme`、`host`、`port`、`path`。WeaMind 這份 `manifests/deployment.yaml` 則是 `path: /health`、`port: http`，而 `host` 沒填。`kubectl describe` 只是把它硬湊成接近 URL 的樣子，所以你才會看到 `http://:http/health` 這種很怪的字串。
+
+之所以更怪，是因為這裡剛好同時碰到兩個 Kubernetes 設計。第一，`host` 是可選欄位，沒填時 kubelet 預設對 Pod IP 做檢查；第二，HTTP probe 的 `port` 可以不是數字，也可以用命名 port，所以 `http` 在這裡其實是 port 名稱，不是網址裡的 host 或 protocol。這兩件事疊在一起，就讓 `http://:http/health` 很像壞掉的網址。
+
+比較準的說法是：這一行不是給你拿去貼到瀏覽器的 URL，而是 `kubectl describe` 用來快速摘要 probe 設定的短格式。它的設計考量比較像「終端機裡快速掃描欄位」，不是「第一次學 probe 的人也能直讀」。
+
+所以這題最實用的結論是：遇到這種輸出，不要把它當正式語法背。先拆回原始欄位看最穩：
+
+```bash
+scheme = http
+host   = empty
+port   = http
+path   = /health
+```
+
+換成人話就是：用 HTTP，對 Pod 自己的命名 port `http` 發 `/health` 請求。若你要真的看得清楚，`kubectl get pod/deployment -o yaml` 會比 `kubectl describe` 更適合學習；`describe` 比較適合除錯時快速掃一眼。
+
+## WeaMind 為什麼用 `nodeSelector`，不用 taint / toleration？兩者優缺點是什麼？
+
+先講結論：**以 WeaMind 當時的需求來說，`nodeSelector` 是比較輕、比較直接的解法；taint / toleration 則是更強硬、叢集層級的保護。**
+
+WeaMind 當時遇到的問題很單純：control-plane `weamind-001` 沒有 taint，所以一般 Pod 也能被排上去。repo 內 `PROGRESS.md` 也有直接記錄，後來的修正是對 `weamind-002`、`weamind-003` 加 `nodepool=worker` label，然後在 `manifests/deployment.yaml` 裡加：
+
+```yaml
+nodeSelector:
+  nodepool: worker
+```
+
+這種做法的優點是：
+
+- 改動小，只影響這個 workload，不會一下子改變整個叢集的排程規則
+- 很直觀，面試時也很好講：不是「所有 Pod 都不能去 control-plane」，而是「這個 app 明確只去 worker」
+- 對目前這種 3 台節點、目標很單純的情境，已經足夠達成「業務 Pod 不跑到 control-plane」的效果
+- 之後如果想在 control-plane 臨時跑 debug Pod、小工具或測試 Pod，不需要另外補 toleration
+
+但它的缺點也很明確：
+
+- 它是「Pod 主動挑節點」，不是「節點主動拒絕 Pod」，所以保護力比較軟
+- 如果未來有別的 Deployment 忘了加 `nodeSelector`，那些 Pod 還是可能跑去 control-plane
+- 它比較像 workload 級別的規則，不是整個叢集的安全欄杆
+
+相對地，taint / toleration 的思路是反過來：**節點先說『沒有被允許的 Pod 不准上來』**。所以它的優點是：
+
+- 保護更硬，因為 control-plane 可以從節點端直接拒絕一般 workload
+- 比較適合你真的想把 control-plane 當成「預設禁區」的生產環境
+- 不容易因為某個新 Deployment 忘了寫 `nodeSelector` 就意外踩進去
+
+但它的代價是：
+
+- 你是在改變叢集層級行為，不只是修一個 app 的 YAML
+- 之後凡是要允許跑到那台節點的 Pod，都要處理對應的 toleration
+- 在目前這種小叢集與學習型專案裡，可能會把問題從「理解排程」升級成「管理一堆 toleration 細節」
+
+所以最適合 WeaMind 的收斂方式是：**`nodeSelector` 比較像明確導流，taint / toleration 比較像硬性門禁。** 如果目標只是把 `line-bot` 穩定放到 worker，而且不想動太多 cluster-level 規則，`nodeSelector` 很合理；如果目標是從制度上保證 control-plane 幾乎不會被一般 workload 碰到，那 taint / toleration 會更完整。
+
+一句話收斂：WeaMind 現在用 `nodeSelector` 的優點是輕量、直接、好解釋；缺點是它保護的是「這個 Deployment」，不是整個叢集。taint / toleration 則剛好相反，保護更硬，但複雜度也更高。
