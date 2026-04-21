@@ -136,15 +136,33 @@ helm upgrade --install observability prometheus-community/kube-prometheus-stack 
 
 #### 實際輸出 / 操作結果
 
-- 待回填
+```bash
+$ helm upgrade --install observability prometheus-community/kube-prometheus-stack \
+  -n observability --create-namespace
+Release "observability" does not exist. Installing it now.
+NAME: observability
+LAST DEPLOYED: Tue Apr 21 11:51:27 2026
+NAMESPACE: observability
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+TEST SUITE: None
+NOTES:
+kube-prometheus-stack has been installed. Check its status by running:
+  kubectl --namespace observability get pods -l "release=observability"
+```
 
 #### AI 判讀與收斂
 
-- 待回填
+- 這一步已明確成功，因為 Helm 回傳的是 **`STATUS: deployed`**，而不是 `failed`、`pending-install` 或 template/render 類型錯誤。
+- `NAME: observability`、`NAMESPACE: observability`、`REVISION: 1` 這三個欄位一起說明：這次 chart 已經正式成為叢集裡的一個 **release 實例**，而且目前是第一次部署。
+- `DESCRIPTION: Install complete` 代表 Helm 這一層的 install 流程已經完成；接下來要看的不再是 repo / chart / release 參數，而是 **叢集裡的核心 workload 是否真的建立並健康運作**。
+- `NOTES` 區塊很有價值，但今天先把它當成後續操作提示，不要被它帶去分心做 Grafana 密碼或 port-forward。W7D2 現在的主線仍是：**先驗證核心資源是否已成功建立。**
+- 這一步的最小結論是：**Helm install 主線已打通，`kube-prometheus-stack` 已成功部署為 `observability` release。**
 
 #### 目前狀態
 
-- 未開始
+- 已完成
 
 ### Step 4
 
@@ -162,12 +180,55 @@ kubectl get deploy,sts,ds -n observability
 
 #### 實際輸出 / 操作結果
 
-- 待回填
+```bash
+$ helm status observability -n observability
+NAME: observability
+NAMESPACE: observability
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+
+Key resources observed from helm status:
+- Alertmanager: observability-kube-prometh-alertmanager -> READY 1 / AVAILABLE True
+- Prometheus: observability-kube-prometh-prometheus -> READY 1 / AVAILABLE True
+- Deployment: observability-grafana -> READY 1/1
+- Deployment: observability-kube-state-metrics -> READY 1/1
+- Deployment: observability-kube-prometh-operator -> READY 1/1
+- DaemonSet: observability-prometheus-node-exporter -> READY 3/3
+
+$ kubectl get pods -n observability
+NAME                                                     READY   STATUS    RESTARTS   AGE
+alertmanager-observability-kube-prometh-alertmanager-0   2/2     Running   0          8m58s
+observability-grafana-cbb9d6fd9-z7lg7                    3/3     Running   0          9m2s
+observability-kube-prometh-operator-7bbc97b8c5-zjsjq     1/1     Running   0          9m2s
+observability-kube-state-metrics-7cf68b47dc-lq7d7        1/1     Running   0          9m2s
+observability-prometheus-node-exporter-7bbcf             1/1     Running   0          9m3s
+observability-prometheus-node-exporter-8lmj5             1/1     Running   0          9m3s
+observability-prometheus-node-exporter-xv882             1/1     Running   0          9m3s
+prometheus-observability-kube-prometh-prometheus-0       2/2     Running   0          8m57s
+
+$ kubectl get deploy,sts,ds -n observability
+NAME                                                  READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/observability-grafana                 1/1     1            1           9m3s
+deployment.apps/observability-kube-prometh-operator   1/1     1            1           9m3s
+deployment.apps/observability-kube-state-metrics      1/1     1            1           9m3s
+
+NAME                                                                    READY   AGE
+statefulset.apps/alertmanager-observability-kube-prometh-alertmanager   1/1     9m
+statefulset.apps/prometheus-observability-kube-prometh-prometheus       1/1     8m59s
+
+NAME                                                    DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+daemonset.apps/observability-prometheus-node-exporter   3         3         3       3            3           kubernetes.io/os=linux   9m6s
+```
 
 #### AI 判讀與收斂
 
-- 待回填
+- 這一步已經拿到足夠完整的成功證據，不只是 Helm 說 `deployed`，而是 Kubernetes runtime 也顯示核心 workload 已經各自落在合理的工作負載型別上，而且目前都進入 `Running` / `Ready` 狀態。
+- 目前可以穩定辨識出這批核心元件的最小地圖：Grafana、`kube-state-metrics`、Prometheus Operator 走 `Deployment`；Prometheus 與 Alertmanager 走 `StatefulSet`；Node Exporter 走 `DaemonSet`。
+- `DaemonSet` 的 `READY 3/3` 很有價值，因為它直接對回「每個 Linux node 一個 exporter」這個每節點型工作負載模型，也剛好呼應 W7 觀察點裡 Node Exporter 為什麼是第二個每節點型工作負載範例。
+- `StatefulSet` 的 Prometheus / Alertmanager 也都已 `READY 1/1`，表示這次 install 不只把 stateless 元件拉起來，連較有狀態邊界的核心資料面元件也已正常建立。
+- 這一步的最小結論是：**`kube-prometheus-stack` 的核心 workload 已成功建立並健康運作，W7D2 的最小安裝驗收已成立。**
 
 #### 目前狀態
 
-- 未開始
+- 已完成

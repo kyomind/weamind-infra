@@ -58,7 +58,7 @@
 2. 先做 cluster 與 Helm 前置驗證，確認本機 CLI 到遠端 K3s API 的控制鏈是通的。
 3. 再確認 chart repo / release / namespace 的最小安裝策略，避免一開始就陷入 values 細節。
 4. 完成 install 後，直接在 `06-implementation.md` 補最小驗證證據，確認核心 workload 是否建立並進入穩定狀態。
-5. 實作主體完成後，再回 `02-qa.md` 做 post-implementation QA 的短版定位題收斂。
+5. 只有在實作主體完成後，再回 `02-qa.md` 做 post-implementation QA 的短版定位題收斂。
 6. 若過程中出現 implementation-specific 補充觀察，同步整理到 `07-implementation-note.md`。
 7. 最後回 `04-report.md` 收斂成一版可口述的 W7D2 結論。
 
