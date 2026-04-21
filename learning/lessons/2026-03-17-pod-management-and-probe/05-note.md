@@ -80,7 +80,7 @@
 ### `describe pod` 在 Ready 問題裡的角色
 
 - 使用者在拆題後的情境 B 選擇先看 `kubectl describe pod -n weamind <pod-name>`，並補充自己的實際排查順序通常會是：先看 `describe pod`，若沒有關鍵資訊，再補看 `kubectl logs`。
-- 這個順序是合理的。若題目是「某個 Pod 明明 Running，但 READY 是 0/1」，第一個最穩的入口通常就是 `describe pod`，因為它最容易同時看到 Pod conditions、container state、restart count、probe 設定，以及 events。
+- ⭐️這個順序是合理的。若題目是「某個 Pod 明明 **Running，但 READY 是 0/1**」，第一個**最穩的入口**通常就是 `describe pod`，因為它最容易同時看到 **Pod conditions、container state、restart count、probe 設定，以及 events**。
 - 這次因為使用者拿來觀察的是健康 Pod，所以輸出裡看到的是 `Ready: True`、`ContainersReady: True`、`Restart Count: 0`、`Events: <none>`。這剛好說明一件事：健康 Pod 的 `describe` 主要是在告訴你「目前沒有異常跡象」，而不是主動展示失敗案例。
 - 若真的有問題，常見線索通常會出現在這些地方：
 - `Conditions` 裡的 `Ready=False` 或 `ContainersReady=False`
@@ -88,29 +88,6 @@
 - `Restart Count` 持續增加
 - `Events` 出現 `Readiness probe failed`、`Liveness probe failed`、`Back-off restarting failed container`、`FailedScheduling`、`Failed to pull image` 等訊息
 - 所以更精準的說法不是「describe 一定能直接給答案」，而是「describe 是 Pod 層的第一個狀態面板」。若它已指出 probe fail、restart 或事件，通常先沿著那條線查；若它沒有給出足夠原因，再去看 logs 補 app process 的細節。
-
-### Command 3 的拆題修正
-
-- 使用者在 Command 3 回答時指出：原題把「Deployment 是否成功交接」、「Pod 明明 Running 但還沒 Ready」以及「app 本身是否報錯」混在一起，導致單一指令選擇不夠乾淨。
-- 這個回饋是對的，因為這三個問題本來就站在不同層級。
-- 比較好的拆法是三個情境分開問：
-- 情境 A：想確認 Deployment rollout 有沒有完成，先看 `kubectl rollout status deployment/weamind -n weamind`。
-- 情境 B：想確認某個 Pod 為什麼 Running 但還沒 Ready，先看 `kubectl describe pod -n weamind <pod-name>`。
-- 情境 C：想確認 app process 自己有沒有報錯，先看 `kubectl logs -n weamind <pod-name> --tail=30`。
-- `rollout status` 回報 `successfully rolled out` 只能先說明 Deployment 這次 rollout 已完成，不能直接取代 Pod readiness 與 app logs 的排查。
-
-### `get pods -o wide` 的證據邊界
-
-- 使用者在 Command 2 主動指出：`kubectl get pods -n weamind -o wide` 雖然能看到 Pods 跑在 `weamind-002` 與 `weamind-003`，但單靠這個輸出，還不能百分之百證明這兩台 node 真的帶有 `nodepool=worker` label。
-- 這個判斷是對的，而且很值得保留。`get pods -o wide` 回答的是 Pod-to-node 對照，不是 node labels 本身。
-- 若要把命題補完整，下一步仍需要去看 nodes 的 labels，例如 `kubectl get nodes -L nodepool`。也就是說，Command 2 先回答「排到哪裡」，Command 4 才補回答「那裡是不是符合 selector」。
-
-### 管理鏈與執行鏈補充
-
-- 使用者在 Q4 中已經抓到一個很好的區分：管理鏈偏期望狀態與控制器層級，執行鏈偏實際把 Pod 跑出來的過程。
-- 這題最需要修正的點是 scheduler / kubelet 的互動方式。比較精準的說法不是 scheduler 直接命令 kubelet「開兩個 Pod」，而是 scheduler 先替待執行的 Pod 決定 node，之後該 node 上的 kubelet 觀察到 Pod 已綁到自己，才去協調 container runtime 落地執行。
-- Pod 不是純抽象名詞，但也不是像 VM 一樣獨立存在的一台小機器。比較穩的理解是：Pod 是 Kubernetes 的最小部署單位與執行邊界，container 則是在這個邊界裡真正跑起來的進程。
-- 因此兩條鏈雖然最後都會碰到 Pod，但管理鏈在回答「應該維持哪些 Pods 存在」，執行鏈在回答「這些 Pods 怎麼在某台 node 上真的跑起來」。
 
 ### Pod 物件與實際資源消耗補充
 
@@ -120,7 +97,7 @@
 - 所以可以說：Pod 在 control-plane 上先以「API 物件」形式存在，在 worker node 上再以「執行邊界」形式落地。這兩者都是真的，但不是同一種存在方式。
 - etcd 或其他 cluster datastore 的角色比較接近「儲存 Pod 物件狀態」，不是「執行 Pod」。所以不建議說 Pod 藍圖是「跑在 etcd 上」；更精準的說法是：Pod spec / state 會被持久化在 cluster datastore，而不是由 datastore 來執行。
 - 這也解釋了你對記憶體的直覺：未排程的 Pod object 確實不是零成本，但它消耗的是控制面的資料與協調成本；而當大家在談 Pod 吃多少 CPU / 記憶體時，通常指的是它被排到 node 後，Pod 內 containers 在 worker 上的實際執行資源。
-- 若要再講得更精準一點，scheduler 在做排程判斷時，主要看的也不是「Pod object 在 control-plane 自己吃了多少 RAM」，而是 Pod spec 裡宣告的 requests / limits 與 node 可用資源，必要時也會把 Pod overhead 算進去。
+- ⭐️若要再講得更精準一點，scheduler 在做排程判斷時，主要看的也不是「Pod object 在 control-plane 自己吃了多少 RAM」，而是 Pod spec 裡**宣告的 requests / ~~limits~~ 與 node 可用資源**，必要時也會把 Pod overhead 算進去。
 
 ### Pod 在 control-plane 與 worker 的成本差異
 

@@ -591,3 +591,17 @@ kubectl get pod darkmind-healthy-85c6dcf689-98tv5 -n darkmind -o yaml | sed -n '
 結果是 Deployment 端看不到 `nodeSelector` 或 `affinity`；Pod 端只看到 Kubernetes 預設加上的 `not-ready` / `unreachable` tolerations，沒有那種用來指定 control-plane 或 worker 的 toleration。
 
 所以這次查完後，比較穩的結論是：**`darkmind` 目前在 worker 是事實，但 repo 與 live 證據都還不足以證明這是被 YAML 硬性限制的；更像是 scheduler 當下的實際選擇。**
+
+## scheduler 會考慮 `limits` 嗎？還是只看 `requests`？
+
+這題你抓得對，**一般在排程時，scheduler 主要看的是 `requests`，不是 `limits`。**
+
+Kubernetes 官方文件對這點講得很直接：kube-scheduler 會用 Pod / container 的 resource requests 來判斷節點放不放得下；`limits` 比較是執行期由 kubelet / runtime 負責約束的上限，不是 scheduler 的主要放置依據。
+
+所以我先前那句若要修正，應該改成：scheduler 主要看 `requests` 與 node 可分配資源，必要時再把 Pod overhead 算進去。
+
+比較容易混淆的例外是：**如果只寫了 `limit`，某些情況下 Kubernetes 可能會自動把 `request` 補成和 `limit` 一樣。**
+
+這是 Kubernetes 官方文件明確寫的行為，所以最後 scheduler 看到的其實還是 request，只是那個 request 是被預設補出來的，不是 scheduler 直接拿 limit 來排。
+
+一句話收斂：**scheduler 平常看的是 `requests`；`limits` 主要管執行期上限。**
