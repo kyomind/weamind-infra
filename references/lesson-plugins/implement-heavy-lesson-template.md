@@ -82,7 +82,7 @@ implement-heavy mode 預設直接建立六份檔案：
 
 1. 先用 `06-implementation.md` 做主要實作與每個 step 的閉環記錄。
 2. 若 `06` 過程中出現 implementation-specific 補充觀察，同步整理到 `07-implementation-note.md`。
-3. 實作主體結束後，再回 `02-qa.md` 做 post-implementation QA 與定位收斂。
+3. 只有在實作主體完成後，再回 `02-qa.md` 做 post-implementation QA 與定位收斂。
 4. 若需要最小操作驗證，直接把證據留在 `06-implementation.md` 的對應 step。
 5. 過程中的一般 lesson 延伸問答仍整理進 `05-note.md`。
 6. 最後回 `04-report.md` 做整體收斂。
@@ -193,15 +193,9 @@ implement-heavy mode 預設直接建立六份檔案：
 
 > 這份檔案與 `06-implementation.md` 綁定，只承接 `06` 過程中的 implementation-specific 關鍵觀察與決策討論。
 
-## 實作前邊界
+<!-- 初始化時可保持空白；真正出現 implementation-specific 主題後，再用 `##` 標題逐條新增 note。 -->
 
-<!-- 初始化時保持空白；若需要佔位，可只保留這類特殊註記。 -->
+## 某個與實作決策直接相關的主題
 
-## 實作中觀察
-
-<!-- 初始化時保持空白；若需要佔位，可只保留這類特殊註記。 -->
-
-## 後續待驗證
-
-<!-- 初始化時保持空白；若需要佔位，可只保留這類特殊註記。 -->
+- 在這個 H2 下直接整理與實作邊界、驗收、風險或取捨有關的關鍵觀察。
 </template example 07-implementation-note.md>

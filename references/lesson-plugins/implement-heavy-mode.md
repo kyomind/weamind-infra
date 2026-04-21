@@ -74,7 +74,7 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 5. 在每一步真正執行前，AI 都應先給 1 到 3 句簡短前情說明，至少交代這一步的目的、它位於哪個階段、成功或失敗大致各代表什麼；不要只丟指令而不交代脈絡。
 6. implement 階段若需要提問，重點也應是為了確認操作前提、判讀現象或補足決策資訊，不是把 `02-qa.md` 的答題模式搬進來。
 7. 若 `06` 過程中出現 implementation-specific 補充觀察，同步整理到 `07-implementation-note.md`。
-8. 實作主體結束後，再回 `02-qa.md` 做 post-implementation QA，用短版定位題收斂理解。
+8. 只有在實作主體完成後，才回 `02-qa.md` 做 post-implementation QA，用短版定位題收斂理解。
 9. `05-note.md` 繼續承接一般 lesson 延伸問答與卡片素材。
 10. `04-report.md` 仍在互動完成後再收斂。
 
@@ -90,7 +90,7 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 
 ## QA 的例外規格
 
-若今天明確屬於 implement-heavy mode，`02-qa.md` 仍應保留，但改成 post-implementation QA，也就是實作後收斂用的短版定位題。
+若今天明確屬於 implement-heavy mode，`02-qa.md` 仍應保留，但改成 post-implementation QA，也就是實作完成後才進入的短版收斂題。
 
 建議調整為 2 到 3 題，角色是先對齊：
 
@@ -104,6 +104,7 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 2. QA 應服務 implementation，不應和 `06-implementation.md` 搶主體。
 3. 若某段延伸問答已超出這次改動的最小定位需求，優先放進 `05-note.md`。
 4. QA 的價值是把這次實作鎖成可口述的理解，不是把實作過程再考一次。
+5. implementation 尚未完成前，不應提前切進 `02-qa.md`；否則 QA 會失去「用完成結果做收斂」的價值。
 
 ---
 
@@ -187,23 +188,18 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 1. 一般 lesson 討論與延伸問答仍優先放 `05-note.md`。
 2. 只有直接影響實作邊界、驗收、風險、設計取捨或下一步決策的關鍵討論，才放進 `07-implementation-note.md`。
 3. 若某段內容雖然重要，但不是 implementation-specific，仍應回到 `05-note.md`，不要因為它「重要」就全部塞進 `07`。
-
-建立骨架時，建議先放：
-
-1. `## 實作前邊界`
-2. `## 實作中觀察`
-3. `## 後續待驗證`
+4. `07-implementation-note.md` 應以真正的 note 形式撰寫：一個主題一個 `##` 標題，下面直接展開內容；不要先用固定分區把檔案切成骨架式欄位。
 
 初始化原則：
 
-1. 這三個 H2 可以先建立，但內文預設保持空白，最多只留 HTML comment 這類佔位註記。
+1. 建立骨架時不需要先預建固定 H2 區塊；等真正出現 implementation-specific 主題後，再以對應主題名稱新增 `##` 標題。
 2. 不要一開始就把 `04-report.md` 的結論預抄進來。
 3. 不要把一般 lesson 延伸問答先塞進這裡；若內容不是 implementation-specific，優先回 `05-note.md`。
 4. 不要把大段原始輸出直接倒進這裡；這份檔案是補充理解，不是原始紀錄倉庫。
 
 自檢規則：
 
-1. 初始化時是否只有段落骨架與必要佔位，沒有預寫結論。
+1. 初始化時是否沒有預寫不必要的固定分區與結論。
 2. 實際回填後，內容是否真的屬於 implementation-specific，而不是一般 QA 延伸。
 3. 是否避免和 `06-implementation.md` 重複貼同一段操作記錄。
 4. 若某段內容已足夠成為 lesson-level 收斂，是否應改回 `04-report.md`，而不是一直留在這裡。
