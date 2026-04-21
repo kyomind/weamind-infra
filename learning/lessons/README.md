@@ -159,13 +159,12 @@ mode 的合法 enum、決策來源與 plugin 索引，統一以 `references/less
 
 5. `03-command.md`
 
-若當天計畫已明確指定 implement-heavy mode，請直接改讀 `references/lesson-plugins/implement-heavy-mode.md` 與 `references/lesson-plugins/implement-heavy-lesson-template.md`，並一次建立 `01-07` 全部七份檔案。
+若當天計畫已明確指定 implement-heavy mode，請直接改讀 `references/lesson-plugins/implement-heavy-mode.md` 與 `references/lesson-plugins/implement-heavy-lesson-template.md`，並建立 implement-heavy mode 專用的 6 份檔案。
 
 範例：
 
 - `learning/lessons/2026-03-10-weamind-traffic-path/01-outline.md`
 - `learning/lessons/2026-03-10-weamind-traffic-path/02-qa.md`
-- `learning/lessons/2026-03-10-weamind-traffic-path/03-command.md`
 - `learning/lessons/2026-03-10-weamind-traffic-path/04-report.md`
 - `learning/lessons/2026-03-10-weamind-traffic-path/05-note.md`
 

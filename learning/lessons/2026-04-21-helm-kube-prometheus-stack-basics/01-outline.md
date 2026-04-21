@@ -49,28 +49,27 @@
 ### 回退點
 
 1. 若 chart 安裝失敗，先縮回 Helm repo、cluster access、target namespace、release name 與 chart version 這幾個最小前提，不急著追 values 細節。
-2. 若 release 建立成功但 Pod 不健康，先用 `03-command.md` 的驗證指令切到 `helm status`、`kubectl get pods`、`kubectl describe` 與 `events`，不要先擴成 app metrics 問題。
+2. 若 release 建立成功但 Pod 不健康，先在 `06-implementation.md` 的對應 step 補 `helm status`、`kubectl get pods`、`kubectl describe` 與 `events` 這條最小證據鏈，不要先擴成 app metrics 問題。
 3. 若今天 install 成功但還沒來得及做 dashboard 或對外存取，仍算 lesson 主線完成；GUI 存取與進一步觀察可留到後續收尾。
 
 ## 建議學習順序
 
-1. 先用 `06-implementation.md` 確認今天的實作主體、驗收訊號與每輪操作閉環。
+1. 先用 `06-implementation.md` 確認今天的實作主體、驗收訊號與每個 step 的操作閉環。
 2. 先做 cluster 與 Helm 前置驗證，確認本機 CLI 到遠端 K3s API 的控制鏈是通的。
 3. 再確認 chart repo / release / namespace 的最小安裝策略，避免一開始就陷入 values 細節。
-4. 完成 install 後，用 `03-command.md` 補最小驗證證據，確認核心 workload 是否建立並進入穩定狀態。
-5. 實作主體完成後，再回 `02-qa.md` 做實作後的短版定位題收斂。
+4. 完成 install 後，直接在 `06-implementation.md` 補最小驗證證據，確認核心 workload 是否建立並進入穩定狀態。
+5. 實作主體完成後，再回 `02-qa.md` 做 post-implementation QA 的短版定位題收斂。
 6. 若過程中出現 implementation-specific 補充觀察，同步整理到 `07-implementation-note.md`。
 7. 最後回 `04-report.md` 收斂成一版可口述的 W7D2 結論。
 
 ## 文件分工
 
 1. `01-outline.md`：宣告今天套用 `implement-heavy`，並寫清楚主題、邊界、驗收與回退點。
-2. `02-qa.md`：記錄實作後的短版定位題、使用者回答摘要與 AI 修正。
-3. `03-command.md`：承接實作前後的最小驗證指令與證據。
-4. `04-report.md`：收斂今天真正學到的內容。
-5. `05-note.md`：記錄一般 lesson 延伸問答、暫時結論與卡片素材。
-6. `06-implementation.md`：記錄今天的安裝主體與每輪實作閉環。
-7. `07-implementation-note.md`：承接 `06` 過程中的 implementation-specific 補充觀察。
+2. `02-qa.md`：記錄 post-implementation QA 的短版定位題、使用者回答摘要與 AI 修正。
+3. `04-report.md`：收斂今天真正學到的內容。
+4. `05-note.md`：記錄一般 lesson 延伸問答、暫時結論與卡片素材。
+5. `06-implementation.md`：記錄今天的安裝主體與每個 step 的實作閉環，包含必要的驗證證據。
+6. `07-implementation-note.md`：承接 `06` 過程中的 implementation-specific 關鍵觀察與決策討論。
 
 ## 這份 lesson 的完成標準
 
