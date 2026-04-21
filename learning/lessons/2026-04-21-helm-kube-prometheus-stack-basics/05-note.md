@@ -85,4 +85,38 @@
 
 ## Flashcards
 
-<!-- 初始化時保持空白；若需要佔位，可只保留這類特殊註記。等 lesson 過程中真的整理出卡片素材後再填。 -->
+- `chart`、`release`、`values` 在 Helm 各自回答什麼問題？ #DevOps #card
+	- `chart` 是安裝藍圖，包模板、預設值與要建立的一組資源
+	- `release` 是某個 chart 在 cluster / namespace 裡實際安裝出來的實例
+	- `values` 是這次實例化時帶入的參數，今天先採用預設值做最小安裝
+
+- 為什麼 Helm 不能簡化成只是另一種 `kubectl apply`？ #DevOps #card
+	- `kubectl apply` 比較像送既定 manifest 到 API server
+	- Helm 多了模板渲染、values 覆蓋、release 管理、revision 與 upgrade / rollback 邊界
+	- 這次看到的 `REVISION: 1` 就是 release 管理層的直接證據
+
+- 這次 `kube-prometheus-stack` 的核心元件對應到哪些 workload？ #DevOps #card
+	- Grafana、Prometheus Operator、`kube-state-metrics` 是 `Deployment`
+	- Prometheus 與 Alertmanager 是 `StatefulSet`
+	- Node Exporter 是 `DaemonSet`
+
+- 為什麼 Node Exporter 用 `DaemonSet` 最合理？ #DevOps #card
+	- 它的任務是每個 node 都各跑一份 exporter
+	- 這正是每節點型工作負載的典型模型
+	- `READY 3/3` 代表每個 Linux node 都已有一份在提供 node metrics
+
+- 如果 Helm release 建了，但 Pod 起不來，第一輪應怎麼縮圈？ #DevOps #card
+	- 先看 `helm status`，確認 release 層有沒有明顯失敗訊號
+	- 再看 `kubectl get pods` 找出壞掉的 workload
+	- 最後對特定 Pod 做 `describe` 或看 `events`
+	- 在核心 workload 還沒穩之前，不跳去 app metrics 或 dashboard
+
+- Prometheus 為什麼有狀態，卻仍然可以部署在 Kubernetes 內？ #DevOps #card
+	- 關鍵不是能不能進 Pod，而是不能把它當 stateless web app 處理
+	- 它需要穩定身份、持久化儲存與適合的升級模型
+	- 所以更合理的做法是用 `StatefulSet` 加持久化來管理
+
+- WeaMind 這種小型 K3s cluster，為什麼先把 Prometheus / Grafana 放在 cluster 內是合理 baseline？ #DevOps #card
+	- 部署最直接，discovery 與 `ServiceMonitor` 模型最自然
+	- 權限與網路邊界一致，符合 `kube-prometheus-stack` 的預期使用方式
+	- 在還沒碰到 retention、跨 cluster 或平台獨立維運需求前，不需要先搬到堡壘機
