@@ -365,6 +365,99 @@ manifests/deployment.yaml
 
 #### 這一步要驗證什麼
 
+- WeaMind app repo 是否能先在不擴大業務邏輯重構的前提下，補出 W7 demo MVP 所需的 App 4 metrics，也就是 `request / success / error / latency` 這條最小 webhook 觀測鏈。
+
+#### 預計操作
+
+```bash
+cd /Users/kyo/Code/WeaMind
+uv add prometheus-client
+uv run pytest tests/test_main.py tests/line/test_webhook.py tests/line/test_metrics.py
+uv run ruff check app/main.py app/line/router.py app/line/metrics.py tests/test_main.py tests/line/test_webhook.py tests/line/test_metrics.py
+uv run pyright app/main.py app/line/router.py app/line/metrics.py
+```
+
+#### 實際輸出 / 操作結果
+
+- 已新增 `prometheus-client` 依賴，並更新 `uv.lock`。
+- 已在 WeaMind app 補出 `/metrics` endpoint，掛點放在 `app/main.py`。
+- 已新增 `app/line/metrics.py`，集中定義 W7 的 App 4 指標與最小 event type 分類邏輯。
+- 已在 router 邊界接上第一版 instrumentation：驗簽後記錄 received，背景處理區塊記錄 success / error / duration。
+- 已補 `/metrics` endpoint 測試、webhook metrics 測試與基本 helper 測試，先確認整條 app-side 鏈路能跑通。
+- 實際驗證結果：
+	- `uv run pytest tests/test_main.py tests/line/test_webhook.py tests/line/test_metrics.py` -> `16 passed`
+	- `uv run ruff check ...` -> passed
+	- `uv run pyright app/main.py app/line/router.py app/line/metrics.py` -> `0 errors`
+
+#### AI 判讀與收斂
+
+- 這一步代表 **App 4 在 application repo 這一側已經不是缺口**。現在 WeaMind app 已具備最小可 scrape 的 `/metrics` 入口，也已把 W7 要的四個 webhook 指標實際產生出來。
+- 這一版的價值在於先把 app-side observability 鏈路打通，而不是一次做完整 production metrics 設計。
+- 當時的判斷是：先用 router + metrics 模組這個最小改動，把 `/metrics`、App 4 指標與測試基線建立起來，再看 review 結果決定是否要下沉記帳邊界。
+- 這一步的最小結論是：**WeaMind app 端現在已能產生 App 4 metrics，接下來真正剩下的缺口已收斂到 infra 端的 `ServiceMonitor` 與 Prometheus / Grafana 驗證，而不是 application instrumentation 本身。**
+
+#### 目前狀態
+
+- 已完成
+
+### Step 6
+
+#### 這一步要驗證什麼
+
+- 第一版 App 4 metrics 雖然已經能 demo，但 success / error / duration 的記帳邊界是否真的和 metric 名稱一致；如果不一致，應該把記帳邏輯下沉到哪一層才合理。
+
+#### 預計操作
+
+```bash
+cd /Users/kyo/Code/WeaMind
+uv run pytest
+```
+
+#### 實際輸出 / 操作結果
+
+- WeaMind repo 經 review 後，保留了 Step 5 已建立的整體方向：
+	- 仍維持 Fast ACK
+	- 仍保留 `/metrics` endpoint
+	- 仍保留 App 4 指標名稱
+	- 仍保留最小 `event_type` 分類策略
+- 但 success / error / duration 的記帳邊界被修正了。原本這三個指標是包在 router 的整包 background task 外圍，實際語意比較接近 request-level / batch-level；修正後改為下沉到 service 的逐筆 event dispatch 邊界。
+- 新增 `process_webhook_events(...)` 這條處理路徑，改為逐筆 event：
+	- 解析 payload
+	- 找出對應 handler
+	- 呼叫 handler
+	- 對單一 event 記錄 success / error / duration
+- `router.py` 的責任因此被收斂成：
+	- 驗證 request
+	- 抽出 raw payload 的最小 event types
+	- 記錄 received total
+	- 把背景工作委派給 `process_webhook_events(...)`
+- `metrics.py` 也同步補成兩層分類：
+	- raw payload 分類，給 router 在背景任務前使用
+	- runtime object 分類，給 service 在逐筆 dispatch 時使用
+- 驗證結果依 WeaMind repo 的最終報告為準：
+	- `uv run pytest` -> `236 passed`
+	- total coverage -> `94%`
+	- `app/line/metrics.py` -> `98%`
+	- `app/line/router.py` -> `98%`
+	- `app/line/service.py` -> `88%`
+	- `app/main.py` -> `100%`
+
+#### AI 判讀與收斂
+
+- 我認同這個後續修正，而且它修的是根本問題，不是風格偏好。第一版做法的價值在於先把 W7 的 app-side 觀測鏈路跑通；但 review 指出的語意問題也成立：metric 名稱明明寫的是 `event`，success / error / duration 卻還停在整包 request 的外圍，這會讓資料模型和名稱不一致。
+- 這次最重要的進步，不是「又多改了幾個檔案」，而是把記帳邊界放到正確位置。改完後，`line_webhook_events_success_total`、`line_webhook_events_error_total`、`line_webhook_event_duration_seconds` 才真的對應單一 event，而不是整包 request 的推估值。
+- 我也同意沒有把 metrics 散進每個 business handler 這個決策。把它集中在 event dispatch 邊界，比塞進 `handle_message_event()`、`handle_follow_event()` 之類的函式乾淨得多，也更符合 cross-cutting concern 的處理方式。
+- 這個修正同時保住了 W7 MVP 的節奏：沒有推翻 Fast ACK、沒有重做整套路由、沒有把 observability 擴張成 production redesign，只是把原本「能 demo」的版本校正成「仍然是 MVP，但語意正確」的版本。
+- 這一步的最小結論是：**Step 5 建立了可跑通的 app metrics baseline，而 Step 6 則把 success / error / duration 從 request-level 修正成 event-level，讓 W7 的 App 4 指標在語意上真正站得住。**
+
+#### 目前狀態
+
+- 已完成
+
+### Step 7
+
+#### 這一步要驗證什麼
+
 - 今天是否已具備一版可 demo 的 Grafana 最小觀測結果；若沒有，缺口究竟是在 datasource / target / app metrics 哪一層。
 
 #### 預計操作
