@@ -168,7 +168,7 @@ mode 的合法 enum、決策來源與 plugin 索引，統一以 `references/less
 - `learning/lessons/2026-03-10-weamind-traffic-path/04-report.md`
 - `learning/lessons/2026-03-10-weamind-traffic-path/05-note.md`
 
-implement-heavy mode 的正式流程與 `06` 規則，不在本節展開，改由上述兩份 plugin 文件維護。實作過程中的補充觀察、設計取捨與一般延伸內容，統一併入 `05-note.md`，不再額外建立 `07-implementation-note.md`。
+implement-heavy mode 的正式流程與 `06` 規則，不在本節展開，改由上述兩份 plugin 文件維護。實作過程中的補充觀察、設計取捨與一般延伸內容，統一併入 `05-note.md`，不再額外建立 `07-implementation-note.md`。另外，implement step 不一定都是指令操作；若這一步主要是跑指令，就記指令與結果，若主要是直接修改程式碼、文件或設定，則用文字描述實際執行內容與結果即可。
 
 ---
 
