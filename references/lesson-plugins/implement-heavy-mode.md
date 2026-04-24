@@ -22,11 +22,10 @@
 
 本檔只補充五件事：
 
-1. implement-heavy lesson 的骨架預設應一次建立 6 份檔案。
+1. implement-heavy lesson 的骨架預設應一次建立 5 份檔案。
 2. implement-heavy lesson 的重心如何移到 `06-implementation.md`。
 3. `06-implementation.md` 的初始化與自檢規則。
-4. `07-implementation-note.md` 的初始化與自檢規則。
-5. implement-heavy mode 專用 template 應從哪裡讀。
+4. implement-heavy mode 專用 template 應從哪裡讀。
 
 換句話說：
 
@@ -45,18 +44,16 @@
 3. `04-report.md`
 4. `05-note.md`
 5. `06-implementation.md`
-6. `07-implementation-note.md`
 
 這裡和常態 lesson 最大的差異是：
 
-1. `06-implementation.md` 與 `07-implementation-note.md` 不再是少見特例，而是 mode 內建的一部分。
-2. `07-implementation-note.md` 與 `06-implementation.md` 完全綁定；它不是獨立 phase，只承接 `06` 過程中的 implementation-specific 補充觀察。
-3. implement-heavy mode 預設不建立 `03-command.md`；實作前提、驗證與觀察證據直接留在 `06-implementation.md` 的各個 step 閉環裡。
-4. 檔案先建立，不等於每份都要預先寫滿；真正的內容仍依互動與實作結果回填。
+1. `06-implementation.md` 不再是少見特例，而是 mode 內建的一部分。
+2. implement-heavy mode 預設不建立 `03-command.md`；實作前提、驗證與觀察證據直接留在 `06-implementation.md` 的各個 step 閉環裡。
+3. 檔案先建立，不等於每份都要預先寫滿；真正的內容仍依互動與實作結果回填。
 
 建立骨架時：
 
-1. `01-outline.md`、`06-implementation.md`、`07-implementation-note.md` 應優先參考 `references/lesson-plugins/implement-heavy-lesson-template.md`。
+1. `01-outline.md`、`06-implementation.md` 應優先參考 `references/lesson-plugins/implement-heavy-lesson-template.md`。
 2. `02-qa.md`、`04-report.md`、`05-note.md` 仍沿用 `learning/lessons/lesson-template.md` 的常態模板。
 
 ---
@@ -70,18 +67,18 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 1. 若今天需要 prework，仍先完成 prework。
 2. 進入 lesson 後，先用 `01-outline.md` 明確宣告今天套用了 implement-heavy mode，並寫明流程順序、實作邊界、驗收訊號、回退點。
 3. 互動主體預設先進 `06-implementation.md`，逐輪記錄改動、結果與判讀。
-4. 在 `06-implementation.md` 與 `07-implementation-note.md` 這個 implementation 階段，預設採協作模式，不採邊做邊考的節奏。AI 應先說清楚這一步在驗證什麼、為什麼現在做、看到什麼輸出要怎麼判讀，再由使用者執行並回報結果。
+4. 在 `06-implementation.md` 的 implementation 階段，預設採協作模式，不採邊做邊考的節奏。AI 應先說清楚這一步在驗證什麼、為什麼現在做、看到什麼輸出要怎麼判讀，再由使用者執行並回報結果。
 5. 在每一步真正執行前，AI 都應先給 1 到 3 句簡短前情說明，至少交代這一步的目的、它位於哪個階段、成功或失敗大致各代表什麼；不要只丟指令而不交代脈絡。
 6. implement 階段若需要提問，重點也應是為了確認操作前提、判讀現象或補足決策資訊，不是把 `02-qa.md` 的答題模式搬進來。
-7. 若 `06` 過程中出現 implementation-specific 補充觀察，同步整理到 `07-implementation-note.md`。
+7. 若 `06` 過程中出現 implementation-specific 補充觀察或設計取捨，視需要整理到 `05-note.md`。
 8. 只有在實作主體完成後，才回 `02-qa.md` 做 post-implementation QA，用短版定位題收斂理解。
-9. `05-note.md` 繼續承接一般 lesson 延伸問答與卡片素材。
+9. `05-note.md` 繼續承接一般 lesson 延伸問答、實作觀察與卡片素材。
 10. `04-report.md` 仍在互動完成後再收斂。
 
 補充原則：
 
 1. implement-heavy mode 一旦套用，預設就是 implementation-first；這不是臨時例外，而是 mode 本身的正式流程。
-2. `06` / `07` 階段預設採協作模式，不把實作主體做成答題測驗；短版 QA 收斂留到實作後的 `02-qa.md`。
+2. `06` 階段預設採協作模式，不把實作主體做成答題測驗；短版 QA 收斂留到實作後的 `02-qa.md`。
 3. implement 階段的每一步都應先有簡短前情說明，再進入指令或操作本身。
 4. `01-outline.md` 應明確寫出今天套用了這個 mode，讓 AI 不需要自行猜測。
 5. implement-heavy mode 改的是 lesson 內部流程，不影響是否需要 prework 的上層判斷。
@@ -170,45 +167,6 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 
 ---
 
-## `07-implementation-note.md` 的初始化規格
-
-`07-implementation-note.md` 用來承接實作專屬補充，不和 `05-note.md` 混在一起。
-
-它和 `06-implementation.md` 的關係應固定如下：
-
-1. `06-implementation.md` 是主戰場。
-2. `07-implementation-note.md` 是 `06` 的 companion file，不是獨立 phase。
-3. 若內容不是 implementation-specific，優先回 `05-note.md`，不要塞進 `07`。
-
-它預設承接三類內容：
-
-1. 實作前已知邊界與風險。
-2. 實作過程中冒出的關鍵觀察與設計修正。
-3. 實作後仍待驗證，但不適合塞回單一 step 的補充理解。
-
-邊界原則：
-
-1. 一般 lesson 討論與延伸問答仍優先放 `05-note.md`。
-2. 只有直接影響實作邊界、驗收、風險、設計取捨或下一步決策的關鍵討論，才放進 `07-implementation-note.md`。
-3. 若某段內容雖然重要，但不是 implementation-specific，仍應回到 `05-note.md`，不要因為它「重要」就全部塞進 `07`。
-4. `07-implementation-note.md` 應以真正的 note 形式撰寫：一個主題一個 `##` 標題，下面直接展開內容；不要先用固定分區把檔案切成骨架式欄位。
-
-初始化原則：
-
-1. 建立骨架時不需要先預建固定 H2 區塊；等真正出現 implementation-specific 主題後，再以對應主題名稱新增 `##` 標題。
-2. 不要一開始就把 `04-report.md` 的結論預抄進來。
-3. 不要把一般 lesson 延伸問答先塞進這裡；若內容不是 implementation-specific，優先回 `05-note.md`。
-4. 不要把大段原始輸出直接倒進這裡；這份檔案是補充理解，不是原始紀錄倉庫。
-
-自檢規則：
-
-1. 初始化時是否沒有預寫不必要的固定分區與結論。
-2. 實際回填後，內容是否真的屬於 implementation-specific，而不是一般 QA 延伸。
-3. 是否避免和 `06-implementation.md` 重複貼同一段操作記錄。
-4. 若某段內容已足夠成為 lesson-level 收斂，是否應改回 `04-report.md`，而不是一直留在這裡。
-
----
-
 ## 不變的部分
 
 即使今天是 implement-heavy mode，下列常態規則仍然不變：
@@ -226,8 +184,8 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 
 1. 先讀 `learning/README.md`，確認今天確實要進 lesson，且 prework 判斷已完成。
 2. 再讀 `learning/lessons/README.md`，確認 lesson 的通用結構與檔案分工。
-3. 再讀本檔，套用 implement-heavy mode 的正式流程、6 檔骨架與 06 / 07 初始化規則。
+3. 再讀本檔，套用 implement-heavy mode 的正式流程、5 檔骨架與 06 初始化規則。
 4. 建骨架時再讀 `references/lesson-plugins/implement-heavy-lesson-template.md`，建立 implement-heavy 專用骨架。
 5. `02-qa.md`、`04-report.md`、`05-note.md` 的共通骨架，仍回 `learning/lessons/lesson-template.md`。
 
-一句話原則：常態規則留在 `README.md`，實作型 lesson 的重心與 06 / 07 規格留在本檔，按需揭露。
+一句話原則：常態規則留在 `README.md`，實作型 lesson 的重心與 06 規格留在本檔，按需揭露。
