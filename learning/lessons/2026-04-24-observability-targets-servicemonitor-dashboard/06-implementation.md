@@ -16,7 +16,9 @@
 2. 把 Helm release 與 namespace 從 `observability` 重建為 `watchmind`。
 3. 釐清目前 Prometheus 已 scrape 到哪些 targets，哪些是 cluster baseline，哪些還不是 WeaMind app metrics。
 4. 對照 WeaMind `Deployment` / `Service`，判斷 app metrics 若要被 scrape 的最小接法。
-5. 視現況收斂一版 Grafana 最小 dashboard 驗收結果或缺口定位。
+5. 先在 WeaMind app repo 補出 App 4 metrics 的第一版 baseline。
+6. 根據 review 把 success / error / duration 的記帳邊界從 request-level 修正到 event-level。
+7. 最後視現況收斂一版 Grafana 最小 dashboard 驗收結果或缺口定位。
 
 ## 驗收訊號與回退點
 
@@ -38,7 +40,7 @@
 
 - `observability` namespace 內目前有哪些 `ServiceMonitor`、`PodMonitor`、Prometheus 與 Grafana 資源，確認 Operator discovery 模型已經落在叢集裡的哪一層。
 
-#### 預計操作
+#### 預計採取的動作
 
 ```bash
 kubectl get prometheus,servicemonitor,podmonitor -n observability
@@ -46,7 +48,7 @@ kubectl get svc -n observability
 kubectl get ingress -n observability
 ```
 
-#### 實際輸出 / 操作結果
+#### 實際執行內容與結果
 
 ```bash
 $ kubectl get prometheus,servicemonitor,podmonitor -n observability
@@ -102,7 +104,7 @@ No resources found in observability namespace.
 
 - 目前這套 demo stack 是否能安全地從 `observability` 重建為 `watchmind`，讓 release / namespace 前綴更明顯地表達「這是我們自己建立的學習用 observability stack」。
 
-#### 預計操作
+#### 預計採取的動作
 
 ```bash
 helm uninstall observability -n observability
@@ -112,7 +114,7 @@ helm upgrade --install watchmind prometheus-community/kube-prometheus-stack \
 kubectl get pods -n watchmind
 ```
 
-#### 實際輸出 / 操作結果
+#### 實際執行內容與結果
 
 ```bash
 $ helm uninstall observability -n observability
@@ -173,13 +175,13 @@ watchmind-prometheus-node-exporter       ClusterIP   10.43.212.189   <none>     
 
 - Prometheus 目前實際 scrape 到哪些 targets，並區分這些 target 主要是 node / Kubernetes baseline，還是已經包含 WeaMind app。
 
-#### 預計操作
+#### 預計採取的動作
 
 ```bash
 kubectl port-forward -n watchmind svc/watchmind-kube-prometheus-prometheus 9090:9090
 ```
 
-#### 實際輸出 / 操作結果
+#### 實際執行內容與結果
 
 ```bash
 $ curl -s http://127.0.0.1:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, namespace: .labels.namespace, health: .health, scrapeUrl: .scrapeUrl}'
@@ -330,13 +332,13 @@ $ curl -s http://127.0.0.1:9090/api/v1/targets | jq '.data.activeTargets[] | {jo
 
 - 以 repo 內 WeaMind `Deployment` / `Service` 為錨點，判斷 app metrics 若要被 scrape，目前缺的是 `ServiceMonitor`、`/metrics` 暴露，還是兩者都缺。
 
-#### 預計操作
+#### 預計採取的動作
 
 ```bash
 rg -n "metrics|prometheus|port:" manifests/deployment.yaml manifests/service.yaml
 ```
 
-#### 實際輸出 / 操作結果
+#### 實際執行內容與結果
 
 ```bash
 $ rg -n "metrics|prometheus|port:" manifests/deployment.yaml manifests/service.yaml
@@ -367,7 +369,7 @@ manifests/deployment.yaml
 
 - WeaMind app repo 是否能先在不擴大業務邏輯重構的前提下，補出 W7 demo MVP 所需的 App 4 metrics，也就是 `request / success / error / latency` 這條最小 webhook 觀測鏈。
 
-#### 預計操作
+#### 預計採取的動作
 
 ```bash
 cd /Users/kyo/Code/WeaMind
@@ -377,7 +379,7 @@ uv run ruff check app/main.py app/line/router.py app/line/metrics.py tests/test_
 uv run pyright app/main.py app/line/router.py app/line/metrics.py
 ```
 
-#### 實際輸出 / 操作結果
+#### 實際執行內容與結果
 
 - 已新增 `prometheus-client` 依賴，並更新 `uv.lock`。
 - 已在 WeaMind app 補出 `/metrics` endpoint，掛點放在 `app/main.py`。
@@ -406,14 +408,14 @@ uv run pyright app/main.py app/line/router.py app/line/metrics.py
 
 - 第一版 App 4 metrics 雖然已經能 demo，但 success / error / duration 的記帳邊界是否真的和 metric 名稱一致；如果不一致，應該把記帳邏輯下沉到哪一層才合理。
 
-#### 預計操作
+#### 預計採取的動作
 
 ```bash
 cd /Users/kyo/Code/WeaMind
 uv run pytest
 ```
 
-#### 實際輸出 / 操作結果
+#### 實際執行內容與結果
 
 - WeaMind repo 經 review 後，保留了 Step 5 已建立的整體方向：
 	- 仍維持 Fast ACK
@@ -460,13 +462,13 @@ uv run pytest
 
 - 今天是否已具備一版可 demo 的 Grafana 最小觀測結果；若沒有，缺口究竟是在 datasource / target / app metrics 哪一層。
 
-#### 預計操作
+#### 預計採取的動作
 
 ```bash
 kubectl port-forward -n watchmind svc/watchmind-grafana 3000:80
 ```
 
-#### 實際輸出 / 操作結果
+#### 實際執行內容與結果
 
 - 待回填
 
