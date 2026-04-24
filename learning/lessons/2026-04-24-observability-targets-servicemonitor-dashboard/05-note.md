@@ -23,4 +23,12 @@
 
 ## Notes
 
+### Observability UI 在實務上最常怎麼暴露
+
+- 學習、個人維運、小團隊臨時 debug 時，`port-forward` 很常見，因為它最保守、暴露面最小，也最適合像今天這樣一步一步驗證 Prometheus / Grafana。
+- 但如果講到真實 production，**最常見的正式做法通常不是長期靠 `port-forward`**，而是把 Grafana 這類 UI 放在受控的內網入口後面，例如 internal ingress、internal load balancer、VPN 後面，或 Zero Trust / bastion 保護後的入口。
+- ⭐️Prometheus UI 本身在 production 裡通常比 Grafana **更少直接開給大量使用者**，常見做法是只給維運人員內網存取，甚至平常只在需要時 `port-forward`。
+- 直接暴露到公網不是完全不可能，但它不應是預設。若真的要公網暴露，通常也不會只靠 Grafana 內建帳密，而會再疊 SSO、auth proxy、IP allowlist、TLS 與審計。
+- 所以更穩的短版收斂是：**`port-forward` 常見於學習、debug、break-glass；內網暴露是 production 最常見的正式方案；公網暴露是高風險例外，不應當成預設。**
+
 ## Flashcards

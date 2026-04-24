@@ -8,14 +8,15 @@
 
 ## 今日實作主題
 
-- 檢查 Prometheus targets 與 CRD discovery 現況，確認 WeaMind app metrics 若要接進來的最小邊界，並盡量收斂出一版可 demo 的 dashboard 驗收結果。
+- 檢查 Prometheus targets 與 CRD discovery 現況，確認 WeaMind app metrics 若要接進來的最小邊界，並在中途把 release / namespace 從 `observability` 重建為 `watchmind`，降低資源命名辨識成本。
 
 ## 今日實作順序
 
 1. 先確認 `observability` namespace 內的 Prometheus / Grafana / `ServiceMonitor` / `PodMonitor` 現況。
-2. 釐清目前 Prometheus 已 scrape 到哪些 targets，哪些是 cluster baseline，哪些還不是 WeaMind app metrics。
-3. 對照 WeaMind `Deployment` / `Service`，判斷 app metrics 若要被 scrape 的最小接法。
-4. 視現況收斂一版 Grafana 最小 dashboard 驗收結果或缺口定位。
+2. 把 Helm release 與 namespace 從 `observability` 重建為 `watchmind`。
+3. 釐清目前 Prometheus 已 scrape 到哪些 targets，哪些是 cluster baseline，哪些還不是 WeaMind app metrics。
+4. 對照 WeaMind `Deployment` / `Service`，判斷 app metrics 若要被 scrape 的最小接法。
+5. 視現況收斂一版 Grafana 最小 dashboard 驗收結果或缺口定位。
 
 ## 驗收訊號與回退點
 
@@ -47,17 +48,126 @@ kubectl get ingress -n observability
 
 #### 實際輸出 / 操作結果
 
-- 待回填
+```bash
+$ kubectl get prometheus,servicemonitor,podmonitor -n observability
+NAME                                                                     VERSION   DESIRED   READY   RECONCILED   AVAILABLE   AGE
+prometheus.monitoring.coreos.com/observability-kube-prometh-prometheus   v3.11.2   1         1       True         True        3d
+
+NAME                                                                                      AGE
+servicemonitor.monitoring.coreos.com/observability-grafana                                3d
+servicemonitor.monitoring.coreos.com/observability-kube-prometh-alertmanager              3d
+servicemonitor.monitoring.coreos.com/observability-kube-prometh-apiserver                 3d
+servicemonitor.monitoring.coreos.com/observability-kube-prometh-coredns                   3d
+servicemonitor.monitoring.coreos.com/observability-kube-prometh-kube-controller-manager   3d
+servicemonitor.monitoring.coreos.com/observability-kube-prometh-kube-etcd                 3d
+servicemonitor.monitoring.coreos.com/observability-kube-prometh-kube-proxy                3d
+servicemonitor.monitoring.coreos.com/observability-kube-prometh-kube-scheduler            3d
+servicemonitor.monitoring.coreos.com/observability-kube-prometh-kubelet                   3d
+servicemonitor.monitoring.coreos.com/observability-kube-prometh-operator                  3d
+servicemonitor.monitoring.coreos.com/observability-kube-prometh-prometheus                3d
+servicemonitor.monitoring.coreos.com/observability-kube-state-metrics                     3d
+servicemonitor.monitoring.coreos.com/observability-prometheus-node-exporter               3d
+
+$ kubectl get svc -n observability
+NAME                                      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+alertmanager-operated                     ClusterIP   None            <none>        9093/TCP,9094/TCP,9094/UDP   3d
+observability-grafana                     ClusterIP   10.43.50.8      <none>        80/TCP                       3d
+observability-kube-prometh-alertmanager   ClusterIP   10.43.178.92    <none>        9093/TCP,8080/TCP            3d
+observability-kube-prometh-operator       ClusterIP   10.43.215.137   <none>        443/TCP                      3d
+observability-kube-prometh-prometheus     ClusterIP   10.43.87.155    <none>        9090/TCP,8080/TCP            3d
+observability-kube-state-metrics          ClusterIP   10.43.191.200   <none>        8080/TCP                     3d
+observability-prometheus-node-exporter    ClusterIP   10.43.115.212   <none>        9100/TCP                     3d
+prometheus-operated                       ClusterIP   None            <none>        9090/TCP                     3d
+
+$ kubectl get ingress -n observability
+No resources found in observability namespace.
+```
 
 #### AI 判讀與收斂
 
-- 待回填
+- 這一步的核心收穫不是「看到很多奇怪資源名」，而是正式確認這套 stack 已經把 **Prometheus Operator 模型** 帶進叢集了。`prometheus.monitoring.coreos.com`、`servicemonitor.monitoring.coreos.com`、`podmonitor.monitoring.coreos.com` 都不是 Kubernetes 內建資源，而是 `monitoring.coreos.com` 這組 **CRD**。它們是 Prometheus Operator 提供的 API 類型，`kube-prometheus-stack` 安裝時一起帶進來。
+- 所以比較精準的說法是：這些不是「我們自己手寫的自訂 resource」，但它們確實是 **安裝 chart 後由 chart 連同 Operator 一起安裝到 cluster 的 custom resources / custom resource definitions**。今天能直接 `kubectl get prometheus,servicemonitor,podmonitor`，正是因為 cluster 裡現在已經有這些 CRD。
+- `servicemonitor` 清單也很有資訊量。它顯示這套 baseline 目前主要在觀測 **cluster / control plane / observability stack 本身**，例如 apiserver、coredns、kubelet、node-exporter、grafana、prometheus、operator。這也直接說明：**目前還看不到 WeaMind app-specific metrics 已經接進來的證據。**
+- `alertmanager-operated` 與 `prometheus-operated` 的 `CLUSTER-IP` 是 `None`，不是壞掉，而是它們是 **headless service**。這類 service **不分配虛擬 IP**，主要用途是讓 `StatefulSet` 類型工作負載有穩定的 DNS / peer discovery 邊界。進一步看 service YAML 也能驗證：這兩個 service 都是 `clusterIP: None`，其中 Alertmanager 還有 `publishNotReadyAddresses: true`，這正是叢集內部 peer 協調常見的做法。
+- `kubectl get ingress` 這一步看到空結果，其實也有價值。動機不是假設今天一定會用 Ingress，而是快速確認 **Grafana 或 Prometheus 有沒有被 chart 預設直接對外暴露**。現在答案是**沒有**，所以若後面要進 UI，合理路徑會是 `port-forward`、kubectl proxy，或之後再自己補 ingress / auth 設計，而不是期待 namespace 內已經有現成入口。
+- 這一步的最小結論是：**Step 1 已確認 observability stack 的 discovery 與 API 模型已存在，cluster baseline targets 已有骨架，但 WeaMind app metrics 尚未從這些資源清單中自然浮現。**
 
 #### 目前狀態
 
-- 未開始
+- 已完成
 
 ### Step 2
+
+#### 這一步要驗證什麼
+
+- 目前這套 demo stack 是否能安全地從 `observability` 重建為 `watchmind`，讓 release / namespace 前綴更明顯地表達「這是我們自己建立的學習用 observability stack」。
+
+#### 預計操作
+
+```bash
+helm uninstall observability -n observability
+kubectl delete namespace observability
+helm upgrade --install watchmind prometheus-community/kube-prometheus-stack \
+	-n watchmind --create-namespace
+kubectl get pods -n watchmind
+```
+
+#### 實際輸出 / 操作結果
+
+```bash
+$ helm uninstall observability -n observability
+release "observability" uninstalled
+
+$ kubectl delete namespace observability
+namespace "observability" deleted
+
+$ helm upgrade --install watchmind prometheus-community/kube-prometheus-stack \
+	-n watchmind --create-namespace
+Release "watchmind" does not exist. Installing it now.
+NAME: watchmind
+LAST DEPLOYED: Fri Apr 24 12:51:50 2026
+NAMESPACE: watchmind
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+
+$ kubectl get pods -n watchmind
+NAME                                                    READY   STATUS    RESTARTS   AGE
+alertmanager-watchmind-kube-prometheus-alertmanager-0   2/2     Running   0          61s
+prometheus-watchmind-kube-prometheus-prometheus-0       2/2     Running   0          60s
+watchmind-grafana-84bf7db899-d6jrw                      3/3     Running   0          62s
+watchmind-kube-prometheus-operator-54798d77c5-vzkh2     1/1     Running   0          62s
+watchmind-kube-state-metrics-7ff886b755-fkzq6           1/1     Running   0          62s
+watchmind-prometheus-node-exporter-8s5pq                1/1     Running   0          63s
+watchmind-prometheus-node-exporter-mff6c                1/1     Running   0          63s
+watchmind-prometheus-node-exporter-vc5m4                1/1     Running   0          63s
+
+$ kubectl get svc -n watchmind
+NAME                                     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+alertmanager-operated                    ClusterIP   None            <none>        9093/TCP,9094/TCP,9094/UDP   59s
+prometheus-operated                      ClusterIP   None            <none>        9090/TCP                     58s
+watchmind-grafana                        ClusterIP   10.43.169.168   <none>        80/TCP                       62s
+watchmind-kube-prometheus-alertmanager   ClusterIP   10.43.26.233    <none>        9093/TCP,8080/TCP            62s
+watchmind-kube-prometheus-operator       ClusterIP   10.43.120.103   <none>        443/TCP                      62s
+watchmind-kube-prometheus-prometheus     ClusterIP   10.43.218.178   <none>        9090/TCP,8080/TCP            62s
+watchmind-kube-state-metrics             ClusterIP   10.43.192.87    <none>        8080/TCP                     62s
+watchmind-prometheus-node-exporter       ClusterIP   10.43.212.189   <none>        9100/TCP                     62s
+```
+
+#### AI 判讀與收斂
+
+- 這次重建主線是成功的，而且比預期更乾淨：舊 `observability` release 已卸載、舊 namespace 已刪除，新的 `watchmind` release 也已在新 namespace 內完成 `STATUS: deployed`。
+- 這證明了一件重要的實務事：**Helm release name 與 namespace 不適合原地硬改，最省事的方式就是 uninstall + 刪 namespace + 用新名字重裝。** 對現在這種 demo baseline 來說，這樣做的成本很低，而且辨識收益很高。
+- 重建後的資源名稱已經明顯更好讀。像 `watchmind-grafana`、`watchmind-kube-prometheus-prometheus`、`watchmind-kube-prometheus-operator` 這類名字，一眼就看得出 `watchmind` 是我們自己的前綴，剩下才是 chart 生成的元件名稱。
+- 這一步也順手驗證了另一個重要邊界：**Prometheus Operator 的 CRD 沒有因為 uninstall 舊 release 就消失。** 也就是說，這次重建主要換掉的是 namespace 內的 workload / service / custom resource 實例，而不是整個 cluster 的 API 擴充能力。
+- 重建後所有核心 Pod 都已進入 `Running`，Grafana 也從一開始短暫的 `2/3` 很快收斂成 `3/3`。這表示目前 stack 已重新回到健康狀態，可以安全進入下一步 target 驗證。
+- 這一步的最小結論是：**`watchmind` 重建成功，新的命名邊界已成立，後續 Step 3 起都應以 `watchmind` namespace 與對應 service 名稱為準。**
+
+#### 目前狀態
+
+- 已完成
+
+### Step 3
 
 #### 這一步要驗證什麼
 
@@ -66,7 +176,7 @@ kubectl get ingress -n observability
 #### 預計操作
 
 ```bash
-kubectl port-forward -n observability svc/observability-kube-prometh-prometheus 9090:9090
+kubectl port-forward -n watchmind svc/watchmind-kube-prometheus-prometheus 9090:9090
 ```
 
 #### 實際輸出 / 操作結果
@@ -81,7 +191,7 @@ kubectl port-forward -n observability svc/observability-kube-prometh-prometheus 
 
 - 未開始
 
-### Step 3
+### Step 4
 
 #### 這一步要驗證什麼
 
@@ -105,7 +215,7 @@ rg -n "metrics|prometheus|port:" manifests/deployment.yaml manifests/service.yam
 
 - 未開始
 
-### Step 4
+### Step 5
 
 #### 這一步要驗證什麼
 
@@ -114,7 +224,7 @@ rg -n "metrics|prometheus|port:" manifests/deployment.yaml manifests/service.yam
 #### 預計操作
 
 ```bash
-kubectl port-forward -n observability svc/observability-grafana 3000:80
+kubectl port-forward -n watchmind svc/watchmind-grafana 3000:80
 ```
 
 #### 實際輸出 / 操作結果
