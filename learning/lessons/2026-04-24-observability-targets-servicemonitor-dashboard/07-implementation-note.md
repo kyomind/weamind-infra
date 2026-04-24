@@ -37,3 +37,16 @@
 - 對學習來說，這會直接增加辨識成本。例如 `observability-grafana`、`observability-kube-prometh-prometheus` 這種名字，初看時不容易立刻分清楚哪一段是 chart 原生資源名，哪一段是我們自己取的 release 前綴。
 - 改成 `watchmind` 的好處不是比較潮，而是**更強的識別性**：只要看到 `watchmind-...`，就能立刻知道那是這次學習環境自己建立出的資源前綴。
 - 技術上這也屬於現在改最便宜的事情，因為 Helm release name 本來就不能原地 rename，namespace 也不能直接 rename。與其未來多加一堆 values、dashboard、ServiceMonitor 之後再重建，不如在 W7 還是 demo baseline 時就重建一次。
+
+## 為什麼 `kubelet` targets 看起來很多，而且像重複
+
+- 這不是 Prometheus 壞掉，也不是 chart 重複亂抓。原因是 `watchmind-kube-prometheus-kubelet` 這個 `ServiceMonitor` 本來就定義了多個 endpoint path。
+- 這次直接查 `ServiceMonitor` 可以看到至少三類路徑：
+	- `/metrics`
+	- `/metrics/cadvisor`
+	- `/metrics/probes`
+- 因為 cluster 有三個 node，而每個 node 的 kubelet 又會對這幾種路徑各自形成 target，所以在 Prometheus target 頁面上看起來就會很多筆，而且 job 名稱都還叫 `kubelet`。
+- 更精準地說，這裡的「多」來自兩個維度同時展開：
+	- 多個 node
+	- 同一個 kubelet 暴露多個 metrics surface
+- 所以這題的最穩短版答案是：**`kubelet` target 多是正常現象，因為同一組 kubelet endpoints 會被分別抓 `/metrics`、`/metrics/cadvisor`、`/metrics/probes` 等不同路徑，不是單純重複。**

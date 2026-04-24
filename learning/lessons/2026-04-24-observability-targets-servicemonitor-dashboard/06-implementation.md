@@ -181,15 +181,148 @@ kubectl port-forward -n watchmind svc/watchmind-kube-prometheus-prometheus 9090:
 
 #### 實際輸出 / 操作結果
 
-- 待回填
+```bash
+$ curl -s http://127.0.0.1:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, namespace: .labels.namespace, health: .health, scrapeUrl: .scrapeUrl}'
+{
+	"job": "watchmind-grafana",
+	"namespace": "watchmind",
+	"health": "up",
+	"scrapeUrl": "http://10.42.2.27:3000/metrics"
+}
+{
+	"job": "watchmind-kube-prometheus-alertmanager",
+	"namespace": "watchmind",
+	"health": "up",
+	"scrapeUrl": "http://10.42.0.12:9093/metrics"
+}
+{
+	"job": "watchmind-kube-prometheus-alertmanager",
+	"namespace": "watchmind",
+	"health": "up",
+	"scrapeUrl": "http://10.42.0.12:8080/metrics"
+}
+{
+	"job": "apiserver",
+	"namespace": "default",
+	"health": "up",
+	"scrapeUrl": "https://10.0.0.3:6443/metrics"
+}
+{
+	"job": "coredns",
+	"namespace": "kube-system",
+	"health": "up",
+	"scrapeUrl": "http://10.42.0.3:9153/metrics"
+}
+{
+	"job": "kubelet",
+	"namespace": "kube-system",
+	"health": "up",
+	"scrapeUrl": "https://10.0.0.3:10250/metrics"
+}
+{
+	"job": "kubelet",
+	"namespace": "kube-system",
+	"health": "up",
+	"scrapeUrl": "https://10.0.0.4:10250/metrics"
+}
+{
+	"job": "kubelet",
+	"namespace": "kube-system",
+	"health": "up",
+	"scrapeUrl": "https://10.0.0.5:10250/metrics"
+}
+{
+	"job": "kubelet",
+	"namespace": "kube-system",
+	"health": "up",
+	"scrapeUrl": "https://10.0.0.3:10250/metrics/cadvisor"
+}
+{
+	"job": "kubelet",
+	"namespace": "kube-system",
+	"health": "up",
+	"scrapeUrl": "https://10.0.0.4:10250/metrics/cadvisor"
+}
+{
+	"job": "kubelet",
+	"namespace": "kube-system",
+	"health": "up",
+	"scrapeUrl": "https://10.0.0.5:10250/metrics/cadvisor"
+}
+{
+	"job": "kubelet",
+	"namespace": "kube-system",
+	"health": "up",
+	"scrapeUrl": "https://10.0.0.3:10250/metrics/probes"
+}
+{
+	"job": "kubelet",
+	"namespace": "kube-system",
+	"health": "up",
+	"scrapeUrl": "https://10.0.0.4:10250/metrics/probes"
+}
+{
+	"job": "kubelet",
+	"namespace": "kube-system",
+	"health": "up",
+	"scrapeUrl": "https://10.0.0.5:10250/metrics/probes"
+}
+{
+	"job": "watchmind-kube-prometheus-operator",
+	"namespace": "watchmind",
+	"health": "up",
+	"scrapeUrl": "https://10.42.1.39:10250/metrics"
+}
+{
+	"job": "watchmind-kube-prometheus-prometheus",
+	"namespace": "watchmind",
+	"health": "up",
+	"scrapeUrl": "http://10.42.1.40:9090/metrics"
+}
+{
+	"job": "watchmind-kube-prometheus-prometheus",
+	"namespace": "watchmind",
+	"health": "up",
+	"scrapeUrl": "http://10.42.1.40:8080/metrics"
+}
+{
+	"job": "kube-state-metrics",
+	"namespace": "watchmind",
+	"health": "up",
+	"scrapeUrl": "http://10.42.1.38:8080/metrics"
+}
+{
+	"job": "node-exporter",
+	"namespace": "watchmind",
+	"health": "up",
+	"scrapeUrl": "http://10.0.0.3:9100/metrics"
+}
+{
+	"job": "node-exporter",
+	"namespace": "watchmind",
+	"health": "up",
+	"scrapeUrl": "http://10.0.0.4:9100/metrics"
+}
+{
+	"job": "node-exporter",
+	"namespace": "watchmind",
+	"health": "up",
+	"scrapeUrl": "http://10.0.0.5:9100/metrics"
+}
+```
 
 #### AI 判讀與收斂
 
-- 待回填
+- 這一步最重要的訊號不是 target 很多，而是 **所有 active targets 目前都是 `health: up`**。這表示 `watchmind` 這套 baseline 的 scrape 鏈路已經成立，不只是資源存在，Prometheus 也真的抓得到資料。
+- 目前 targets 可以很清楚地分成兩大類。第一類是 **cluster baseline / control plane / node 層**：`apiserver`、`coredns`、`kubelet`、`node-exporter`、`kube-state-metrics`。這些就是今天 W7 baseline 已經打通的主體。第二類是 **observability stack 自己的 self-monitoring**：`watchmind-grafana`、`watchmind-kube-prometheus-alertmanager`、`watchmind-kube-prometheus-operator`、`watchmind-kube-prometheus-prometheus`。
+- 這個分類直接回答了一個關鍵問題：**目前仍然看不到 WeaMind app 自己的業務 metrics target。** 也就是說，Prometheus 現在已成功監控 cluster 與 observability stack 本身，但還沒有 scrape 到 WeaMind 應用程式。
+- `kubelet` 看起來很多，不代表配置壞掉。進一步看 `watchmind-kube-prometheus-kubelet` 這個 `ServiceMonitor`，可以看到它對同一批 kubelet endpoints 定義了多個 scrape path，例如 `/metrics`、`/metrics/cadvisor`、`/metrics/probes`。所以同一個 node 會出現多個 kubelet-related target，這是正常的，因為它們代表不同 metrics surface，不是單純重複抓同一份東西。
+- 這一步也順手對上 W7 的 Node 3 邏輯。像 `node-exporter` 與部分 kubelet / cadvisor 指標，已經足以支撐 node CPU、memory、filesystem 這類基礎觀測盤。也就是說，**Node 3 這一側其實已經有可觀察資料來源，真正還沒接上的主要是 App 4。**
+- 這一步的最小結論是：**Prometheus targets 現在已成功覆蓋 cluster baseline 與 observability stack self-monitoring，但 WeaMind app-specific metrics 尚未出現在 target 清單中；下一步應直接回 repo 驗證 app 端目前有沒有 `/metrics` 暴露與可被 `ServiceMonitor` 接上的結構。**
 
 #### 目前狀態
 
-- 未開始
+- 已完成
 
 ### Step 4
 
