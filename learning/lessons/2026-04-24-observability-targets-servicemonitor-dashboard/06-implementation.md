@@ -4,7 +4,7 @@
 
 - 這份檔案用來記錄今天實作主體的每個 step 閉環，不是一般 command drill。
 - 今天的主體是把已安裝好的 `kube-prometheus-stack` 往前推到 target discovery、`ServiceMonitor` / `PodMonitor` 與 Grafana 最小 dashboard 驗收。
-- `07-implementation-note.md` 與本檔綁定，只承接本檔過程中的 implementation-specific 補充觀察。
+- 實作補充觀察、設計取捨與一般 lesson 延伸內容，統一整理到 `05-note.md`。
 
 ## 今日實作主題
 
@@ -338,15 +338,28 @@ rg -n "metrics|prometheus|port:" manifests/deployment.yaml manifests/service.yam
 
 #### 實際輸出 / 操作結果
 
-- 待回填
+```bash
+$ rg -n "metrics|prometheus|port:" manifests/deployment.yaml manifests/service.yaml
+manifests/service.yaml
+12:      port: 80
+
+manifests/deployment.yaml
+54:              port: http
+60:              port: http
+```
 
 #### AI 判讀與收斂
 
-- 待回填
+- 這個輸出本身很短，但訊息很夠。它顯示在這個 infra repo 裡，WeaMind 目前只有**一般 HTTP 服務埠與 `/health` probe** 的痕跡，沒有任何明確的 `metrics`、`prometheus`、`ServiceMonitor` 或 metrics-specific port 設定。
+- 更具體地說，`service.yaml` 只有一個 `http` service，把 `80` 對到 container `8000`；`deployment.yaml` 命中的兩行則只是 readiness / liveness probe 都打在 `port: http`。這代表目前 manifest 已經準備好讓 app 提供一般 HTTP 流量與健康檢查，但**還沒有在 infra 層顯式宣告 Prometheus scrape 邊界。**
+- 這一步至少可以確定一件事：**`ServiceMonitor` 在這個 repo 裡是缺的。** 因為如果 WeaMind app 已經要被 `kube-prometheus-stack` scrape，正常會在 infra repo 看得到對應的 `ServiceMonitor` 或其他監控資源定義，但目前沒有。
+- 但這一步也有邊界，不能講過頭。從這個 infra repo 的 grep 結果，我們**不能 100% 證明 app 程式碼一定沒有 `/metrics` endpoint**，因為 `/metrics` 可能存在於另一個 application repo 裡，而且仍可能和一般 HTTP port 共用 `8000`。只是就目前這個 repo 來看，沒有任何顯式證據顯示這條 scrape 鏈已被設計好。
+- 所以更準確的結論不是「兩者都缺」的絕對判決，而是：**在 infra repo 這一側，明確缺的是 `ServiceMonitor`；至於 app 是否已暴露 `/metrics`，目前仍未被這個 repo 證明，而且從現有 manifest 也看不到任何 scrape-ready 訊號。**
+- 這一步的最小結論是：**W7 的 App 4 目前沒有在 infra 端打通。下一步若要繼續收斂，就要嘛去 app repo 驗證有沒有 `/metrics` instrumentation，要嘛先在這個 repo 補 `ServiceMonitor` skeleton，明確承認它目前仍是未完成缺口。**
 
 #### 目前狀態
 
-- 未開始
+- 已完成
 
 ### Step 5
 

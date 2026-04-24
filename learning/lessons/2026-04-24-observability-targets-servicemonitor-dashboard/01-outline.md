@@ -59,7 +59,7 @@
 2. 對照 repo 內 WeaMind `Deployment` / `Service`，判斷 app metrics 若要接進來，最小修改點會落在哪。
 3. 視現況決定今天是走「驗證既有 cluster metrics + Grafana dashboard」還是「補最小 app scrape skeleton」。
 4. 只有在主要實作閉環完成後，再回 `02-qa.md` 做 post-implementation QA。
-5. 若過程中出現 implementation-specific 設計取捨，同步整理到 `07-implementation-note.md`。
+5. 若過程中出現 implementation-specific 設計取捨或實作補充，同步整理到 `05-note.md`。
 6. 最後回 `04-report.md` 收斂今天真正打通或確認缺口的部分。
 
 ## 文件分工
@@ -67,9 +67,8 @@
 1. `01-outline.md`：宣告今天套用 `implement-heavy`，並寫清楚主題、邊界、驗收與回退點。
 2. `02-qa.md`：記錄 post-implementation QA 的短版定位題、使用者回答摘要與 AI 修正。
 3. `04-report.md`：收斂今天真正學到的內容。
-4. `05-note.md`：記錄一般 lesson 延伸問答、暫時結論與卡片素材。
+4. `05-note.md`：記錄一般 lesson 延伸問答、實作補充、暫時結論與卡片素材。
 5. `06-implementation.md`：記錄今天 target discovery、`ServiceMonitor` / `PodMonitor` 與 dashboard 驗證的主體 step。
-6. `07-implementation-note.md`：承接 `06` 過程中的 implementation-specific 關鍵觀察與決策討論。
 
 ## 這份 lesson 的完成標準
 
