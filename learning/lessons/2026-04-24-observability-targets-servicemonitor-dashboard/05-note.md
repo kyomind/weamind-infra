@@ -328,3 +328,50 @@ kubectl get secret watchmind-grafana -n watchmind -o go-template='{{index .data 
 - 這題最值得記的一句話是：**跨 Pod 的 total 靠 PromQL 聚合通常沒問題；真正比較危險的是 Pod 內多 worker process 的 counter 是否先被正確聚合。**
 
 ## Flashcards
+
+- `kube-prometheus-stack` 裡，Prometheus target discovery 的最小工作模型是什麼？ #DevOps #card
+	- Prometheus 負責真的 scrape
+	- Prometheus Operator 把 `ServiceMonitor` / `PodMonitor` 轉成 scrape config
+	- Prometheus 不是亂掃整個 cluster，而是依賴 Operator、CRD 與 selector 規則形成 target 集合
+
+- 為什麼 WeaMind 這次優先用 `ServiceMonitor`，不是 `PodMonitor`？ #DevOps #card
+	- 現況已經有穩定的 `Deployment` + `Service`
+	- `/metrics` 與一般 API 共用同一批 Pods 與同一個 HTTP surface
+	- 先透過既有 `Service` 做 scrape，最符合現在的 repo 結構
+
+- `ServiceMonitor` 與 `Service` 的 selector 邊界怎麼分？ #DevOps #card
+	- `Service.spec.selector` 是 `Service` 用來找 Pod
+	- `ServiceMonitor.spec.selector.matchLabels` 是用來找 `Service`
+	- 這也是為什麼這次要補 `Service.metadata.labels`
+
+- 從 Pod 的 `/metrics` 到 Prometheus scrape 的完整鏈路怎麼講？ #DevOps #card
+	- Pod 先真的提供 `/metrics`
+	- `Service` 把流量導到正確的 Pods
+	- `ServiceMonitor` 描述要抓哪個 `Service` 與 endpoint
+	- Operator 轉成 scrape config，Prometheus 再照設定抓
+
+- W7 observability demo MVP 的完整完成線是什麼？ #DevOps #card
+	- Node 3、App 4、1 個 dashboard 三者都要到位
+	- 若只有 scrape 鏈成立，還不能算完整 observability baseline
+	- dashboard 的價值是把資料變成可展示、可讀取、可驗收的觀察入口
+
+- 新 image 上線後，驗證順序為什麼不能先看 Grafana？ #DevOps #card
+	- 先看 deployment / pod 是否真的更新
+	- 再看 service `/metrics` 是否可達
+	- 最後才看 Prometheus target 是否 `up`
+	- 這樣 Grafana 沒資料時才能快速切出是哪一層有問題
+
+- 為什麼 Grafana 初始 admin 密碼可以從 Kubernetes 讀出來？ #DevOps #card
+	- `kube-prometheus-stack` 會把 Grafana admin 帳密放進 `Secret`
+	- 查法是 `kubectl get secret ...` 再做 `base64decode`
+	- 終端機最後多出的 `%` 通常是 shell prompt，不是密碼內容
+
+- 為什麼明明只按幾次 rich menu，Grafana 上的 webhook 數字卻可能看起來怪？ #DevOps #card
+	- `increase(...[5m])` 是時間窗推估，不是逐筆事件回放
+	- 現況是 `replicas: 2` 加 `uvicorn --workers 2`
+	- 跨 Pod 聚合通常不是主問題，真正危險的是 Pod 內多 worker process 的 counter 是否先被正確聚合
+
+- 現在對 App 4 metrics 最穩的收斂是什麼？ #DevOps #card
+	- 已足夠證明 App 4 metrics 與 Grafana 展示鏈路成立
+	- Node 3 可直接重用 `node-exporter-mixin` dashboard
+	- App 4 最後的缺口不在 scrape，而在多 Pod / 多 worker 下的 total 解讀與 panel 收尾
