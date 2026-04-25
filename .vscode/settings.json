@@ -57,4 +57,22 @@
         "git for-each-ref": true,
         "git reflog": true
     },
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.terminal.activateEnvironment": false,
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": false,
+    "python.analysis.diagnosticMode": "openFilesOnly",
+    "python.analysis.indexing": false,
+    "files.watcherExclude": {
+        "**/.*/**": true,
+        "**/.venv/**": true,
+        "**/__pycache__/**": true,
+        "**/node_modules/**": true
+    },
+    "search.exclude": {
+        "**/.*": true,
+        "**/.venv": true,
+        "**/__pycache__": true,
+        "**/node_modules": true
+    },
 }
