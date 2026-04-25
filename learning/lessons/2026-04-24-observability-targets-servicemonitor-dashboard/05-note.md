@@ -186,4 +186,110 @@
 	- 同一個 kubelet 暴露多個 metrics surface
 - 所以這題的最穩短版答案是：**`kubelet` target 多是正常現象，因為同一組 kubelet endpoints 會被分別抓 `/metrics`、`/metrics/cadvisor`、`/metrics/probes` 等不同路徑，不是單純重複。**
 
+### ⭐️新 image 上線後，最小應該怎麼重啟與驗證
+
+- 這次最值得記住的不是單一指令，而是**驗證順序**。新 image 已經 push 後，不要一上來就先看 Grafana；先把「deployment 是否更新」「service `/metrics` 是否可達」「Prometheus target 是否 `up`」這三層拆開驗。
+- 一個夠穩的最小順序可以收斂成：
+	- 若 manifest 有變更，先 `kubectl apply -f ...`
+	- `kubectl rollout restart deployment/weamind -n weamind`
+	- `kubectl rollout status deployment/weamind -n weamind`
+	- `kubectl get pods -n weamind -o wide`
+	- `kubectl port-forward -n weamind svc/weamind-line-bot 18080:80` 後直接看 `curl http://127.0.0.1:18080/metrics`
+	- `kubectl port-forward -n watchmind svc/watchmind-kube-prometheus-prometheus 19090:9090` 後直接查 `/api/v1/targets`
+- 這個順序的好處是：如果 Grafana 沒資料，你不用一次懷疑所有東西，而是可以很快切成三層：
+	- deployment / pod 有沒有真的吃到新 image
+	- app 自己有沒有真的 expose `/metrics`
+	- Prometheus 有沒有真的抓到 target
+- 對新手來說，最重要的不是背很多命令，而是先記住這個判斷順序。因為真正卡住時，問題通常不是「少打一條命令」，而是**沒有先切清楚自己現在在驗哪一層。**
+
+### 為什麼這次要幫 Service 補 metadata labels
+
+- 這次新增 `ServiceMonitor` 之後，`Service` 不只是在做「把流量導到 Pod」這件事，還多了一個新角色：**被 `ServiceMonitor` 選到，讓 Prometheus 知道該抓哪個 Service。**
+- 這裡要刻意分清楚兩種 selector：
+	- `Service.spec.selector`：這是 `Service` 用來找 Pod 的
+	- `Service.metadata.labels`：這是別的資源拿來找這個 `Service` 的
+- 以前沒有 `ServiceMonitor` 時，`Service` 只需要靠 `spec.selector` 把流量導到帶 `app: weamind` 的 Pods，所以 metadata labels 可以完全沒有也照樣正常工作。
+- 但這次多了一條新關係：`ServiceMonitor -> Service`。所以 `Service` 本身也必須在 `metadata.labels` 上提供可被 selector 命中的標記，不然 `ServiceMonitor` 根本找不到它。
+- 這也是為什麼這次會補：
+	- `app: weamind`
+	- `app.kubernetes.io/name: weamind`
+- 其中真正讓這次 `ServiceMonitor` 選到 Service 的關鍵，是 `app: weamind`；因為目前 `ServiceMonitor.spec.selector.matchLabels` 就是靠這個值在選。
+- `app.kubernetes.io/name: weamind` 不算這次功能成立的必要條件，比較像順手補上的標準化 label，讓後面如果想改成更偏標準 label 的 selector，不用再補一次。
+- 所以最穩的短版收斂是：**以前不需要，是因為只有 `Service -> Pod` 這條關係；現在需要，是因為多了 `ServiceMonitor -> Service` 這條關係。**
+
+### 這次其實是在重用原本的 Service
+
+- 對，這次不是為了 metrics 另外做一個新的 `Service`，而是**重用原本已經存在的 application Service**。
+- `manifests/service.yaml` 裡的 `weamind-line-bot` 本來就已經在把流量導到同一批 WeaMind Pods；這次新增的只是 `ServiceMonitor`，不是另一條新的 app 流量拓樸。
+- 更精準地說，這次多出來的是一條 `Prometheus -> ServiceMonitor -> Service -> Pod` 的 scrape 鏈，而不是多一組 `Service -> Pod` 業務鏈。
+- 所以可以把它想成：
+	- 一般使用者或外部系統透過原本的 `Service` 打一般 API
+	- Prometheus 也透過同一個 `Service` 打 `/metrics`
+	- 這兩種 request 最後都會到同一批 Pod
+- 這也是為什麼你會感覺「本質上都是同一個 pod 提供的 API」；這個判斷是對的。更準確地說，是**同一個應用同時提供一般業務 endpoint 和 metrics endpoint，而它們共用同一個 Service 與同一批 Pod。**
+- 這裡要避免的一個小誤解是：`ServiceMonitor` 不是自己去 attach 在 Pod 上監視；它比較像是在描述「Prometheus 應該透過哪個 Service、哪個 port、哪個 path 去 scrape」。
+- 所以這次值得記的設計點不是「我們為 metrics 額外建了一套服務」，而是：**只要 app 已經在同一個 HTTP surface 上提供 `/metrics`，既有的 Service 就可以被複用，不需要再額外切一條新的 Service。**
+- 這也順手解釋了為什麼這次只需要補 `Service.metadata.labels` 給 `ServiceMonitor` 選，而不是重做 `Service.spec.selector` 或重開一組 deployment。
+
+### ⭐️從 Pod 的 `/metrics` 到 Prometheus scrape 的完整鏈路
+
+- 如果要把這次的邏輯一口氣講順，可以收斂成這條鏈：
+	- Pod 內的 app 先真的提供 `/metrics`
+	- `Service` 把流量導到這批 Pods
+	- `ServiceMonitor` 描述 Prometheus 應該抓哪個 `Service`
+	- Prometheus Operator 讀取 `ServiceMonitor`，轉成 Prometheus 可執行的 scrape 設定
+	- Prometheus 依照設定去 scrape target
+- 這條鏈裡每一層的責任不一樣，不能混成一句「Prometheus 自己會找到 Pod」。
+
+#### 第一層：Pod / app 本身要先真的提供 `/metrics`
+
+- 最底層的前提永遠是：**應用程式自己要先能回應 `/metrics`**。
+- 如果 Pod 裡的 app 根本沒有這個 endpoint，那後面就算有 `Service`、`ServiceMonitor`、Prometheus，也只會 scrape 失敗。
+- 所以 `/metrics` 是資料出口，負責把 app 內部已註冊的 metrics 以 Prometheus 看得懂的格式輸出。
+
+#### 第二層：Service 負責把請求導到正確的 Pods
+
+- `Service.spec.selector` 會去選到帶 `app: weamind` 的 Pods。
+- `Service` 的 port 叫 `http`，對外是 `80`，最後轉到 Pod 的 `8000`。
+- 這一層的責任不是「告訴 Prometheus 監控規則」，而是提供一個穩定的 Kubernetes 網路入口，讓打到這個 `Service` 的 request 能進到正確的 Pods。
+- ⭐️所以不論是一般 API request，還是 Prometheus 對 `/metrics` 的 scrape，本質上都是先經過這個 `Service`，再到 Pod。
+
+#### 第三層：ServiceMonitor 負責描述「該抓哪個 Service、抓哪個 endpoint」
+
+- `ServiceMonitor` 不直接選 Pod，它先選的是 `Service`。
+- ⭐️這次的 `ServiceMonitor.spec.selector.matchLabels.app: weamind`，就是在找帶有這個 metadata label 的 `Service`。
+- ⭐️它同時還定義了 scrape 細節：
+	- 抓 `port: http`
+	- 抓 `path: /metrics`
+	- `interval: 30s`
+	- `scrapeTimeout: 10s`
+- 所以 `ServiceMonitor` 的角色比較像「⭐️**Kubernetes 世界裡的 scrape 規格**」，而不是實際去送 request 的元件。
+
+#### 第四層：Prometheus Operator 負責把 CRD 規格轉成實際 scrape 設定
+
+- `ServiceMonitor` 只是 custom resource，不是 Prometheus 最終直接執行的原生設定格式。
+- ⭐️真正把這些 **Kubernetes 資源**讀進來、轉成 Prometheus **scrape config** 的，是 Prometheus **Operator**。
+- 這也是為什麼我們會說：`ServiceMonitor` 是給 Operator 看的高階入口，而不是 Prometheus 自己手寫的最底層 YAML。
+- ⭐️如果少了 Operator，cluster 裡就算存在 `ServiceMonitor`，Prometheus 也不會自動理解它。
+
+#### 第五層：Prometheus 依照 scrape config 去真的抓 metrics
+
+- 到這一步，Prometheus 才會真的定期發 HTTP request 去 scrape target。
+- 它不是憑空「掃整個 cluster 找所有 Pod」，而是依照 Operator 幫它整理好的目標集合去抓。
+- **所以最後看到 target `up`，代表的是**：
+	- Pod 的 `/metrics` 存在
+	- `Service` 可以把請求導過去
+	- `ServiceMonitor` 有正確選到 `Service`
+	- Operator 有把它轉進 Prometheus 設定
+	- Prometheus 真的抓成功
+
+#### 這條鏈最值得記的短版
+
+- `Pod` 負責提供 `/metrics`
+- `Service` 負責把流量導到 Pod
+- `ServiceMonitor` 負責描述 scrape 規則與選哪個 Service
+- Prometheus Operator 負責把 `ServiceMonitor` 轉成 scrape config
+- Prometheus 負責真的去抓
+- 所以更準的說法不是「Prometheus 找到 Pod」，而是：**Prometheus 透過 Operator 理解 `ServiceMonitor`，再經由 `Service` 去 scrape 那些實際提供 `/metrics` 的 Pods。**
+
 ## Flashcards

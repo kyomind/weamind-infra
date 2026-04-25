@@ -465,17 +465,44 @@ uv run pytest
 #### 預計採取的動作
 
 ```bash
-kubectl port-forward -n watchmind svc/watchmind-grafana 3000:80
+kubectl apply -f manifests/service.yaml -f manifests/service-monitor.yaml
+kubectl rollout restart deployment/weamind -n weamind
+kubectl rollout status deployment/weamind -n weamind
+kubectl port-forward -n weamind svc/weamind-line-bot 18080:80
+kubectl port-forward -n watchmind svc/watchmind-kube-prometheus-prometheus 19090:9090
+curl -s http://127.0.0.1:18080/metrics
+curl -s http://127.0.0.1:19090/api/v1/targets
 ```
 
 #### 實際執行內容與結果
 
-- 待回填
+- 已新增並套用 `manifests/service-monitor.yaml`，同時為 `manifests/service.yaml` 補上可供 ServiceMonitor selector 命中的 labels。
+- `watchmind` 的 Prometheus selector 已確認只會選 `release: watchmind` 的 ServiceMonitor，因此這份新資源是以 `release: watchmind` 為必要條件建立的。
+- WeaMind deployment 已完成 rollout restart，新的 Pod 已就緒，deployment 狀態快照為 `2 2 2`，代表 updated / ready / available replicas 都已到位。
+- 直接從 WeaMind service 驗證 `/metrics`，已可看到 W7 App 4 指標 family：
+	- `line_webhook_events_total`
+	- `line_webhook_events_success_total`
+	- `line_webhook_events_error_total`
+	- `line_webhook_event_duration_seconds`
+- 從 Prometheus API 直接查 active targets，已看到 `namespace=weamind` 的 targets 為 `health: up`，scrape URL 指向兩個新 Pod：
+	- `http://10.42.1.41:8000/metrics`
+	- `http://10.42.2.28:8000/metrics`
+- 額外檢查 metric name catalog 時，Prometheus 的 `label/__name__/values` 目前還沒回出這四個新指標名稱；這代表 target 與 metric family 已存在，但真正的 labeled time series 還需要至少一筆真實 webhook 流量進來後才會長出樣本。
 
 #### AI 判讀與收斂
 
-- 待回填
+- 這一步把 W7 在 infra 端剩下的主缺口補上了：WeaMind 現在不只 app 端有 `/metrics`，Prometheus 也真的抓到了 WeaMind target，所以 App 4 這條 scrape 鏈已從「程式碼存在」進一步變成「cluster 內真的可觀測」。
+- 從驗證順序來看，這次最重要的不是先開 Grafana，而是先把鏈路拆成三層確認：
+	- deployment 是否已拉到新 image 並重建 Pod
+	- service `/metrics` 是否真的可達
+	- Prometheus target 是否真的 `up`
+- 這三層都通了，所以如果後面 Grafana 沒資料，問題就不該再懷疑 deployment、ServiceMonitor 或 scrape 邊界，而更可能是：
+	- 還沒有真實 webhook 流量進來
+	- 還沒有針對 App 4 建立 dashboard panel / query
+	- 查詢時間窗太短或 query 寫法不對
+- 這也解釋了為什麼 Prometheus 的 metric catalog 還沒有立即列出 App 4 指標名稱。對這組以 label 為主的 metrics 來說，只有 metric family 被 expose 還不夠；要等到至少一筆 event 真正觸發，Prometheus 才會拿到可查詢的 time series 樣本。
+- 所以更準確的收斂不是「Grafana 已完成」，而是：**WeaMind 的 app metrics scrape 鏈已打通，現在剩下的是 traffic-driven samples 與 dashboard query / panel 這個展示層。**
 
 #### 目前狀態
 
-- 未開始
+- 已完成
