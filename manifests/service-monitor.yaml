@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: weamind-line-bot
+  namespace: weamind
+  labels:
+    release: watchmind
+spec:
+  namespaceSelector:
+    matchNames:
+      - weamind
+  selector:
+    matchLabels:
+      app: weamind
+  endpoints:
+    - port: http
+      path: /metrics
+      scheme: http
+      interval: 30s
+      scrapeTimeout: 10s

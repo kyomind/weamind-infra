@@ -3,6 +3,9 @@ kind: Service
 metadata:
   name: weamind-line-bot
   namespace: weamind
+  labels:
+    app: weamind
+    app.kubernetes.io/name: weamind
 spec:
   type: ClusterIP
   selector:
