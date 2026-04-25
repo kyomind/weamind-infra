@@ -4,7 +4,7 @@
 
 - 這份檔案用來記錄今天實作主體的每個 step 閉環，不是一般 command drill。
 - 今天的主體是用 Helm 在 WeaMind 的 K3s 叢集完成 `kube-prometheus-stack` 最小安裝，並保留可複習的驗證脈絡。
-- `07-implementation-note.md` 與本檔綁定，只承接本檔過程中的 implementation-specific 補充觀察。
+- implementation-specific 補充觀察統一整理到 `05-note.md`，不再額外拆 `07`。
 
 ## 今日實作主題
 

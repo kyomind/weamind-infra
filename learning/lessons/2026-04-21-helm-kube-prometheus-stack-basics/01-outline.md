@@ -59,7 +59,7 @@
 3. 再確認 chart repo / release / namespace 的最小安裝策略，避免一開始就陷入 values 細節。
 4. 完成 install 後，直接在 `06-implementation.md` 補最小驗證證據，確認核心 workload 是否建立並進入穩定狀態。
 5. 只有在實作主體完成後，再回 `02-qa.md` 做 post-implementation QA 的短版定位題收斂。
-6. 若過程中出現 implementation-specific 補充觀察，同步整理到 `07-implementation-note.md`。
+6. 若過程中出現 implementation-specific 補充觀察，同步整理到 `05-note.md`。
 7. 最後回 `04-report.md` 收斂成一版可口述的 W7D2 結論。
 
 ## 文件分工
@@ -69,7 +69,7 @@
 3. `04-report.md`：收斂今天真正學到的內容。
 4. `05-note.md`：記錄一般 lesson 延伸問答、暫時結論與卡片素材。
 5. `06-implementation.md`：記錄今天的安裝主體與每個 step 的實作閉環，包含必要的驗證證據。
-6. `07-implementation-note.md`：承接 `06` 過程中的 implementation-specific 關鍵觀察與決策討論。
+6. `05-note.md`：承接一般 lesson 延伸內容，也包含 `06` 過程中的 implementation-specific 關鍵觀察與決策討論。
 
 ## 這份 lesson 的完成標準
 
