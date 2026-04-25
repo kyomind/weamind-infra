@@ -12,6 +12,8 @@
 - 在 WeaMind app repo 補出 `/metrics` 與 App 4 metrics，之後再根據 review 把 success / error / duration 從 request-level 修正為 event-level 記帳。
 - 在 infra repo 補上 `ServiceMonitor` 與必要的 `Service.metadata.labels`，讓 Prometheus 能透過既有 `Service` scrape WeaMind app metrics。
 - 完成 post-implementation QA，把 `ServiceMonitor` / `PodMonitor` 的邊界、target discovery 鏈路，以及 W7 demo MVP 的完成線整理成可口述答案。
+- 已確認 Grafana 入口、Prometheus datasource 與現成 `node-exporter-mixin` dashboard 可用，Node 3 展示面可直接重用。
+- 已在 Grafana Explore 與 panel 編輯畫面證明 App 4 metric 有真實 samples，且第一個 App 4 panel 已可開始成形。
 
 ## 今日最後確認的關鍵理解
 
@@ -22,11 +24,12 @@
 
 ## 還沒完成但已明確定位的缺口
 
-- Grafana 的實際 dashboard 畫面、查詢與 panel 整理仍需要最後確認，不能只停在 Prometheus targets 與 `/metrics` endpoint 驗證。
-- 目前已經能證明 app metrics scrape 鏈成立，但仍需要用實際展示面把 Node 3 與 App 4 收斂成一個可 demo 的 dashboard。
+- App 4 的 dashboard panel 雖已開始建立，但目前仍未收斂成最後可交付版。
+- 更重要的是，今晚已浮出一個不能草率帶過的問題：在多 Pod 與多 worker 條件下，counter / increase 的數字語意是否能直接被解讀成精確 total。
+- 這個問題已超出今晚原本想收尾的範圍，因此需要明天再接著判讀與決定是否回到 app metrics 實作層檢查。
 
 ## 下一步
 
-- 進入 Grafana，先確認登入與入口正常，再建立或檢視最小 dashboard。
-- 用 Node 3 與 App 4 指標把展示面補齊，完成 W7 demo MVP 的最後一段驗收。
-- 若 dashboard 畫面與 Prometheus 查詢結果一致，再把 Day 4 的重點放在理解加深、口述收斂與面試式重講。
+- 今晚 stop 在這裡，不再新增新的實作 step。
+- 明天先接這個明確缺口：釐清 App 4 counter 在多 Pod / 多 worker 下的解讀方式，再決定 dashboard 該怎麼收尾。
+- 等這個語意問題釐清後，再完成 App 4 panel 與整體 W7 demo MVP 的最後驗收。

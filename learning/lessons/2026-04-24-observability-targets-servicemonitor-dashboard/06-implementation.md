@@ -19,7 +19,8 @@
 5. 先在 WeaMind app repo 補出 App 4 metrics 的第一版 baseline。
 6. 根據 review 把 success / error / duration 的記帳邊界從 request-level 修正到 event-level。
 7. 補上 `ServiceMonitor` 並驗證 WeaMind app metrics 的 scrape 鏈是否真的打通。
-8. 進入 Grafana，確認展示層入口、datasource 與 dashboard 驗收條件。
+8. 進入 Grafana，確認展示層入口與登入流程正常。
+9. 在 Grafana 內確認 Prometheus datasource 與 dashboard 驗收條件。
 
 ## 驗收訊號與回退點
 
@@ -512,7 +513,7 @@ curl -s http://127.0.0.1:19090/api/v1/targets
 
 #### 這一步要驗證什麼
 
-- 以 Grafana 作為展示面，確認目前 `watchmind` stack 是否已有可登入入口、Prometheus datasource 是否正常，以及 W7 需要的 Node 3 / App 4 是否已具備最小 dashboard 驗收條件。
+- 以 Grafana 作為展示面，先確認目前 `watchmind` stack 是否已有可登入入口，且使用者能成功進入 UI。
 
 #### 預計採取的動作
 
@@ -522,8 +523,6 @@ kubectl port-forward -n watchmind svc/watchmind-grafana 3000:80
 
 - 在瀏覽器開啟 `http://127.0.0.1:3000`
 - 以 Grafana admin 帳號登入
-- 先確認 Prometheus datasource 是否正常
-- 再確認目前是已有現成 dashboard 可用，還是需要手動建立最小 panel
 
 #### 實際執行內容與結果
 
@@ -532,21 +531,101 @@ kubectl port-forward -n watchmind svc/watchmind-grafana 3000:80
 	- Grafana 可透過 `port-forward` 成功打開
 	- 可使用 admin 帳號成功登入
 	- 首頁顯示為 Grafana 預設 home 畫面
-- 待確認項目：
-	- Prometheus datasource 是否顯示為正常
-	- 左側 dashboard 清單裡是否已有可直接使用的 node / app metrics 畫面
-	- 若沒有現成 dashboard，則進一步確認是否需要手動建立 W7 最小 dashboard
 
 #### AI 判讀與收斂
 
 - 這一步的重點不再是 target 或 scrape 鏈，而是**展示層驗收**。
 - 目前已確認 Grafana UI 入口與登入流程正常，代表 observability stack 的展示面入口已成立。
-- 如果後面 datasource 正常但畫面沒有 WeaMind App 4，問題通常不在 `ServiceMonitor`，而會落在：
-	- 尚未有 webhook samples
-	- query / time range 不對
-	- 尚未建立對應 panel
-- 所以這一步的目的，是把 Day 3 最後一段從「資料已進 Prometheus」推進到「Grafana 上已能驗收或至少清楚定位展示層缺口」。
+- 這一步先到這裡收斂，不把 datasource 與 dashboard 驗收混進同一個 step，避免一個 step 同時承載過多操作目標。
 
 #### 目前狀態
 
-- 進行中
+- 已完成
+
+### Step 9
+
+#### 這一步要驗證什麼
+
+- 在 Grafana 內確認 Prometheus datasource 是否正常，以及目前是否已有可直接用來驗收 W7 的 node / app dashboard；若沒有，就明確定位缺口是在 datasource、samples、還是 panel 尚未建立。
+
+#### 預計採取的動作
+
+- 進入 Grafana 左側 `Connections` 或 `Administration` 相關頁面，確認 Prometheus datasource 狀態
+- 查看左側 `Dashboards` 清單，確認是否已有可直接使用的 node / app metrics 畫面
+- 若沒有現成 dashboard，再決定下一步是先用現成 query 驗證，還是手動建立 W7 最小 dashboard panel
+
+#### 實際執行內容與結果
+
+- 由使用者進入 Grafana 的 `Connections -> Data sources`，已確認存在 `Prometheus` datasource，且被標記為 `default`。
+- 從畫面可見 Prometheus datasource 指向 `http://watchmind-kube-prometheus-prometheus.watchmind:9090/`，代表 Grafana 與 cluster 內 Prometheus 的 service 連線入口已建立。
+- 使用者已點入 Prometheus datasource，並將其提供的三個預設 dashboard 匯入：
+	- `Prometheus Stats`
+	- `Prometheus 2.0 Stats`
+	- `Grafana metrics`
+- 使用者進一步查看 dashboard 清單後，確認目前只有 `kubernetes-mixin`、`node-exporter-mixin` 這類預設 dashboard，沒有任何 WeaMind 自定義命名的 dashboard。
+- 這代表目前可直接重用的主要是 Kubernetes / node 側既有 dashboard；WeaMind app 側的展示面仍未建立。
+- 使用者進一步打開 `Node Exporter / Nodes` 後，已確認畫面不只覆蓋 W7 要的 Node 3，還額外包含 load average、disk I/O、network 等更多 node-level 資訊。
+- 其中至少已明確看到：
+	- CPU usage
+	- memory usage
+	- disk / filesystem 相關資訊
+- 這代表 W7 的 Node 3 展示面不需要從零建立，直接重用現成 `node-exporter-mixin` dashboard 即可。
+- 使用者接著在 Grafana `Explore` 內以 Prometheus datasource 直接查詢 `line_webhook_events_total`，已成功看到實際結果，不是 `No data`。
+- 從畫面可見目前至少已有兩組 series / samples：
+	- `event_type="message_text"`
+	- `event_type="postback"`
+- 這代表 WeaMind App 4 不只 metric name 可被查到，Prometheus 也已經真的收到了 webhook 觸發後的 time series 樣本。
+
+#### AI 判讀與收斂
+
+- 這一步才是 Grafana 展示層真正開始收斂的地方。
+- 目前可以先下兩個結論。第一，Grafana 與 Prometheus 的 datasource 連線層已成立，Day 3 的缺口不在 datasource 本身。
+- 第二，這次匯入的三個 dashboard 比較偏 **Prometheus / Grafana 自身監控**，不是 W7 要驗收的 Node 3 / App 4 展示面，所以不能把它們直接當成 W7 已完成的 dashboard 交付物。
+- 第三，既有 dashboard 清單雖然沒有 WeaMind 自定義內容，但已經有現成的 `kubernetes-mixin` / `node-exporter-mixin` 可作為 Node 3 的候選展示面，因此下一步最合理的做法不是從零開始重做全部，而是：
+	- node 側直接重用已驗證足夠的 `Node Exporter / Nodes`
+	- app 側再另外補最小 query / panel
+- 到這一步可以更進一步下結論：**Node 3 其實已經可視為完成展示面驗收；Step 9 現在真正剩下的只有 App 4 的展示層。**
+- 第四，`Explore` 已經查得到 `line_webhook_events_total` 且帶有實際 samples，代表 App 4 現在也不是卡在「沒有資料」或「Prometheus 沒抓到」，而是只差把這些 query 組織成 dashboard panel。
+- 因此剩餘問題已收斂到展示內容本身：
+	- WeaMind App 4 是否需要手動建立 panel / query
+	- 哪幾條 query 最適合拿來做 W7 最小可 demo panel
+
+#### 目前狀態
+
+- 已完成
+
+### Step 10
+
+#### 這一步要驗證什麼
+
+- 以目前已存在的 Prometheus samples 為基礎，手動建立 W7 需要的 App 4 最小展示面，確認 webhook total / success / error / latency 至少能以 query 或 panel 形式被驗收。
+
+#### 預計採取的動作
+
+- 由使用者在 Grafana 內建立新的 dashboard 或 panel
+- 先從最容易驗證的 App 4 query 開始，例如 total、success、error，再視情況補 latency
+- 若某些 query 查得到 metric name 但沒有資料，則回頭判斷是 samples 不足還是查詢窗口不對
+
+#### 實際執行內容與結果
+
+- 使用者已在 Grafana 內建立 App 4 的第一個 panel，並先以 `Webhook Events (5m)` 做 total 類型展示驗證。
+- 過程中已確認：
+	- `line_webhook_events_total` 在 Grafana Explore 內查得到
+	- 改用 `increase(...[5m])` 後，panel 也能出現隨實際操作變動的結果
+	- 調整 `Decimals` 與時間窗後，畫面已比原始 counter 直接畫圖更接近可 demo 狀態
+- 但在驗證過程中也浮出新的語意問題：
+	- 為什麼手動按了少量 rich menu postback，圖上的數字看起來卻偏大
+	- 在 `replicas: 2` 且 `uvicorn --workers 2` 的情況下，total 應如何正確解讀
+- 這些問題不再是 Grafana 操作問題，而是進一步牽涉到 counter 在多 Pod / 多 worker 條件下的聚合語意。
+
+#### AI 判讀與收斂
+
+- 到這一步，Day 3 已經多走到一個原本沒有打算在今晚深入的區塊：Grafana panel 已經開始建立，但也因此撞到「數字語意是否可靠」這個新問題。
+- 這個問題值得做，但它已經不適合在今晚繼續往下擴成更多 step。比較合理的 stop 點是：
+	- 承認 Node 3 展示面已成立
+	- 承認 App 4 的 query / panel 鏈路已經被驗通
+	- 把多 Pod / 多 worker 下的 total 解讀問題留到明天，再決定要不要繼續擴 dashboard 或回頭檢查 app metrics 實作語意
+
+#### 目前狀態
+
+- 暫停，明日續作

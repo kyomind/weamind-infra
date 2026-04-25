@@ -309,4 +309,22 @@ kubectl get secret watchmind-grafana -n watchmind -o go-template='{{index .data 
 - 如果終端機輸出最後多一個 `%`，那通常不是密碼內容，而是 zsh prompt 接在輸出後面顯示出來；這次真正的密碼本身**不包含**最後那個 `%`。
 - 所以這題最穩的短版記法是：**Grafana 初始帳密通常放在 Kubernetes Secret；要拿密碼，不是去猜，而是去查 chart 建出的 secret 並做 base64 decode。**
 
+### 為什麼明明只按幾次，Grafana 上的 webhook 數字卻看起來怪
+
+- 這次在 Grafana 做 App 4 panel 時，一個很重要的觀察是：**圖能證明 metrics 鏈路是通的，但不能立刻把畫面上的數字直接解讀成「剛剛手動按了幾次」。**
+- 第一個原因是 query 本身。像 `increase(line_webhook_events_total[5m])` 這類函數，問的是「最近 5 分鐘內推估增加多少」，不是逐筆事件回放；Prometheus 會根據 scrape sample 做時間窗推估，所以結果可能出現小數，也可能和人手動記的次數不完全對齊。
+- 第二個原因是 runtime 佈局。現在 `weamind` deployment 不只 `replicas: 2`，而且啟動命令裡還有 `uvicorn --workers 2`。也就是說，現在大致是：
+	- 2 個 Pods
+	- 每個 Pod 內 2 個 worker processes
+	- 總共 4 個 process 在處理請求
+- Prometheus 跨 Pod 加總這一層本身不是問題，正常就是靠 `sum(...)` 類 query 來聚合多個 instance。
+- 真正要小心的是 **Pod 內的多 worker process metrics 怎麼聚合**。如果 `prometheus_client` 在這個模式下沒有正確做 multiprocess aggregation，那每個 worker 看到的 counter 可能只是局部值，`/metrics` 抓到的也不一定是「這個 Pod 的完整總和」。
+- 這會造成兩種容易誤讀的現象：
+	- 你明明只手動按了幾次，圖看起來卻像更多
+	- counter / increase 的數字語意還站不穩，不能直接拿來當精確業務統計
+- 所以目前更穩的收斂應該是：
+	- 圖表已足夠證明 App 4 metrics 與 Grafana 展示鏈路成立
+	- 但若要把數字解讀成精確 total，後面還需要回頭確認多 Pod + 多 worker 下的 metrics aggregation 語意
+- 這題最值得記的一句話是：**跨 Pod 的 total 靠 PromQL 聚合通常沒問題；真正比較危險的是 Pod 內多 worker process 的 counter 是否先被正確聚合。**
+
 ## Flashcards
