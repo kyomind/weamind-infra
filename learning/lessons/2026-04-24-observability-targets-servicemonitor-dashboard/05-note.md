@@ -292,4 +292,21 @@
 - Prometheus 負責真的去抓
 - 所以更準的說法不是「Prometheus 找到 Pod」，而是：**Prometheus 透過 Operator 理解 `ServiceMonitor`，再經由 `Service` 去 scrape 那些實際提供 `/metrics` 的 Pods。**
 
+### 怎麼拿到 Grafana 初始登入密碼
+
+- 這次 Grafana 的 admin 帳密不是我憑空知道的，而是從 Kubernetes 裡的 `Secret` 讀出來。
+- `kube-prometheus-stack` 這類 Helm chart 安裝 Grafana 時，通常會把 admin username / password 放進對應 namespace 內的 secret。
+- 這次實際可用的查法是：
+
+```bash
+kubectl get secret watchmind-grafana -n watchmind -o go-template='{{index .data "admin-user" | base64decode}} {{index .data "admin-password" | base64decode}}'
+```
+
+- 這條指令做的事可以拆成三段：
+	- `kubectl get secret watchmind-grafana -n watchmind`：讀取 `watchmind` namespace 裡的 Grafana secret
+	- `.data "admin-user"` / `.data "admin-password"`：取出 secret 裡儲存的帳號與密碼欄位
+	- `base64decode`：把 Kubernetes Secret 預設的 base64 編碼值解回原文
+- 如果終端機輸出最後多一個 `%`，那通常不是密碼內容，而是 zsh prompt 接在輸出後面顯示出來；這次真正的密碼本身**不包含**最後那個 `%`。
+- 所以這題最穩的短版記法是：**Grafana 初始帳密通常放在 Kubernetes Secret；要拿密碼，不是去猜，而是去查 chart 建出的 secret 並做 base64 decode。**
+
 ## Flashcards

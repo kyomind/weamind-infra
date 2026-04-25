@@ -18,7 +18,8 @@
 4. 對照 WeaMind `Deployment` / `Service`，判斷 app metrics 若要被 scrape 的最小接法。
 5. 先在 WeaMind app repo 補出 App 4 metrics 的第一版 baseline。
 6. 根據 review 把 success / error / duration 的記帳邊界從 request-level 修正到 event-level。
-7. 最後視現況收斂一版 Grafana 最小 dashboard 驗收結果或缺口定位。
+7. 補上 `ServiceMonitor` 並驗證 WeaMind app metrics 的 scrape 鏈是否真的打通。
+8. 進入 Grafana，確認展示層入口、datasource 與 dashboard 驗收條件。
 
 ## 驗收訊號與回退點
 
@@ -506,3 +507,46 @@ curl -s http://127.0.0.1:19090/api/v1/targets
 #### 目前狀態
 
 - 已完成
+
+### Step 8
+
+#### 這一步要驗證什麼
+
+- 以 Grafana 作為展示面，確認目前 `watchmind` stack 是否已有可登入入口、Prometheus datasource 是否正常，以及 W7 需要的 Node 3 / App 4 是否已具備最小 dashboard 驗收條件。
+
+#### 預計採取的動作
+
+```bash
+kubectl port-forward -n watchmind svc/watchmind-grafana 3000:80
+```
+
+- 在瀏覽器開啟 `http://127.0.0.1:3000`
+- 以 Grafana admin 帳號登入
+- 先確認 Prometheus datasource 是否正常
+- 再確認目前是已有現成 dashboard 可用，還是需要手動建立最小 panel
+
+#### 實際執行內容與結果
+
+- 這一步改由使用者實際操作，AI 只負責引導，不直接代做。
+- 目前已確認：
+	- Grafana 可透過 `port-forward` 成功打開
+	- 可使用 admin 帳號成功登入
+	- 首頁顯示為 Grafana 預設 home 畫面
+- 待確認項目：
+	- Prometheus datasource 是否顯示為正常
+	- 左側 dashboard 清單裡是否已有可直接使用的 node / app metrics 畫面
+	- 若沒有現成 dashboard，則進一步確認是否需要手動建立 W7 最小 dashboard
+
+#### AI 判讀與收斂
+
+- 這一步的重點不再是 target 或 scrape 鏈，而是**展示層驗收**。
+- 目前已確認 Grafana UI 入口與登入流程正常，代表 observability stack 的展示面入口已成立。
+- 如果後面 datasource 正常但畫面沒有 WeaMind App 4，問題通常不在 `ServiceMonitor`，而會落在：
+	- 尚未有 webhook samples
+	- query / time range 不對
+	- 尚未建立對應 panel
+- 所以這一步的目的，是把 Day 3 最後一段從「資料已進 Prometheus」推進到「Grafana 上已能驗收或至少清楚定位展示層缺口」。
+
+#### 目前狀態
+
+- 進行中
