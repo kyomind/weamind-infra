@@ -43,17 +43,58 @@
 - 對照目前 panel query 與現象，列出 raw counter、`increase()`、`resets()`、`changes()` 的最小查詢組。
 - 定義今天第一輪判讀標準：哪些結果更像真實流量，哪些更像 counter reset / worker 切換。
 
+第一輪最小查詢組先固定如下：
+
+```promql
+line_webhook_events_total{event_type="postback"}
+```
+
+- 用途：先看 raw counter 本身是否在不同序列間跳動，而不是一開始就只看 `increase()`。
+
+```promql
+sum by (event_type) (increase(line_webhook_events_total[5m]))
+```
+
+- 用途：對照目前 Grafana panel 的主要異常現象，確認問題重現的是哪一條 query。
+
+```promql
+resets(line_webhook_events_total{event_type="postback"}[30m])
+```
+
+- 用途：看 Prometheus 是否頻繁把這條序列判定成 counter reset。
+
+```promql
+changes(line_webhook_events_total{event_type="postback"}[30m])
+```
+
+- 用途：看這條序列在沒有真實流量時，是否仍持續發生大量值變化。
+
+第一輪判讀標準先收斂成：
+
+- 若 raw counter 看起來平穩，只在真實操作後才增加，則比較像 query window 或 panel 解讀問題。
+- 若 raw counter 在沒有真實操作時仍反覆跳動，且 `resets()` / `changes()` 明顯偏高，則更像 worker 切換或 runtime aggregation 問題。
+- 若 `increase()` 長時間有值，但 raw counter 與 `resets()` 也顯示不穩定，則不應把這些數字當成真實 5 分鐘流量。
+
 #### 實際執行內容與結果
 
-- 待回填
+- 第一張 raw counter 圖：`line_webhook_events_total{event_type="postback"}` 回來兩條序列。
+- 其中一條序列大致穩在 `5`，另一條則在 `3` 到 `4` 之間反覆跳動；這代表問題不是只有 `increase()` 在放大噪音，而是 raw counter 本身就已經不穩定。
+- 第二張 `increase()` 圖：`sum by (event_type) (increase(line_webhook_events_total[5m]))` 的 `postback` 長時間落在約 `10` 到 `30` 之間，與目前真實使用情境不符，重現了原本 panel 的異常現象。
+- 第三張 `resets()` 圖：`resets(line_webhook_events_total{event_type="postback"}[30m])` 顯示其中一條序列接近 `0`，另一條卻長時間落在約 `20` 到 `30`。這代表 Prometheus 在 30 分鐘視窗內，持續把其中一個 target 判成反覆 reset。
+- 第四張 `changes()` 圖：`changes(line_webhook_events_total{event_type="postback"}[30m])` 其中一條序列約落在 `40` 到 `60`，另一條接近 `0`；這代表那個有問題的 target 在沒有真實流量對應的情況下，仍持續發生大量值變動。
+- 這四張圖合在一起的訊號是：不是只有 panel query 很怪，而是某一條 `postback` counter 序列本身就不是可被 `increase()` 信任的單調遞增序列。
 
 #### AI 判讀與收斂
 
-- 待回填
+- Step 1 已經拿到很強的第一輪證據，方向比原本更清楚。
+- 最關鍵的不是第二張 `increase()` 圖，而是第一張 raw counter 圖。因為它顯示兩條 `postback` 序列裡，至少有一條 target 的原始 counter 自己就在 `3` 與 `4` 間來回跳；對真正的 counter 來說，這種下降本身就不合理。
+- 第三張 `resets()` 與第四張 `changes()` 進一步把這件事坐實了：Prometheus 對其中一條序列觀察到大量 reset 與變動，而另一條幾乎沒有。這很符合「某個 scrape target 背後其實不是單一穩定 source，而是在不同 in-memory 狀態之間切換」的模型。
+- 換句話說，現在最合理的判讀不是「半夜真的有很多 postback」，也不是「`increase()` 天生不準」，而是：Prometheus 正在對一條已經失真的 counter 序列做 `increase()`，所以才會算出長時間持續存在的假流量。
+- 這也帶出一個更精準的定位：問題不是單純出在 panel 聚合；因為 raw counter、`resets()`、`changes()` 都已經在單條 `postback` 序列層級暴露異常。接下來最合理的下一步，就是回到 deployment 與 app metrics 實作，確認這是否正是 `uvicorn --workers 2` 搭配預設 in-process registry 造成的 runtime 問題。
 
 #### 目前狀態
 
-- 未開始
+- 已完成
 
 ### Step 2
 
