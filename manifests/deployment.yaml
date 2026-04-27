@@ -27,7 +27,7 @@ spec:
             - --port
             - "8000"
             - --workers
-            - "2" # 2 個 worker processes（與 Docker Compose 保持一致）
+            - "1" # Step 3 診斷：先用單 worker 驗證 metrics 序列是否恢復可解讀性
             - --proxy-headers # 信任代理 headers（X-Forwarded-* 等）
             - --loop
             - uvloop # 使用高效能的 uvloop
