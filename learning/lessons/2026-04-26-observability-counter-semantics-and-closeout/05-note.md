@@ -190,6 +190,83 @@ sum by (event_type) (increase(line_webhook_events_total[5m]))
 - 這也說明為什麼不能直接拿 Node dashboard 的慣例硬套過來。Node 那一側很多 metric family 天然就同時需要兩種視角，例如 usage vs load、timeseries vs gauge、I/O vs capacity；但 App metrics 不一定每一組都天然有這麼強的雙視角需求。
 - 這題可以收斂成一句話：**一個 metric 要不要拆兩格，不看它能不能拆，而看拆完後是不是多回答了一個重要問題。**
 
+### `line_webhook_event_duration_seconds` 到底是從哪裡開始算、在哪裡結束
+
+- 這題要先講結論：**這個 duration 不是從使用者手機開始算，也不是從 LINE 平台送出請求那一刻開始算；它量的是 webhook 進到我們 app 之後，app 內部處理這個 event 花了多久。**
+- 這次去看 app repo 的實際 call site，可以把計時邊界拆成兩段：
+
+#### 第一段：payload parse 失敗時的計時邊界
+
+- 在 webhook service 一開始，程式先做：
+
+```python
+parse_start_time = time.perf_counter()
+```
+
+- 接著才呼叫 LINE SDK parser 去 parse `body_text` 與 `signature`。
+- 如果這一步就丟出 `InvalidSignatureError` 或其他 exception，程式會立刻記錄：
+
+```python
+line_metrics.record_webhook_duration(event_types, time.perf_counter() - parse_start_time)
+```
+
+- 也就是說，在 parse 失敗的情況下，duration 量到的是：
+	- app 開始處理這個 webhook payload
+	- 到 parse 驗證失敗或 handler 前置流程失敗為止
+
+#### 第二段：單一 event 正常處理時的計時邊界
+
+- 當 payload parse 成功後，程式會迴圈處理 `payload.events` 裡的每一個 event。
+- 對每一個 event，它會先做：
+
+```python
+start_time = time.perf_counter()
+```
+
+- 然後才去：
+	- 判斷這個 event 對應哪個 handler
+	- 實際呼叫 handler
+	- 記 success 或 error metrics
+- 最後在 `finally` 裡記錄：
+
+```python
+line_metrics.record_webhook_duration([event_type], time.perf_counter() - start_time)
+```
+
+- 所以在正常 event 路徑下，duration 量到的是：
+	- 這個 event 開始進入 app 內部 handler 處理
+	- 到 handler 執行完畢或拋出例外為止
+
+#### 這代表它「有包含什麼」
+
+- 它通常會包含 app 內部真正做事的時間，例如：
+	- event handler 本身的邏輯
+	- handler 裡的資料整理
+	- handler 裡呼叫其他 service 的時間
+	- 若 handler 會打天氣 API、查資料、組回覆內容，這些時間也可能被算進去
+
+#### 這代表它「不包含什麼」
+
+- 它不包含這些外部路徑：
+	- 使用者手機到 LINE 平台的網路延遲
+	- LINE 平台內部處理時間
+	- LINE 平台把 webhook 傳到我們服務之前的外部傳輸時間
+- 換句話說，它不是 end-to-end user latency，而是比較接近 **server-side webhook handling latency**。
+
+#### 為什麼這個邊界很重要
+
+- 因為當我們看到 `postback` 平均大約 `0.5` 到 `0.6` 秒時，不能把它解讀成「台灣使用者按一下按鈕到看到結果花了 0.5 秒」。
+- 更準確的說法是：**這個數字反映的是 webhook 進到我們 app 之後，到 app 內部把這個 event 處理完為止，大約花了數百毫秒。**
+- 若這條路徑裡有外部 I/O，例如查天氣 API，那數百毫秒就不一定代表異常；但它也不能算是特別快。
+
+#### 這題可以怎麼口述
+
+- 可以這樣說：
+	- `line_webhook_event_duration_seconds` 量的是 app 端處理 webhook event 的時間，不包含使用者到 LINE、或 LINE 到我們服務之前的外部網路延遲。
+	- parse 失敗時，它量的是 app 開始 parse 到失敗為止。
+	- 正常 event 路徑時，它量的是單一 event 進入 handler 到 handler 完成為止。
+	- 所以目前看到 `postback` 平均約 `0.5` 到 `0.6` 秒，比較應該解讀成 server-side 處理時間是數百毫秒級，而不是完整使用者體感延遲。
+
 
 
 ## Flashcards

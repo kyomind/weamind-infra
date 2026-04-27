@@ -59,20 +59,25 @@
 1. 先用 `06-implementation.md` 收斂今天的診斷假設、PromQL 驗證點與 rollout 驗證順序。
 2. 先看 raw counter / `increase()` / `resets()` / `changes()` 的差異，再決定 deployment 要改哪個最小控制變數。
 3. 進行 `workers: 2 -> 1` 的診斷實驗，並確認 rollout、`/metrics`、Prometheus target 與 Grafana panel 是否同步反映。
-4. 只有在實作主體有結果後，再回 `02-qa.md` 做 post-implementation QA，收斂這次的 runtime 邊界與 W7 收尾判準。
-5. 將額外的 Prometheus counter 語意、multiprocess 邊界與 dashboard 設計取捨整理到 `05-note.md`。
+4. 將額外的 Prometheus counter 語意、multiprocess 邊界、duration 計時範圍與 dashboard 設計取捨整理到 `05-note.md`。
+5. 今天以 implementation closeout 為主，post-implementation QA 本日略過，不另外開 `02-qa.md` 互動。
 6. 最後回 `04-report.md` 收斂今天真正確認的根因、結果與後續收尾線。
 
 ## 文件分工
 
 1. `01-outline.md`：宣告今天套用 `implement-heavy`，並寫清楚診斷主線、邊界、驗收與回退點。
-2. `02-qa.md`：記錄 post-implementation QA 的短版定位題、使用者回答摘要與 AI 修正。
+2. 今天不建立 `02-qa.md` 的互動收斂；若需要補口述題，改留待下一次 lesson 或直接吸收到 `04-report.md`。
 3. `04-report.md`：收斂今天真正確認的 metrics 語意、實作結果與 W7 收尾狀態。
-4. `05-note.md`：記錄 Prometheus counter / `increase()` / multiprocess 邊界等延伸問答與卡片素材。
+4. `05-note.md`：記錄 Prometheus counter / `increase()` / multiprocess 邊界 / duration 計時範圍等延伸問答與卡片素材。
 5. `06-implementation.md`：記錄今天的診斷 step、rollout、查詢證據與 dashboard 收尾過程。
 
 ## 這份 lesson 的完成標準
 
 1. 能說清楚目前 App 4 圖表異常比較像哪一層的問題：真實流量、query 語意、還是多 worker 下的 metrics runtime。
 2. 能完成至少一輪最小診斷實驗，並留下可複習的 rollout / query / panel 證據鏈。
-3. 能明確定義 W7 observability demo MVP 在今天結束時是「已收尾」、「部分收尾」，還是「因特定根因而保留缺口」。
+3. 能明確定義 W7 observability demo MVP 在今天結束時是「已收尾」、「部分收尾」，還是「因特定根因而保留缺口」，即使今天略過 QA 也不影響這條完成線。
+
+## 今日流程備註
+
+- 今天實作密度已高，晚間收尾以 implementation closeout 為優先，因此 post-implementation QA 本日略過。
+- 這次略過 QA 不是因為主題不重要，而是因為今天已在 `06-implementation.md` 與 `05-note.md` 留下足夠的可複習證據鏈與口述素材。
