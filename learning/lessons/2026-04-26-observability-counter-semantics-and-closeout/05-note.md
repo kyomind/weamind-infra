@@ -271,4 +271,34 @@ line_metrics.record_webhook_duration([event_type], time.perf_counter() - start_t
 
 ## Flashcards
 
-<!-- 待回填 -->
+- 為什麼 `uvicorn --workers 2` 搭配預設 in-process `prometheus_client` registry，會讓 `increase()` 產生假的流量增量？ #DevOps #card
+	- 每個 worker 都有各自獨立的 in-memory counter
+	- Prometheus scrape 同一個 endpoint 時，可能在不同 worker 的值之間切換
+	- 對 `increase()` 來說，這會像同一條 counter 發生 reset 後又繼續增加
+	- 所以問題不是 `increase()` 算錯，而是它看到的已不是可信的單調遞增序列
+
+- raw counter 和 `increase()` 各自在回答什麼問題？ #DevOps #card
+	- raw counter 比較適合看最後累積到多少
+	- `increase()[1m]` 或 `[5m]` 比較適合看某段時間內是否出現一波活動
+	- 低流量、短時間窗、fresh series 下，`increase()` 不適合拿來精準逐筆對帳
+
+- Pod 重啟後，Prometheus 會怎麼處理 counter 的時間連續性？ #DevOps #card
+	- 舊 Pod 的 series 停在最後一個樣本，新 Pod 以新的 series 重新開始
+	- Prometheus 保的是歷史資料與可查詢性，不是替你把 Pod identity 無縫接起來
+	- 服務層連續性通常是在 PromQL aggregation 這一層建立的
+
+- App dashboard 的 panel 數量應該怎麼決定？ #DevOps #card
+	- 不是照 metric family 數量或版面對稱硬拆
+	- 判準是拆開後是否多回答了一個重要問題
+	- 例如 total vs recent activity、average vs p95 就是不同問題
+
+- 為什麼這次 App dashboard 的主活動 panel 先選 `increase(...[5m])`，不是 `1m`？ #DevOps #card
+	- `5m` 比較適合平常 dashboard 觀察趨勢，畫面更穩
+	- `1m` 更接近即時脈衝，但對 scrape timing 更敏感、低流量下更抖
+	- 這次收斂是先用 `5m` 當主 panel，需要更即時視角時再補 `1m`
+
+- `line_webhook_event_duration_seconds` 量的是什麼，不量什麼？ #DevOps #card
+	- 它量的是 webhook 進到 app 之後，app 內部處理 event 花了多久
+	- parse 失敗時，量的是開始 parse 到失敗為止
+	- 正常路徑時，量的是單一 event 進入 handler 到 handler 完成為止
+	- 它不是 end-to-end user latency，不包含使用者到 LINE 或 LINE 到我們服務前的外部網路延遲
