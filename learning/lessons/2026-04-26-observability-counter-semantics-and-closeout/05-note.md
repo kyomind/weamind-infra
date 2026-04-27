@@ -161,6 +161,35 @@ sum by (event_type) (increase(line_webhook_events_total[5m]))
 - 若之後想補一張更偏即時脈衝感的圖，可以再加一張 `1m` panel，但不把它當成唯一主指標。
 - 所以這次 W7 的收斂決策是：**App dashboard 主 panel 先維持 `5m`，若後面需要更即時的補充視角，再額外加 `1m` panel，而不是一開始就把主 panel 換成 `1m`。**
 
+### Grafana 首頁比較像入口，不是主要展示面
+
+- 這一輪在整理 `WatchMind` folder、tag 與 starred dashboard 時，也順手釐清了 Grafana 首頁與 dashboard 本體的分工。
+- 比較準確的理解是：**首頁主要是導覽入口，不是主要展示頁；真正的監看與展示通常是直接進某一份 dashboard。**
+- 首頁能承接的內容通常有限，常見是：
+	- starred dashboards
+	- recently viewed dashboards
+	- 一些導覽或教學區塊
+- 所以就算把 `WatchMind Apps`、`WatchMind Nodes` 都整理好了，也不代表首頁會直接變成完整 wall display；首頁比較像「讓你快速找到要開哪一份 dashboard」。
+- 真正用在監控牆、長時間展示或多螢幕輪播的做法，通常是：
+	- 每個螢幕直接開某一份 dashboard 的 URL
+	- 平常就停在那份 dashboard
+	- 視需要再搭配全螢幕、kiosk mode、auto refresh 或 playlist
+- 換句話說，folder、tag、starred 這些整理動作，解的是「入口治理」問題，不是「把 dashboard 內容直接塞進首頁」的問題。
+- 這題可以收斂成一句話：**首頁負責讓我快速找到 dashboard；真正展示時，畫面通常直接停在那份 dashboard 上。**
+
+### 為什麼 App dashboard 不是每個 metric 都硬拆成兩格
+
+- 這一輪有一個很值得記住的 panel 設計判準：**panel 數量不是照 metric family 數量或版面對稱來決定，而是照「是否多回答了一個重要問題」來決定。**
+- 換句話說，不是每個 metric 都要為了形式工整硬拆兩格；只有當第二格真的在回答另一個不同且有價值的問題時，才值得拆。
+- 放回這次 App dashboard：
+	- `line_webhook_events_total` 值得拆兩格，因為「累積總量」和「最近 5 分鐘活動」是兩個不同問題。
+	- `line_webhook_event_duration_seconds` 也值得拆兩格，因為「平均延遲」和「p95 尾延遲」是兩個不同問題。
+	- `line_webhook_events_success_total` 目前先維持一格，因為如果再額外補一格 success total，資訊增量和整體 total panel 高度重疊。
+	- `line_webhook_events_error_total` 目前也先維持一格，因為這次 W7 更在意的是「最近有沒有錯、錯得多不多」，而不是一條長期累積的 error total 線。
+- 所以現在 App dashboard 做成 6 格，不是因為少做，而是因為這 6 格剛好對應目前最有訊號價值的 6 個問題。
+- 這也說明為什麼不能直接拿 Node dashboard 的慣例硬套過來。Node 那一側很多 metric family 天然就同時需要兩種視角，例如 usage vs load、timeseries vs gauge、I/O vs capacity；但 App metrics 不一定每一組都天然有這麼強的雙視角需求。
+- 這題可以收斂成一句話：**一個 metric 要不要拆兩格，不看它能不能拆，而看拆完後是不是多回答了一個重要問題。**
+
 
 
 ## Flashcards

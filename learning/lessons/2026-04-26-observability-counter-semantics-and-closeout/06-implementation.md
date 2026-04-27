@@ -258,15 +258,35 @@ sum by (event_type) (increase(line_webhook_events_total[5m]))
 
 #### 實際執行內容與結果
 
-- 待回填
+- 重新檢視內建 `Node Exporter / Nodes` dashboard 後，可以確認原本把 Node 3 想成「3 個 metric = 3 個 panel」其實太粗。
+- 目前畫面更合理的拆法是「3 個 metric family，但每個 family 用 2 個 panel 從不同角度看」，總共 6 個 panels：
+  - CPU：`CPU Usage`、`Load Average`
+  - Memory：`Memory Usage` 時序圖、`Memory Usage` gauge
+  - Disk：`Disk I/O`、`Disk Space Usage`
+- 這個拆法合理，因為 panel 不是對應 metric 名稱，而是對應觀察角度。
+- `CPU Usage` 看的是 CPU 使用率趨勢；`Load Average` 則補的是排程壓力與核心數對照，兩者不是重複資訊。
+- `Memory Usage` 時序圖看的是記憶體組成與時間變化；旁邊的 gauge 則提供當下使用率的一眼判讀。
+- `Disk I/O` 看的是讀寫活動與 io time；`Disk Space Usage` 則回答容量剩多少、掛載點是否逼近滿載，這也不是同一件事。
+- 另外也確認了這組內建 panel 是透過 dashboard variables 在切 node，而不是每個 panel 各自寫死節點。
+- 從畫面上看，目前至少有兩個關鍵變數：`datasource` 與 `instance`；`instance` 下拉可切 `10.0.0.3:9100`、`10.0.0.4:9100`、`10.0.0.5:9100`。
+- 這代表若要把這些 panel 搬到新的 dashboard，有兩條可行路線：
+  - 路線 A：保留 variable-driven 設計，把 `datasource` 與 `instance` 變數也一起帶進新 dashboard，讓同一份 dashboard 可切不同 node。
+  - 路線 B：若 W7 demo 只要求固定展示 Node 3，則直接把查詢裡的 `instance` 鎖定成 Node 3，做成不帶下拉選單的定版 dashboard。
+- 以這次 W7 收尾目標來看，路線 B 更乾淨，因為需求不是做通用 node explorer，而是交付能穩定展示 Node 3 的 dashboard。
+- 也就是說，這一步的真正結論不是「只挑 3 個 panel」，而是「接受 6 個 panel 才是合理最小展示面，並決定後續搬運時以 Node 3 固定版為優先」。
 
 #### AI 判讀與收斂
 
-- 待回填
+- 這一步把一個很重要的 dashboard 設計原則釐清了：panel 對應的是問題，不是 metric family 的數量。
+- 所以後面做 App dashboard 時，也不應把思路卡死在「4 個 metrics 就只能有 4 個 panels」；如果同一個 metrics family 需要總量與近窗活動兩種語意，拆成 2 個 panels 才是正確做法。
+- 對 Node dashboard 而言，最小可交付面其實不是 3 格，而是這 6 格。這樣既保住 W7 minimum spec，又保住可讀性。
+- 搬運方式上，Grafana 並不是用「引用既有 panel」的概念來重用；比較實際的作法是複製 panel 設定或 panel JSON 到新 dashboard。
+- 如果保留原本的 variable-driven 查詢，新 dashboard 也必須有相同名稱的 variables，至少包含 `datasource` 與 `instance`，否則 panel 會失效。
+- 如果直接做 Node 3 固定版，反而更適合這次 lesson：把 `instance` 變數拿掉，將查詢直接鎖到 Node 3，會比保留下拉選單更容易解釋、也更像交付物而不是工具盤。
 
 #### 目前狀態
 
-- 未開始
+- 已完成
 
 ### Step 7
 
@@ -276,20 +296,36 @@ sum by (event_type) (increase(line_webhook_events_total[5m]))
 
 #### 預計採取的動作
 
-- 建立或整理 `Node Dashboard`。
-- 將 Step 6 選好的 3 個 node panels 放進 dashboard，確認標題、單位與時間範圍看起來合理。
+- 優先採用低成本搬運法，而不是從零重建 6 個 panel。
+- 第一選項是直接從內建 `Node Exporter / Nodes` dashboard 另存新檔或複製一份，再刪掉不需要的 panels，只保留 Step 6 選定的 6 個 panel。
+- 若內建 dashboard 因 provisioned / read-only 限制無法直接另存，第二選項才是匯出 dashboard JSON 再 import 成可編輯副本。
+- 只有在前兩條都卡住時，才退回逐個 panel 複製設定或重貼 query。
+- 建立或整理 `Node Dashboard` 後，確認標題、單位、時間範圍與變數策略看起來合理。
 
 #### 實際執行內容與結果
 
-- 待回填
+- 已實際驗證 `Node Exporter / Nodes` 可以直接用 `Save As` 複製成新的 dashboard。
+- 複製後的新 dashboard 會出現在 dashboard 清單中，與先前建立的其他 dashboard 並列存在，代表這條路可作為 W7 Node dashboard 的主路線，不需要先走 export/import，也不需要逐個 panel 重建。
+- 重新檢視內建 `Nodes` dashboard 後，也確認它原本其實就是 4 個 metric family：CPU、Memory、Disk、Network。
+- 若以 W7 minimum spec 來看，真正必需的是 Node 3，也就是 CPU usage、memory usage、filesystem usage；network 並不是硬需求。
+- 但從實作成本與可讀性來看，network panels 本身並沒有造成明顯干擾，而且保留整份現成 dashboard 幾乎是零額外成本。
+- 因此目前收斂出的較佳做法是：先保留原本 `Nodes` dashboard 的整體結構，不急著刪 network，只做輕量客製，例如改成自己的 dashboard 名稱，必要時再調整變數或預設 node。
+- 也就是說，對這次 W7 收尾而言，「複製一份內建 Nodes dashboard，保留大部分既有 panel 結構，只做最小命名與展示客製」已經足夠合理。
 
 #### AI 判讀與收斂
 
-- 待回填
+- 這一步的關鍵不是技術上能不能重建，而是有沒有必要重建。
+- 現在既然 `Save As` 已驗證可行，就代表最省力且最穩的路線已經成立：直接複製內建 dashboard，再做最小幅度客製。
+- 對目前 lesson 目標來說，我傾向同意先不要刪 network。原因不是 network 很重要，而是它不構成主要成本，也不會破壞 dashboard 的正當性；相反地，若現在為了追求「只剩必要 panel」而做一堆裁切，反而增加無謂編修。
+- 更精準地說，現在的客製重點可以從「大量刪 panel」改成「定義這份 dashboard 在清單與展示中的身份」：
+  - 用自己的命名方式把它和內建 dashboard 區分開。
+  - 視需要把它放到合適 folder。
+  - 視需要調整預設 node 或變數可見性。
+- 若之後真的發現 demo 畫面太雜，再回頭做 slim 版 dashboard 也來得及；但這不應該阻塞目前的 W7 推進。
 
 #### 目前狀態
 
-- 未開始
+- 已完成
 
 ### Step 8
 
@@ -311,15 +347,42 @@ sum by (event_type) (increase(line_webhook_events_total[5m]))
 
 #### 實際執行內容與結果
 
-- 待回填
+- 在完成 `WatchMind Nodes` 的複製、命名、folder 與 starred 整理後，開始回到 App dashboard 的真正交付內容，也就是先定 `WatchMind Apps` 的 panel inventory。
+- 這一步先不急著寫每個 panel 的 PromQL，而是先決定 App dashboard 到底要回答哪些問題。
+- 目前已確認的原始 metric family 仍是 4 類：
+  - `line_webhook_events_total`
+  - `line_webhook_events_success_total`
+  - `line_webhook_events_error_total`
+  - `line_webhook_event_duration_seconds`
+- 但 panel inventory 不應硬等於 4，因為同一個 metric family 可能需要不同觀察角度。
+- 綜合前面對 counter 語意、`increase()[5m]` vs `increase()[1m]`、以及 raw total / trend 用途差異的整理後，第一版 App dashboard panel inventory 先收斂成 6 格：
+  - `Webhook Events Total by Event Type`
+  - `Webhook Events Recent Activity (5m)`
+  - `Webhook Success Events (5m)`
+  - `Webhook Error Events (5m)`
+  - `Webhook Average Duration`
+  - `Webhook P95 Duration`
+- 這 6 格對應的意圖如下：
+  - 第一格看累積總量與 event type 分布，回答「目前系統總共接了哪些 webhook event」。
+  - 第二格看近 5 分鐘活動量，回答「最近是否有一波 webhook 活動」。
+  - 第三、四格把 success / error 拆開，回答「最近成功與失敗的處理量如何」。
+  - 第五、六格把 latency 拆成平均值與高分位，回答「一般延遲」與「尾延遲」是否健康。
+- 這也代表這次不採用「只有 4 格、每個 metric family 對一格」的簡化版本；因為那會把 total 與 recent activity 混在一起，也會把 latency 的平均與尾部風險混在一起。
+- 另外，這一步也維持前面的收斂：近期活動主 panel 先以 `5m` 為主，不把 `1m` 當成預設主 panel；若後面覺得需要更即時脈衝視角，再考慮補一張額外 panel。
 
 #### AI 判讀與收斂
 
-- 待回填
+- Step 8 的核心收斂已經成立：App dashboard 應該用「問題導向」來定 panel，而不是用「metric family 數量」來定 panel。
+- 這個結論和 Node dashboard 那邊學到的是同一件事：同一個 metrics family 完全可能需要兩個以上 panel，因為它們回答的是不同問題。
+- 目前這 6 格版本已經足夠支撐 W7 minimum spec，而且也能把這次 counter semantics lesson 真正學到的邊界保留下來。
+- 最重要的兩個設計決策是：
+  - total 與 recent activity 分開，不讓單一 panel 同時承擔「總量」和「近窗活動」兩種語意。
+  - latency 拆成 average 與 p95，不讓單一平均值掩蓋尾端慢請求。
+- 因此下一步就不再是討論 App dashboard 要幾格，而是直接進 Step 9：逐一替這 6 個 panels 定 PromQL。
 
 #### 目前狀態
 
-- 未開始
+- 已完成
 
 ### Step 9
 
@@ -333,17 +396,115 @@ sum by (event_type) (increase(line_webhook_events_total[5m]))
 - 對每一個 panel 明確寫下它是回答「總量」、「近窗活動」、「成功 / 錯誤」、「平均延遲」還是「高分位延遲」。
 - 若某個 panel 使用 `increase()`，也同步記下它是看趨勢，不是逐次精準對帳。
 
-#### 實際執行內容與結果
+#### 實際執行內容
 
-- 待回填
+- 核心原則先固定三條：
+  - total panel 用 raw counter，回答累積總量，不混入近窗估算。
+  - activity / success / error panels 用 `increase(...[5m])`，回答最近 5 分鐘是否有一波事件量變化。
+  - duration panels 用 histogram 慣用寫法，分別回答平均延遲與 p95 尾延遲。
+- 第一版 panel-to-query 對應如下。
+
+`Webhook Events Total by Event Type`
+
+- 建議 visualization type：`Time series`
+- 理由：這格雖然是看累積總量，但在 Grafana 的一般 dashboard 編輯流程裡，Prometheus 預設通常會先以 range query 呈現；若直接套 `Bar chart`，X 軸很容易被時間點塞滿，畫面反而變成視覺噪音。
+
+```promql
+sum by (event_type) (line_webhook_events_total)
+```
+
+- 這格回答的是累積總量與 event type 分布，所以直接用 raw counter 聚合，不用 `increase()`。
+- 第一版先用 `Time series` 會更穩，因為它能自然呈現各 event type 的累積曲線，也較符合目前 dashboard 其他 panels 的閱讀方式。
+- 若未來真的想把這格改成「只看當下總量比較」而不是看時間上的累積過程，較合理的替代方向會是 `Bar gauge` 或 `Table` 搭配 instant query，而不是直接用目前這種 `Bar chart` + range query 組合。
+
+`Webhook Events Recent Activity (5m)`
+
+- 建議 visualization type：`Time series`
+- 理由：這格是看最近 5 分鐘活動量的變化，核心是時間趨勢，不是單點比較。
+
+```promql
+sum by (event_type) (increase(line_webhook_events_total[5m]))
+```
+
+- 這格回答的是最近 5 分鐘活動量，延續前面 lesson 的收斂，主 panel 先用 `5m` 而不是 `1m`。
+
+`Webhook Success Events (5m)`
+
+- 建議 visualization type：`Time series`
+- 理由：這格要和 recent activity 對齊時間語意，方便觀察最近一段時間成功處理量是否跟著活動量上升。
+
+```promql
+sum by (event_type) (increase(line_webhook_events_success_total[5m]))
+```
+
+- 這格回答最近成功處理量，維持和 recent activity 相同的時間語意，方便橫向比對。
+
+`Webhook Error Events (5m)`
+
+- 建議 visualization type：`Time series`
+- 理由：錯誤量本身也是時間上的事件量變化，先用 time series 才看得出是否在某段時間突然冒出錯誤尖峰。
+
+```promql
+sum by (event_type, error_type) (increase(line_webhook_events_error_total[5m]))
+```
+
+- error counter 額外帶有 `error_type` label，所以這格保留 `error_type` 維度，讓 panel 同時看得到是哪一類 event、哪一類錯誤。
+- 若後面發現 legend 太亂，再考慮把這格拆成 table 或只保留 `error_type` 維度；但第一版先保持 time series，優先保留時間脈絡。
+
+`Webhook Average Duration`
+
+- 建議 visualization type：`Time series`
+- 理由：平均延遲不是只看一個瞬間數字，而是看某段時間內有沒有變慢，所以先用 time series 最合適。
+
+```promql
+1000 * (
+  sum by (event_type) (rate(line_webhook_event_duration_seconds_sum[5m]))
+  /
+  sum by (event_type) (rate(line_webhook_event_duration_seconds_count[5m]))
+)
+```
+
+- 這格用 histogram 的 `_sum / _count` rate 算平均延遲，並在 query 端直接乘上 `1000` 轉成毫秒，回答一般情況下每種 event 的平均處理時間。
+- 單位建議設成 `milliseconds (ms)`，但前提是 query 本身也已轉成毫秒；不能只改面板單位而不改 query，否則會變成把秒值錯標成毫秒。
+
+`Webhook P95 Duration`
+
+- 建議 visualization type：`Time series`
+- 理由：p95 的價值就在觀察尾延遲是否在某個時間段惡化，所以同樣應保留時間軸。
+
+```promql
+1000 * histogram_quantile(
+  0.95,
+  sum by (le, event_type) (rate(line_webhook_event_duration_seconds_bucket[5m]))
+)
+```
+
+- 這格用 histogram bucket 做 p95，並在 query 端直接乘上 `1000` 轉成毫秒，回答尾端慢請求是否有惡化。
+- 單位同樣建議設成 `milliseconds (ms)`，並和 average duration 保持一致；同樣不能只改顯示單位而不改 query。
+
+#### 結果
+
+- 這一步目前完成的是設計稿收斂，不是 Grafana 內的實際落地。
+- 也就是說，現在已經把 Step 8 確認的 6 個 App panels，逐一對應到第一版 PromQL 與 visualization type；但這些查詢尚未逐一放進 `WatchMind Apps` 驗證畫面表現。
+- 到這一步為止，6 格 panel 都已有第一版 query 與對應的 visualization type，而且每一格都能對應到一個明確問題，不再只是把 metric 名稱原樣貼上去。
+- 真正的 panel 建立、畫面檢查與 query 實跑，留到 Step 10。
 
 #### AI 判讀與收斂
 
-- 待回填
+- Step 9 目前能成立的判讀，只是「設計層已可進入實作」，還不是「dashboard 已驗證完成」。
+- 第一版設計已經足夠進入實作階段，因為每一格 panel 的語意與 query 類型都已對齊。
+- 最重要的設計一致性有三個：
+  - 所有事件量 panel 都清楚區分「累積總量」與「近窗活動」，避免一張圖混兩種語意。
+  - success / error 都採 `5m` 視窗，讓它們可以和 recent activity panel 用同一個時間語意互相比較。
+  - duration 明確拆成 average 與 p95，避免平均值掩蓋尾端風險。
+- 另外也有兩個實務上的提醒：
+  - `Webhook Error Events (5m)`` 在低流量情境下可能常常是空的，這是正常現象，不代表 panel 壞掉。
+  - duration 相關 panel 若某些 event type 在觀察窗內沒有樣本，也可能短暫不出線，這同樣是 histogram rate 查詢在低流量條件下的正常表現。
+- 因此 Step 9 應收斂成「設計稿已完成」，下一步直接進 Step 10，把這 6 個 panels 實際放進 `WatchMind Apps` 並做畫面驗收。
 
 #### 目前狀態
 
-- 未開始
+- 已完成（設計稿，待實作驗證）
 
 ### Step 10
 
@@ -357,14 +518,45 @@ sum by (event_type) (increase(line_webhook_events_total[5m]))
 - 檢查 panel 標題、legend、單位、時間範圍與整體閱讀順序。
 - 確認 `Node Dashboard` 與 `App Dashboard` 加起來，已能覆蓋 W7 的 Node 3 + App 4 + dashboard 交付線。
 
-#### 實際執行內容與結果
+#### 實際執行內容
 
-- 待回填
+- 把 Step 9 已確認的 app panels 實際放進 dashboard。
+- 檢查 panel 標題、legend、單位、時間範圍與整體閱讀順序。
+- 確認 `Node Dashboard` 與 `App Dashboard` 加起來，已能覆蓋 W7 的 Node 3 + App 4 + dashboard 交付線。
+
+#### 結果
+
+- 已將 Step 9 設計的 6 個 App panels 實際放進 `WatchMind Apps`，並用一輪受控測試做首輪驗證：再次以 rich menu 觸發 `6` 次 `postback`。
+- `Webhook Events Total by Event Type`：`postback` 累積值由 `6` 上升到 `12`，這表示 raw total panel 的語意正確，能清楚反映這一輪新增的 6 次事件。
+- `Webhook Events Recent Activity (5m)`：`postback` 在最近 5 分鐘內出現約 `6.31` 的上升，這次已非常接近人工觸發的 6 次操作，明顯比前面那輪約 `4` 的情況更貼近人工測試結果。
+- `Webhook Success Events (5m)`：同樣出現約 `6.31` 的上升，且和 recent activity 幾乎同步，代表這 6 次 `postback` 在這一輪測試裡都被成功處理。
+- `Webhook Average Duration`：在 query 端正確乘上 `1000` 之後，最新圖面顯示 `postback` 平均延遲大約落在 `450ms` 到 `600ms` 區間，而不是先前誤讀的 `12ms`。
+- `Webhook P95 Duration`：`postback` 約落在 `950ms` 附近，表示在這一輪少量樣本下，尾延遲接近 `1s` 等級。
+- `Webhook Error Events (5m)`：維持 `No data`，在這次沒有錯誤事件的情況下是合理結果，不代表 panel 設定失敗。
+- 畫面層面上，6 個 panels 都已有明確回應或合理的空狀態，代表 `WatchMind Apps` 已具備可 demo 的基本可讀性。
 
 #### AI 判讀與收斂
 
-- 待回填
+- 這一輪最重要的訊號有三個。
+- 第一，事件量相關的三張圖已經彼此對齊：
+  - total 從 `6 -> 12`
+  - recent activity 約 `6.31`
+  - success 約 `6.31`
+- 這代表 App dashboard 的核心事件流是通的，而且這次 `increase()[5m]` 的估算已經相當貼近人工測試值；至少從 demo 與教學角度來說，這組 panel 已可被信任。
+- 第二，`Webhook Error Events (5m)` 為空是合理現象，不是壞掉。因為這輪測試本來就沒有失敗事件，所以沒有 error series 很正常。
+- 第三，duration 兩張圖是有訊號的，但解讀要比事件量更保守：
+  - average duration 在 query 正確轉成毫秒後，最新圖面約落在 `450ms` 到 `600ms`，這代表這一輪測試的平均處理時間其實是數百毫秒級，而不是先前誤以為的十幾毫秒。
+  - p95 在 query 正確轉成毫秒後，約 `950ms`；在只有 6 筆樣本、且 histogram bucket 有固定粒度的情況下，容易被單一較慢樣本或 bucket 邊界放大，因此目前比較適合讀成「這輪曾出現接近 1 秒的尾延遲」，而不是直接下結論說整體系統常態上有 1 秒延遲。
+- 也就是說，事件量 panels 現在已經足夠穩，可以當作 W7 主展示面；duration panels 也可保留，但更適合當補充觀察，而不是拿來做過度精細的效能結論。
+- 綜合來看，`WatchMind Apps` 已達到 W7 demo 所需的最小可用狀態：
+  - 有 total
+  - 有 recent activity
+  - 有 success
+  - 有 error
+  - 有 average duration
+  - 有 p95 duration
+- 因此 Step 10 可以收斂成首輪驗證已完成；若後面還要再調整，優先順序會是「把 duration queries 明確轉成 `ms`，並同步設定 panel 單位」，而不是重改整體 panel 結構。
 
 #### 目前狀態
 
-- 未開始
+- 已完成（首輪驗證）
