@@ -109,15 +109,22 @@ changes(line_webhook_events_total{event_type="postback"}[30m])
 
 #### 實際執行內容與結果
 
-- 待回填
+- 對照 `/Users/kyo/Code/WeaMind/app/line/metrics.py`，目前 `line_webhook_events_total`、`line_webhook_events_success_total`、`line_webhook_events_error_total` 與 `line_webhook_event_duration_seconds` 都直接使用 `prometheus_client` 的預設 registry。
+- 同一個檔案裡還有一段很直接的註解：`This W7 MVP uses the default in-process registry to keep instrumentation minimal. Cross-worker aggregation can be added later if the deployment moves to Prometheus multiprocess mode.` 這代表目前實作本來就沒有打算支援 cross-worker aggregation。
+- 在這份實作裡，沒有看到 `MultiProcessCollector`、`PROMETHEUS_MULTIPROC_DIR`、或其他 multiprocess aggregation 相關設計；目前 `/metrics` 回傳的是單一 process 眼中的 registry 狀態。
+- 再對照 `manifests/deployment.yaml`，目前 `weamind` deployment 仍明確以 `uvicorn --workers 2` 啟動，而且 `replicas` 也仍是 `2`。
+- 換句話說，現在的 runtime 組合是：每個 Pod 內有 2 個彼此獨立的 Python worker process，而每個 process 又各自持有自己的 in-memory Prometheus registry。
 
 #### AI 判讀與收斂
 
-- 待回填
+- Step 2 基本上已經把 Step 1 的推測坐實了。
+- Step 1 從 PromQL 端看到的是：某條 `postback` raw counter 序列本身就不穩、`resets()` 與 `changes()` 異常偏高。Step 2 則從 runtime 端補上了解釋：目前 metrics 實作確實是 in-process registry，而 deployment 也確實還在多 worker 模式下運作。
+- 這兩組證據拼起來後，最合理的診斷就是：現在 Prometheus 抓到的 `line_webhook_events_total`，不是來自單一穩定的 counter source，而是來自多個彼此不共享 registry 的 process 狀態；因此 `increase()` 算出的長時間流量不可信。
+- 這也讓今天的下一步非常清楚：先不要再糾結 panel 調法，而是把 deployment 的 `--workers` 從 `2` 降到 `1`，做一輪最小控制變數實驗。若異常數字明顯收斂，就可以把這題正式收斂成「multi-worker + in-process registry」造成的 runtime 問題。
 
 #### 目前狀態
 
-- 未開始
+- 已完成
 
 ### Step 3
 
@@ -128,30 +135,58 @@ changes(line_webhook_events_total{event_type="postback"}[30m])
 #### 預計採取的動作
 
 - 將 deployment 的 `--workers` 從 `2` 改為 `1`，rollout 並確認 Pods 已更新。
-- 用固定次數的 rich menu / webhook 操作重測，並重新觀察 `/metrics`、Prometheus query 與 Grafana panel。
+- 在 rollout 後先重看同一組 query，確認異常數字是否至少出現第一輪收斂跡象。
 
 #### 實際執行內容與結果
 
-- 待回填
+- 已將 `manifests/deployment.yaml` 裡的 `uvicorn --workers` 從 `2` 改為 `1`，作為最小控制變數實驗。
+- `kubectl apply -f /Users/kyo/Code/weamind-infra/manifests/deployment.yaml` 成功，deployment 已重新配置。
+- `kubectl rollout status deployment/weamind -n weamind` 最終回報 `deployment "weamind" successfully rolled out`。
+- 進一步用 `kubectl get deployment weamind -n weamind -o jsonpath='{.spec.template.spec.containers[0].command}'` 確認目前 template command 已變成 `"--workers","1"`。
+- 再用 `kubectl get pods -n weamind -l app=weamind -o wide` 確認新的兩個 Pods 都已為 `1/1 Running`，表示目前 deployment 已在 `replicas=2`、`workers=1` 的條件下穩定運作。
+- 到這一步為止，deployment 控制變數已經成功切換；下一步只剩重新觀察 `/metrics`、Prometheus query 與 Grafana panel 是否明顯收斂。
+- rollout 完成約 5 分鐘後，重新執行同一組 4 個 query：
+	- `line_webhook_events_total{event_type="postback"}` 仍會看到兩條序列，但這在 `replicas=2` 的情況下本來就正常；現在的重點不再是「有兩條」，而是它們是否各自呈現合理的 per-pod 累積行為。
+	- `sum by (event_type) (increase(line_webhook_events_total[5m]))` 的 `postback` 值已明顯往下掉，從原本常見的 `20` 到 `40+` 開始滑到接近個位數，這代表異常幅度有收斂訊號。
+	- 但 `resets(...[30m])` 與 `changes(...[30m])` 目前仍然偏高，而且兩條序列的數值差異很大。
+- 這一組結果不能直接拿來當最終判決，因為現在距離 rollout 只有約 5 分鐘，而我們看的 query window 仍是 `[5m]` 與 `[30m]`；它們一定還混著 rollout 前的舊資料，`resets()` 也會把這次正常 rollout 造成的 counter reset 算進去。
 
 #### AI 判讀與收斂
 
-- 待回填
+- Step 3 的第一半已完成，而且結果很乾淨：我們沒有改動 replicas、metrics code 或 query，只改了單一控制變數 `workers`。
+- 這代表接下來如果圖表行為明顯變正常，因果鏈會相對乾淨，足以支持「問題主要來自 multi-worker + in-process registry」這個診斷。
+- 反過來說，如果圖還是維持原樣，那也代表我們該回頭檢查更細的 scrape target / runtime 行為，而不是再懷疑 rollout 有沒有真的生效。這一層現在已經驗證完了。
+- 目前看到的第二輪結果，比較像「已有改善訊號，但觀察窗還不乾淨」，而不是「已經推翻原本假設」。
+- 第二張 `increase()` 圖往下掉，這其實是好訊號，因為它表示原本那種長時間維持高值的假流量正在收斂。
+- 但第三、四張圖現在還不能用來反證或證成太多，因為 `[30m]` 視窗裡必然同時包含 rollout 前的壞資料，以及 rollout 本身造成的合法 reset。
+- 所以 Step 3 最穩的結論應該是：`workers=1` 後，異常數字已有明顯收斂跡象；但若要正式下結論，下一輪應改看更乾淨的時間窗，例如等觀察窗完全跨過 rollout 之後，再用較短範圍重看 raw counter 與 `increase()`，而不要急著拿目前的 `resets(...[30m])` / `changes(...[30m])` 做最終裁決。
 
 #### 目前狀態
 
-- 未開始
+- 已完成
 
 ### Step 4
 
 #### 這一步要驗證什麼
 
-- 在新的診斷結果之上，今天能否把 App 4 panel 與 W7 demo MVP 做到合理收尾。
+- 在 `workers=1` 的條件下，用一輪受控的 rich menu / postback 操作，確認新的 raw counter 與 `increase()` 是否只對真實操作產生反應，並據此判斷 App 4 panel 與 W7 demo MVP 能否合理收尾。
 
 #### 預計採取的動作
 
-- 若數值已可信，完成最小 App 4 panel 收尾並確認 W7 完成線。
-- 若數值仍不可信，將今天結論收斂成已定位根因與後續方案，不假裝 dashboard 已完成。
+- 先等 rollout 後觀察窗滿 15 分鐘，避免 `Last 15 minutes` 仍混入 rollout 前資料。
+- 在沒有其他干擾操作的前提下，固定用 rich menu 觸發 `6` 次 `postback`，節奏盡量平均，例如每 `5` 到 `8` 秒按一次。
+- 按完後先重看兩個主查詢：
+
+```promql
+line_webhook_events_total{event_type="postback"}
+```
+
+```promql
+sum by (event_type) (increase(line_webhook_events_total[5m]))
+```
+
+- 這一輪的主判準不是數字是否剛好等於 `6`，而是：raw counter 是否只往上加、`increase()` 是否只在這 6 次操作後短暫上升，而不再像之前那樣在沒有操作時長時間維持高值。
+- 若這一輪結果可信，再往 W7 demo MVP 的 App 4 panel 收尾走；若仍不可信，則把今天結論收斂成已定位根因與後續方案，不假裝 dashboard 已完成。
 
 #### 實際執行內容與結果
 
