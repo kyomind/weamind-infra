@@ -12,7 +12,7 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 
 優先處理的是：
 
-1. 已在 QA 中被修正並收斂的判斷軸
+1. 已在 QA 中被修正並收斂的判斷軸（若存在）
 2. command drill 中已釐清的工具邊界、證據邊界與 debug sequence
 3. `05-note.md` 的 `## Notes` 中已成熟、適合長期複習的補充理解
 
@@ -41,7 +41,7 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 
 ### 主要來源
 
-1. `02-qa.md`
+1. `02-qa.md`（若存在）
 2. `03-command.md`（若存在；不存在屬正常情況）
 3. `05-note.md` 的 `## Notes`
 
@@ -61,7 +61,7 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 
 1. 一次只處理單一 lesson。
 2. 先確認 lesson 的主要內容已經有足夠收斂，再決定是否生成或更新卡片。
-3. 優先從 `02-qa.md`、`03-command.md`（若存在）、`05-note.md` 的 `## Notes` 抽取成熟內容。
+3. 優先從 `02-qa.md`（若存在）、`03-command.md`（若存在）、`05-note.md` 的 `## Notes` 抽取成熟內容。
 4. 用 `04-report.md` 檢查卡片是否和最終收斂一致。
 5. 每張卡片只放一個概念，背面保留最小必要上下文。
 6. 保留仍然可用的舊卡片，只更新真正值得精修或補齊的地方。
@@ -76,10 +76,9 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 1. 無法判斷要處理哪一份 lesson
 2. lesson 不存在
 3. `05-note.md` 不存在
-4. `02-qa.md` 不存在
-5. `04-report.md` 尚未完成，且無法作為最終校對依據
-6. lesson 內容仍停留在初始化骨架，尚未出現足夠成熟的卡片素材
-7. 現有 `## Flashcards` 已經足夠完整可用，沒有明顯補強空間
+4. `04-report.md` 尚未完成，且無法作為最終校對依據
+5. lesson 內容仍停留在初始化骨架，尚未出現足夠成熟的卡片素材
+6. 現有 `## Flashcards` 已經足夠完整可用，沒有明顯補強空間
 
 ## 執行方式
 
@@ -96,7 +95,6 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 
 至少讀取：
 
-- `<lesson>/02-qa.md`
 - `<lesson>/04-report.md`
 - `<lesson>/05-note.md`
 - `learning/lessons/README.md`
@@ -104,6 +102,7 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 
 若存在，也讀取：
 
+- `<lesson>/02-qa.md`
 - `<lesson>/03-command.md`
 
 `03-command.md` 是 optional。若這份 lesson 沒有 command drill，缺少這個檔案是正常情況，不應因此判定 lesson 異常，也不需要為了生成卡片而停止。
@@ -113,7 +112,7 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 
 優先保留這幾類內容：
 
-1. 在 `02-qa.md` 的 `AI 修正與補充` 中已經收斂出的判斷軸
+1. 在 `02-qa.md` 的 `AI 修正與補充` 中已經收斂出的判斷軸（若存在）
 2. 在 `03-command.md` 中已經釐清的工具分工、證據邊界與最小 sequence
 3. 在 `05-note.md` 的 `## Notes` 中已經被整理成穩定短版理解的內容
 4. 與 WeaMind 實際架構、設計取捨、debug sequence 直接相關的 lesson 特定知識
@@ -189,7 +188,7 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 
 ## 完成前檢查
 
-1. 卡片主要來自 `02-qa.md`、`03-command.md`（若存在）、`05-note.md` 的 `## Notes`
+1. 卡片主要來自 `02-qa.md`（若存在）、`03-command.md`（若存在）、`05-note.md` 的 `## Notes`
 2. `04-report.md` 只用來校對最終收斂，而不是整份直接拆卡
 3. 卡片保留 lesson 特定價值，而不是泛化成空泛 Kubernetes 常識
 4. 每張卡片都能獨立成立，且一眼看出它在回答什麼
