@@ -16,7 +16,10 @@
 2. 對照 WeaMind app metrics 實作與目前 deployment 命令，確認多 worker + 預設 registry 是否成立。
 3. 做 `workers: 2 -> 1` 的最小 deployment 診斷實驗，並確認 rollout 已完成。
 4. 重看 `/metrics`、Prometheus query 與 Grafana panel，判斷異常數值是否消失或明顯收斂。
-5. 視結果決定今天是直接收尾 App 4 dashboard，還是把缺口正式留成已定位問題。
+5. 先把 dashboard 收尾策略定稿，決定是單一 dashboard 還是拆成 Node / App 兩個 dashboard。
+6. 先完成 Node dashboard：從內建 node-exporter / mixin panels 裡挑出 W7 需要的 3 個指標。
+7. 再完成 App dashboard：逐一決定 App 4 metrics 應該用哪些 panel 與查詢語法呈現。
+8. 完成 App dashboard 後，再回收整體 W7 demo MVP 的完成線與後續收尾文件。
 
 ## 驗收訊號與回退點
 
@@ -95,6 +98,154 @@ changes(line_webhook_events_total{event_type="postback"}[30m])
 #### 目前狀態
 
 - 已完成
+
+### Step 5
+
+#### 這一步要驗證什麼
+
+- 先把 W7 dashboard 的最小資訊架構定下來，避免一邊做 panel 一邊改主題，讓後面 query 與畫面設計反覆重來。
+
+#### 預計採取的動作
+
+- 決定 dashboard 是否拆成 `Node Dashboard` 與 `App Dashboard` 兩份。
+- 定義每個 dashboard 的角色、最小 panel 數，以及它們各自回答什麼問題。
+- 若同一個 metric family 需要兩種展示語意，例如總量與近窗活動，這一步就先明講，不等到畫 panel 時才臨時決定。
+
+#### 實際執行內容與結果
+
+- 待回填
+
+#### AI 判讀與收斂
+
+- 待回填
+
+#### 目前狀態
+
+- 未開始
+
+### Step 6
+
+#### 這一步要驗證什麼
+
+- Node dashboard 是否能直接重用現成 stack 內建 panel / query，而不需要重新發明 Node 3 的查詢。
+
+#### 預計採取的動作
+
+- 從現成 `node-exporter` / mixin dashboard 裡，鎖定對應 W7 minimum spec 的 3 個 panel：CPU usage、memory usage、filesystem usage。
+- 記下這 3 個 panel 的來源與要搬到新 dashboard 的對應 query / panel 類型。
+
+#### 實際執行內容與結果
+
+- 待回填
+
+#### AI 判讀與收斂
+
+- 待回填
+
+#### 目前狀態
+
+- 未開始
+
+### Step 7
+
+#### 這一步要驗證什麼
+
+- Node dashboard 是否能在最小成本下完成，並直接成為 W7 Node 3 的展示面。
+
+#### 預計採取的動作
+
+- 建立或整理 `Node Dashboard`。
+- 將 Step 6 選好的 3 個 node panels 放進 dashboard，確認標題、單位與時間範圍看起來合理。
+
+#### 實際執行內容與結果
+
+- 待回填
+
+#### AI 判讀與收斂
+
+- 待回填
+
+#### 目前狀態
+
+- 未開始
+
+### Step 8
+
+#### 這一步要驗證什麼
+
+- App dashboard 的 panel 結構應該怎麼設計，才能同時保住 W7 minimum spec 和這次學到的 counter / query 邊界。
+
+#### 預計採取的動作
+
+- 先列出 App dashboard 的 panel inventory。
+- 至少決定這些 panel 是否存在：
+	- received total 或 total by event type
+	- recent events / activity window
+	- success events
+	- error events
+	- average duration
+	- p95 duration
+- 若同一個 metric family 要拆成兩個 panel，例如 total 與近 5 分鐘活動，這一步就先寫清楚理由。
+
+#### 實際執行內容與結果
+
+- 待回填
+
+#### AI 判讀與收斂
+
+- 待回填
+
+#### 目前狀態
+
+- 未開始
+
+### Step 9
+
+#### 這一步要驗證什麼
+
+- App dashboard 每一個 panel 的 PromQL 是否與它想回答的問題一致，而不是只把 raw metrics 名稱直接貼上去。
+
+#### 預計採取的動作
+
+- 逐一替 App dashboard 的 panel 定 query。
+- 對每一個 panel 明確寫下它是回答「總量」、「近窗活動」、「成功 / 錯誤」、「平均延遲」還是「高分位延遲」。
+- 若某個 panel 使用 `increase()`，也同步記下它是看趨勢，不是逐次精準對帳。
+
+#### 實際執行內容與結果
+
+- 待回填
+
+#### AI 判讀與收斂
+
+- 待回填
+
+#### 目前狀態
+
+- 未開始
+
+### Step 10
+
+#### 這一步要驗證什麼
+
+- App dashboard 是否已經具備最小可 demo 能力，並能和 Node dashboard 一起構成 W7 observability MVP。
+
+#### 預計採取的動作
+
+- 把 Step 9 已確認的 app panels 實際放進 dashboard。
+- 檢查 panel 標題、legend、單位、時間範圍與整體閱讀順序。
+- 確認 `Node Dashboard` 與 `App Dashboard` 加起來，已能覆蓋 W7 的 Node 3 + App 4 + dashboard 交付線。
+
+#### 實際執行內容與結果
+
+- 待回填
+
+#### AI 判讀與收斂
+
+- 待回填
+
+#### 目前狀態
+
+- 未開始
 
 ### Step 2
 

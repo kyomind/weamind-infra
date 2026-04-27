@@ -151,6 +151,16 @@ sum by (event_type) (increase(line_webhook_events_total[5m]))
 	- 或另外用 event log / analytics 系統保存精準逐筆資料
 - 這題可以收斂成一句話：**raw counter 比較適合驗證總次數；`increase()` 比較適合驗證某段時間內是否出現一波流量上升。兩者沒有矛盾，只是在回答不同問題。**
 
+### App dashboard 要用 `1m` 還是 `5m`
+
+- 這題沒有單一永遠正確的答案，因為 `increase()[1m]` 和 `increase()[5m]` 本來就在回答不同問題。
+- `increase(...[5m])` 比較像在看最近 5 分鐘內有沒有一波活動，畫面會比較平滑，也比較適合平常放在 dashboard 上長時間看趨勢。
+- `increase(...[1m])` 會更接近「剛剛這一分鐘有沒有點擊」這種即時脈衝感，但它也會更抖，對 scrape timing 更敏感，在低流量情境下更不穩。
+- 所以 `5m` 的缺點確實是會把同一波流量在接下來幾個 scrape 點裡持續納入，看起來像拖尾；但這不是它不準，而是它本來就在回答「最近 5 分鐘整體活動量」這個問題。
+- 若需求是平常 dashboard 主要觀察用，我們先選 `5m` 當主 panel 比較穩。
+- 若之後想補一張更偏即時脈衝感的圖，可以再加一張 `1m` panel，但不把它當成唯一主指標。
+- 所以這次 W7 的收斂決策是：**App dashboard 主 panel 先維持 `5m`，若後面需要更即時的補充視角，再額外加 `1m` panel，而不是一開始就把主 panel 換成 `1m`。**
+
 
 
 ## Flashcards
