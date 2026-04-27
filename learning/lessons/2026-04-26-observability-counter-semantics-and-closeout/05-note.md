@@ -99,6 +99,58 @@ Counter 的規則是：**只能往上加，不能往下減**。如果看到數�
 - 當同一個 metrics endpoint 背後其實對應到多個彼此不共享 registry 的 Python process 時，Prometheus 看到的值就可能在不同 in-memory 狀態之間切換。
 - 所以這裡不是 `increase()` 算錯，而是它對一條已失真的 counter 序列，做了符合規則、但不符合真實業務流量的換算。
 
+### Pod 重啟後，Prometheus 怎麼面對時間連續性
+
+- 先講最短版：**Prometheus 不會把舊 Pod 的 counter 直接接到新 Pod 上。** 舊 Pod 的 series 會停在最後一個樣本，新 Pod 則會以新的 series 身分重新開始。
+- 也就是說，像 `instance=10.42.x.x:8000` 這種帶有 Pod IP 的 target，一旦 Pod 被 rollout 換掉，對 Prometheus 來說通常就是「舊 series 結束、新 series 出現」，而不是同一條線被無縫延續。
+- 所以如果你直接看帶 `instance` 這種易變 label 的單條 raw counter，Pod 重啟本來就會破壞那條線的連續性。這不是 Prometheus 壞掉，而是 workload identity 本來就變了。
+- 真正在實務上要保的，通常不是「某一顆 Pod 的單條 counter 永遠連續」，而是**服務層或工作負載層的觀察連續性**。這通常是靠 query 聚合來做到，例如：
+
+```promql
+sum by (event_type) (increase(line_webhook_events_total[5m]))
+```
+
+- 這種 query 的意思不是去硬接某一條 Pod series，而是把同一段時間內、屬於這個服務的多條 series 一起納入計算，再做較高層的觀察。
+- 也因此，Prometheus 對 Pod 重啟的處理方式比較像：
+	- 保留舊 Pod 的歷史樣本
+	- 讓舊 series 停止更新並進入 stale
+	- 對新 Pod 開始記新的 series
+	- 查詢時再由 PromQL 決定要如何聚合、忽略哪些易變 label、以及怎麼處理 counter reset
+- 所以如果問題是「Prometheus 怎麼保時間連續性」，更準確的答案是：**它保的是歷史資料與可查詢性，不是替你把 Pod identity 無縫縫合。真正的連續性通常是在 query / aggregation 這一層建立的。**
+- 這也順手解釋了為什麼我們今天會一直避免過度盯著單條 Pod raw counter：那一層對 debug 很有用，但它本來就不是最終想要維持的 product / service-level 觀察面。
+
+### 可以把 Prometheus 理解成盡量忠實記錄樣本，但服務語意問題常出在 query 層
+
+- 這一輪追問的核心很重要：Prometheus 比較像是在盡量保留「每次 scrape 當下實際觀察到了什麼」，而不是保證你最後查出來的每條線都天然對應到想看的業務語意。
+- 所以比較穩的切法是把它分成兩層：
+	- 資料收集層：Prometheus 盡量忠實記下每次 scrape 拿到的樣本
+	- 查詢與解讀層：PromQL、aggregation、label 選擇與 metric 模型，決定這些樣本最後會被解讀成什麼服務指標
+- 換句話說，Prometheus 原始記錄可能是真的，但如果我們把不該拼在一起的 series 拼在一起、忽略了 identity 會變、或把不適合做 `increase()` 的序列拿去換算，最後得到的業務解讀仍然可能失真。
+- 這也是為什麼這次問題不能簡化成「Prometheus 記錯資料」；更準確地說，是：**Prometheus 記下了它真的看到的樣本，但我們原本對這些樣本能否被當成穩定 counter source 的假設不成立。**
+- 若要再口語一點，可以記成：**Prometheus 比較像誠實的記錄員；真正容易出錯的地方，常常不是它記了什麼，而是我們後來怎麼把那些資料解讀成服務指標。**
+
+### 為什麼手動按了 6 次，但 `increase()` 的峰值只有 4
+
+- 這題最重要的先釐清一句：`increase()` 不是在「數事件本身」，而是在**根據 scrape 到的離散樣本，估算某個時間窗內 counter 增加了多少**。
+- 所以 raw counter 和 `increase()` 其實在回答不同問題：
+	- raw counter：最後累積到多少
+	- `increase()[1m]` / `increase()[5m]`：某個時間窗內估計增加了多少
+- 這次 raw counter 很清楚：兩個 Pod 最後各到 `3`，總共就是 `6`。這是最適合用來驗證「這次手動操作總共發生了 6 次」的證據。
+- 但 `sum by (event_type) (increase(line_webhook_events_total[1m]))` 或 `[5m]` 沒有剛好到 `6`，不代表系統少算，也不代表 Prometheus 壞掉；更常見的原因是：
+	- Prometheus 不是 event log，它只看到每次 scrape 當下的 counter 值
+	- 你的 6 次點擊發生在很短時間內，而且流量很小
+	- scrape interval 目前是 `30s`
+	- 這些點擊又分散到兩個 Pod 的兩條 series 上
+	- 新 series 在觀察窗內未必從 `0` 被完整看到
+- 在這種條件下，`increase()` 比較像「估算最近這段時間確實有一波 `postback` 增加」，而不是「精準逐筆對帳器」。
+- 所以這次看到峰值大約 `4`，比較合理的解讀是：Prometheus 在目前這組樣本密度下，看到了明確上升趨勢，但沒有足夠條件把那 6 次手動操作精準還原成峰值 `6`。
+- 這也是為什麼在低流量、短時間窗、fresh series 的測試裡，`increase()` 比較適合拿來看趨勢與方向，而不是要求它精準等於人工按了幾次。
+- 如果需求真的是「每分鐘精準點擊數」，常見的做法通常會是：
+	- 提高 scrape 頻率，例如從 `30s` 降到 `10s`
+	- 接受它仍是監控估算值，不是事件帳本
+	- 或另外用 event log / analytics 系統保存精準逐筆資料
+- 這題可以收斂成一句話：**raw counter 比較適合驗證總次數；`increase()` 比較適合驗證某段時間內是否出現一波流量上升。兩者沒有矛盾，只是在回答不同問題。**
+
 
 
 ## Flashcards

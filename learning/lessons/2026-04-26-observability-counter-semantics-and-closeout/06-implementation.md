@@ -190,12 +190,20 @@ sum by (event_type) (increase(line_webhook_events_total[5m]))
 
 #### 實際執行內容與結果
 
-- 待回填
+- 在 rollout 後觀察窗已相對乾淨的條件下，進行了一輪受控測試：使用 rich menu 固定觸發 `6` 次 `postback`，約每 `10` 秒操作一次。
+- 第一張 raw counter 圖：`line_webhook_events_total{event_type="postback"}` 顯示兩條 per-pod 序列，最後都收斂到 `3`。這代表兩個 Pod 各自收到 `3` 次 `postback`，合計正好對應這次手動觸發的 `6` 次操作。
+- 更重要的是，這兩條 raw counter 序列在這一輪測試裡都呈現正常的累積行為，不再出現之前那種「沒有真實操作也自己上下亂跳」的情況。
+- 第二張 `sum by (event_type) (increase(line_webhook_events_total[5m]))` 圖則顯示 `postback` 在最近 `5` 分鐘內有一段與手動操作對應的小規模上升，之後維持在約 `4` 到 `3` 左右。
+- 這張圖沒有精準等於 `6`，但它已不再像 rollout 前那樣，在沒有操作時長時間維持 `20` 到 `40+` 的高值假流量。
 
 #### AI 判讀與收斂
 
-- 待回填
+- 這一輪 Step 4 最有力的證據是 raw counter，而不是 `increase()` 的精確數字。
+- raw counter 現在能清楚對應到人工測試結果：兩個 Pod 各累積到 `3`，總和為 `6`。這代表在 `workers=1` 的條件下，序列已恢復成可被正常解讀的 per-pod counter。
+- 第二張 `increase()[5m]` 圖不應被讀成「精確逐次對帳器」。它比較適合回答「最近 5 分鐘是否有一段與手動操作對應的增加趨勢」，而不是要求在低流量、fresh series、離散 scrape 的條件下每一個點都精準等於手動次數。
+- 對這次 W7 demo MVP 而言，原本真正要解的問題是 ghost traffic / 假流量。現在這個問題已經消失，raw counter 也恢復正常，因此可以合理收斂成：`workers=2` 加上 in-process registry 造成序列失真；改成 `workers=1` 後，序列恢復可解讀。
+- 更完整地說，這代表這題對 demo 收尾已經解掉，但不是長期架構的最終解。若未來需要回到多 worker，正式解法仍然會是 multiprocess aggregation，而不是假設目前這版可直接外推到所有部署條件。
 
 #### 目前狀態
 
-- 未開始
+- 已完成
