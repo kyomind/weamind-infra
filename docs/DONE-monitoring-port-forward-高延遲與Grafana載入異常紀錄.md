@@ -129,6 +129,21 @@ Browser -> localhost:3000/9090 -> kubectl port-forward -> localhost:6443 -> auto
 2. 但 cache 只像是助燃因素，不是起火點。
 3. 主因仍是高延遲 `kubectl port-forward` 路徑對 full page reload 很不友善。
 
+### 7. 本地網路品質會明顯影響成功率
+
+後續使用者補充了一個很重要的觀察：
+
+- 使用手機網路與使用住宿網路時，Grafana / Prometheus 經由 port-forward 的體感差異明顯。
+- 某些網路狀態下更容易出現 `broken pipe` 或 `Timeout occurred`。
+
+這代表除了固定的跨洲延遲之外，本地出口品質、封包穩定度、抖動與丟包，也會影響最終結果。
+
+比較精確的說法是：
+
+1. 跨洲高延遲是固定底噪。
+2. 本地網路品質則會決定這條本來就脆弱的 `kubectl port-forward` 路徑，最後是「勉強可用」還是「明顯失敗」。
+3. 因此同一套 alias、同一個 cluster、同一天內，都可能因為使用者所在網路改變而呈現不同穩定度。
+
 ## 代表性錯誤訊息
 
 實際在 CLI 看到的錯誤包含：
@@ -201,6 +216,50 @@ E0429 ... portforward.go:357] "Unhandled Error" err="error creating error stream
 2. 改走 VPN / Tailscale / 其他更接近 data-plane 的路徑。
 3. 若只是看 dashboard，可考慮在更靠近叢集的位置開瀏覽器或遠端桌面。
 
+### 後續研究方向補充
+
+在後續討論中，使用者判斷真正可行且最值得投入的方向，主要還是第一種：
+
+1. 給 Grafana 一條正式且受保護的 GUI 入口。
+
+原因是：
+
+1. 現階段最需要的是穩定打開 Grafana GUI，而不是再繼續微調 `port-forward` 的成功率。
+2. repo 目前本來就已經有 Traefik Ingress 與 Middleware 的使用模式，因此這條路和既有 infra 最一致。
+3. 這條路也最像長期可維護的正式做法，而不是臨時 workaround。
+
+### 若未來要公開 Grafana，認證方向應避免只靠密碼
+
+使用者後續也明確表示：
+
+- 單純暴露到公網再只靠 Grafana 帳密，風險偏高。
+- `ipAllowList` 對使用者本人的動態 IP 情境不太實用。
+
+目前較合理的研究方向是：
+
+1. Grafana 對接外部 OAuth / OIDC 身分提供者，而不是只靠本地帳密。
+2. 讓 MFA 發生在外部 IdP，而不是期待 Grafana 本地帳密系統自己扛完整二階段驗證。
+
+當時討論過、但尚未實作的候選方向包括：
+
+1. Grafana + Google OAuth，直接沿用 Google 帳號本身的 MFA。
+2. Traefik `forwardAuth` + Authentik / Authelia / Keycloak 這類外部身份系統。
+3. Cloudflare Access 這類邊界存取控制方案。
+
+當時的研究結論偏向：
+
+1. 若真的要往正式入口走，應優先研究「Grafana Ingress + 外部身份系統」，而不是「Grafana 本地密碼 + 另外補一個小修小補」。
+
+### 為什麼目前先不實作
+
+雖然上面的方向比較合理，但在這次討論當下，使用者的主線目標仍是 DevOps 轉職整體準備，而不是立即把 monitoring 入口升級成 production-grade 設計。
+
+因此當下決策是：
+
+1. 先保留既有 `port-forward` 作為暫時方案。
+2. 把這次分析與候選方案完整寫成紀錄。
+3. 等之後時間較充裕時，再把 Grafana 正式入口、認證與 MFA 方案作為獨立題目研究或實作。
+
 ## 待處理事項
 
 目前仍有待決定的事項如下：
@@ -209,6 +268,8 @@ E0429 ... portforward.go:357] "Unhandled Error" err="error creating error stream
 2. 是否要同樣調整 `pf-prometheus`，或至少新增一條 pod-based 備用 alias。
 3. 是否要為 Grafana / Prometheus 提供正式且較穩定的 GUI 入口，取代長期依賴 `kubectl port-forward`。
 4. 是否要把這次經驗整理進 lesson / troubleshooting 筆記，作為「control-plane path 不適合互動式 GUI」的案例。
+5. 若之後要做正式入口，應優先比較哪種身份驗證方案最適合目前架構：Google OAuth、Traefik `forwardAuth` + 外部 IdP、或 Cloudflare Access。
+6. 若之後要做正式入口，需再確認公開暴露 Grafana 時的最小安全邊界與憑證、DNS、MFA 流程設計。
 
 ## 若下次要繼續查，建議從哪裡開始
 
