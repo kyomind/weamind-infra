@@ -116,6 +116,96 @@
 - 但前提是：它們各自負責不同的資源集合。
 - 真正不能混用的，不是命令本身，而是**同一個資源不能同時被 Helm 和 raw manifests 共同管理。**
 
+### Helm 題最後必知清單
+
+- 這一段不是新的深水區，而是把今天 Helm 題最容易混的幾個骨架，收成最後的必知清單。
+
+#### 1. Helm 解的是 release 管理，不是 Kubernetes 本身的部署能力
+
+- Kubernetes 本來就能部署 app；Helm 不是讓 Kubernetes 「終於會 deploy」。
+- Helm 額外提供的是 chart、values、render、release、history、rollback 這一層。
+- 所以更準確的說法是：**Helm 讓一組資源比較像一個可安裝、可升級、可回滾的 release。**
+
+#### 2. ⭐️Helm 不等於 CD，也不等於 GitOps
+
+- 這三者很常被混在一起，但其實在解不同問題。
+- Helm 主要在管一組資源如何被模板化、安裝、升級、回滾。
+- CD 主要在管版本如何從 app repo 流到 infra repo，再流到 cluster。
+- **GitOps 主要在管 source of truth 是什麼**，以及誰負責自動同步。
+- 它們可以一起出現，但不是同一件事。
+
+#### 3. chart 邊界應該對齊 release 邊界，不是對齊 repo 邊界
+
+- 不是因為幾份 YAML 放在同一個 repo，就代表它們應該進同一個 chart。
+- 比較穩的判斷方式是：這些資源**是不是會一起安裝、一起升級、一起回滾、一起被當成同一個版本單位看待**。
+- 若答案不是，就不應該硬塞進同一個 chart。
+
+#### 4. 同一個資源只能有一個 owner
+
+- 這是混合式管理時最重要的紀律。
+- 可以一部分資源用 Helm，一部分用 raw manifests。
+- 但同一個 `Deployment` 不能今天由 Helm 管、明天又直接套另一份 raw YAML 去改它。
+- 否則最後會很難回答：到底哪一邊才是真正的 source of truth。
+
+#### 5. Helm 的最大代價不是多幾條指令，而是可讀性與心智模型
+
+- 很多人以為 Helm 的成本只是多學 `helm install`、`helm upgrade`。
+- 真成本其實在於：你不再只維護最終 YAML，而是開始維護生成 YAML 的模板與輸入。
+- 這會直接影響 review、debug 與排錯方式，因為你常要多追一層 render 結果。
+
+#### 6. Helm rollback 和 `kubectl rollout undo` 不是同一層能力
+
+- `kubectl rollout undo` 主要回退的是 Deployment 這類 workload controller 的歷史。
+- Helm rollback 回退的是整個 release revision。
+- 所以若 Helm 管的不只 Deployment，rollback 的邊界理論上也會比 rollout undo 大。
+
+#### 把 6 點壓成一句總結
+
+- **Helm 是一個用來管理一組 Kubernetes 資源的 release 工具；它不取代 Kubernetes、不等於 CD，也不必整包吃掉整個 repo，但一旦引入，就要把 chart 邊界、resource ownership、values 輸入與 release state 想清楚。**
+
+#### 目前不用急著展開的題目
+
+- 以 W8 這個階段來說，現在不用急著追 Helm template 語法細節、subchart 深水區、chart publishing 或 OCI registry。
+- 先把今天這幾個骨架講穩，比追模板技巧更重要。
+
 ## Flashcards
 
-<!-- 待 lesson 過程補充 -->
+- Helm 對 WeaMind 真正多出來的是哪一層？ #DevOps #card
+	- 不是把 Kubernetes 換掉
+	- 多出的是 `template`、`values`、`release state`
+	- 本質是在 raw manifests 上多一層 render 與 release 管理能力
+
+- 為什麼 raw manifests 不等於完全沒有版本管理？ #DevOps #card
+	- 因為 infra repo 本身就在 Git 裡
+	- 各個 manifest 的變更仍可被 Git 歷史追蹤
+	- 真正缺的是 cluster 內把多資源打包成單一 release revision 的心智模型
+
+- Helm 什麼時候會比 raw manifests 更有價值？ #DevOps #card
+	- 當多個資源要被當成同一個 release 單位管理
+	- 當同一套部署需要反覆用不同 values render
+	- 當真的需要 `helm history`、`helm rollback` 這類 release-level 能力
+
+- 為什麼 W8 現階段不必急著把 WeaMind 全部 Helm 化？ #DevOps #card
+	- 因為當前最缺的是 deployment version、repo boundary、CD state
+	- Helm 能加值，但不是 CD 的前提條件
+	- 先把 `release image -> infra repo -> cluster` 這條鏈做對更重要
+
+- 沒有 Helm 和有 Helm 時，更新版本的最大差別是什麼？ #DevOps #card
+	- 沒有 Helm：直接改最終 manifest，再 `kubectl apply`
+	- 有 Helm：改 chart 輸入，再用 `helm upgrade` 更新整個 release
+	- 差別在於操作的是最終資源定義，還是生成資源的輸入
+
+- 什麼叫做「只 chart 一部分」？ #DevOps #card
+	- 只把同一個 release 邊界內、會一起升級回滾的那組資源做成 chart
+	- 其他資源可先維持 raw manifests 或由別的 chart 管理
+	- Helm 不必一次吃掉整個 repo
+
+- 混合式管理時，`helm upgrade` 和 `kubectl apply` 可以並存嗎？ #DevOps #card
+	- 可以，同一輪變更裡兩者都可能出現
+	- 前提是它們各自負責不同的資源集合
+	- 同一個資源不能同時被 Helm 和 raw manifests 共同管理
+
+- Helm rollback 和 `kubectl rollout undo` 差在哪？ #DevOps #card
+	- `rollout undo` 回退的是 Deployment 這類 workload controller 的歷史
+	- Helm rollback 回退的是整個 release revision
+	- 若 Helm 管的不只 Deployment，回退邊界理論上也更大
