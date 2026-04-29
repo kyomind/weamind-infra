@@ -70,6 +70,42 @@ helm upgrade --install observability prometheus-community/kube-prometheus-stack 
 - 用 `oci://...` 這種 OCI registry 來源
 - 但 W7 當時不是這兩種，所以先 `repo add`、再 `repo update`，是符合那次 install 寫法的。
 
+### `repo add`、`repo update`、`install` 三者的分工
+
+- 若再切細一點，`repo add` 比較像先把來源記進 Helm 的地址簿；`repo update` 才比較像把這個來源目前的 chart 清單與版本索引同步到本地 cache。
+- 真的到 `helm install` / `helm upgrade --install` 時，Helm 才會去抓你指定的 chart 內容本體，而不是在 `repo add` 那一步就把整個 chart 包抓下來。
+- 所以最短版可以記成：**`repo add` 記住來源，`repo update` 同步索引，`install` 才下載並使用指定 chart。**
+
+### Helm revision 不是只記 diff，而是整個 release snapshot
+
+- 這題值得單獨記，因為它剛好切開 Helm rollback 和 `kubectl rollout undo` 的思考方式。
+- `kubectl rollout undo deployment/...` 回退的是 Deployment 這個 workload controller 的 rollout history；它主要把 Pod template 對回前一版，然後由 Deployment 控制器重新建立 Pods。
+- Helm rollback 則不是只看單一 Deployment，而是看整個 release revision。只要某個資源屬於這個 release，而且在那個 revision 的 manifest 裡出現，它就屬於 Helm rollback 的概念範圍。
+- 最重要的觀念是：**Helm revision 不是只記「這次有改的欄位」，而是更像記「這個 release 在那一版時的整體 manifest snapshot」。**
+- 所以完全可能出現這種情況：某次 revision 實際只改了 Deployment / Pod 相關內容，Service 和 Ingress 跟上一版完全一樣；但它們仍然屬於這個 revision 的內容，只是內容剛好沒有差異。
+- 因此 rollback 到某個 revision 時，Helm 的心智模型是「**把整個 release 對回那版 manifest state**」，不是只把最近那次 diff 過的幾個欄位反向操作一次。
+- 這也解釋了為什麼某些 Helm rollback 在**體感上會很像**普通的 `rollout undo`：如果兩個 revision 之間真正有差異的只有 Deployment，那最後實際出現變動的可能也只有 Deployment；但概念上 Helm 仍是在對整個 release revision 回退，其他資源只是剛好沒有差異，所以結果接近 no-op。
+- 最短版可記成：**`rollout undo` 回退的是 Deployment 的 rollout history；Helm rollback 回退的是整個 release revision，而 revision 比較像完整 snapshot，不只是 diff。**
+
+### 為什麼 `rollout undo` 不是單純退回上一版 Pod
+
+- 這題值得單獨記，因為初學者最容易把它想成「把新版 Pod 刪掉，換回舊版 Pod」。這樣抓到一半方向，但控制點還不夠準。
+- 更精確的控制鏈是：**Deployment -> ReplicaSet -> Pods**。
+- Deployment 自己不直接保存一堆「Pod 版本」讓你切換；⭐️它真正管理的是 Deployment spec 裡的 **Pod template**，也就是「**這一版應該長出什麼樣的 Pods**」。
+- 每當 Deployment 的 Pod template 改變，Kubernetes 會為這個新 template **建出新的 ReplicaSet**；ReplicaSet 再負責實際維持對應數量的 Pods。
+- 所以 `kubectl rollout undo deployment/...` 回退的核心，不是直接對 Pods 動手，而是：**把 Deployment 的 Pod template 對回前一版，然後讓 Deployment / ReplicaSet 控制鏈重新把對應 Pods 長回來。**
+- 這也是為什麼更準確的說法是「回退 Deployment 的 rollout history」，而不是「回退 Pod 歷史」。Pod 比較像結果，不是主要版本控制單位。
+- 若再講得更白話一點：
+
+```text
+你不是直接把某顆舊 Pod 從倉庫拿回來
+而是把 Deployment 的規格退回舊版
+然後讓 Kubernetes 根據那個舊規格重新長出一批 Pod
+```
+
+- 這也解釋了為什麼你有時候會直覺想到 ReplicaSet。這個直覺不算錯，因為 rollout undo 的過程確實和舊 ReplicaSet 有關；但最穩的講法仍然是：⭐️**使用者操作的是 Deployment，Deployment 再透過 ReplicaSet 對回舊版 Pod template。**
+- 最短版可記成：**`rollout undo` 回退的是 Deployment 的 Pod template 歷史；Pods 不是被直接「切回舊版」，而是根據舊 template 被重新建立。**
+
 ## Flashcards
 
 <!-- keep empty until lesson interaction produces concrete flashcards -->
