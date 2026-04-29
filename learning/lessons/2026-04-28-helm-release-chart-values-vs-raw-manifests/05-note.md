@@ -108,4 +108,24 @@ helm upgrade --install observability prometheus-community/kube-prometheus-stack 
 
 ## Flashcards
 
-<!-- keep empty until lesson interaction produces concrete flashcards -->
+- Helm 不只是比較方便的 `kubectl apply`，真正多了哪三層？ #DevOps #card
+	- 多了 `template`、`values`、`release state`
+	- 先 render，再送進 cluster，最後記成可追 revision 的 release
+
+- W7 安裝 `kube-prometheus-stack` 時，手上真正有的是什麼？ #DevOps #card
+	- 是遠端 `chart repo` 裡的 chart 參考，不是 repo 內現成 raw YAML
+	- 同時還有 release name、target namespace、預設 values 或少量 override
+
+- `helm repo add`、`helm repo update`、`helm install` 各自負責什麼？ #DevOps #card
+	- `repo add` 記住來源
+	- `repo update` 同步 chart 索引
+	- `install` / `upgrade --install` 才真的抓 chart、render 並建立 release
+
+- 為什麼 Helm values 不是任意 yaml merge？ #DevOps #card
+	- 只有 chart template 預先留出的入口，values 才有地方可以帶值
+	- 這也是為什麼 `image.tag`、`replicaCount`、`ingress.host` 很適合 values 化，但 selector 或敏感值不應隨便暴露
+
+- `kubectl rollout undo` 和 Helm rollback 的控制邊界差在哪？ #DevOps #card
+	- `rollout undo` 回退的是 Deployment 的 Pod template 歷史
+	- Helm rollback 回退的是整個 release revision
+	- Helm revision 比較像完整 manifest snapshot，不只是 diff
