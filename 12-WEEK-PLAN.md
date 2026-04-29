@@ -6,11 +6,11 @@
 
 ## Overview
 
-| Phase   | Weeks   | Focus                          | Outcome                                       |
-| ------- | ------- | ------------------------------ | --------------------------------------------- |
-| Phase 1 | W1-W6   | WeaMind K8s 架構深化與排查能力 | 建立對部署、網路、設定、TLS、debug 的完整理解 |
-| Phase 2 | W7-W9   | Observability、Helm、Terraform | 補齊可觀測性、交付流程與 IaC 基礎能力         |
-| Phase 3 | W10-W12 | CKA 衝刺與整體收斂             | 把前期能力格式化成更穩定的實戰與考試表現      |
+| Phase   | Weeks   | Focus                                                     | Outcome                                       |
+| ------- | ------- | --------------------------------------------------------- | --------------------------------------------- |
+| Phase 1 | W1-W6   | WeaMind K8s 架構深化與排查能力                            | 建立對部署、網路、設定、TLS、debug 的完整理解 |
+| Phase 2 | W7-W9   | Observability（Prometheus、Grafana）、CD、Helm、Terraform | 補齊可觀測性、交付流程與 IaC 基礎能力         |
+| Phase 3 | W10-W12 | CKA 衝刺與整體收斂                                        | 把前期能力格式化成更穩定的實戰與考試表現      |
 
 ---
 
