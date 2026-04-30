@@ -105,4 +105,32 @@
 - 這也代表 minor / major 的前移不是 GHCR 自動處理，而是 workflow 明確設定出來的結果。
 - 最短版可收成：**WeaMind 已實作兩條 image publish 路徑：main push 產出 `latest` 與 `sha`，release tag 產出完整版、minor、major；tag 的存在與前移都來自 workflow，不是 GHCR 自動處理。**
 
+### Publish GHCR 與 Publish Release 是並行、串接，還是不同入口
+
+- 這也是延伸追問，應放在 note，不塞回主答案。
+- 更準確地說，它們不是同一條鏈上的前後步驟，而是 **兩個不同觸發入口的 workflow**。
+- [references/weamind-app-publish-ghcr.yml](references/weamind-app-publish-ghcr.yml) 是 main push 路徑。
+- 它的觸發條件是 `workflow_run`，也就是等 `CI` 完成後，再 publish `latest` 與 `sha-<short_sha>`。
+- [references/weamind-app-publish-release.yml](references/weamind-app-publish-release.yml) 是 release tag 路徑。
+- 它的觸發條件是 push `v*` tag，會直接 build 並 push 完整版、minor、major。
+- 所以這兩條路徑不是互相串接，也不是固定先後順序，而是 **你做了哪種事件，就進哪條路徑。**
+
+### 它們是在重複 publish 兩份 image 嗎
+
+- 不是「兩份不同 image」這種概念，比較準確的是：**同一次 build 出來的 image 內容，可以同時被貼上多個 tag。**
+- tag 比較像是同一個 image digest 的多個名字。
+- 例如 release workflow 發佈 `v1.1.4` 時，可以把同一個 build 結果同時標成：
+	- `1.1.4`
+	- `1.1`
+	- `1`
+- 它不是三個不同版本內容，而是三個 tag 都指向同一個 image digest。
+- 同理，main push 路徑裡的 `latest` 與 `sha-<short_sha>`，也通常是在同一次 build-and-push 裡一起被貼到同一個 image 上。
+
+### 最短版收斂
+
+- Publish GHCR 與 Publish Release 是兩條不同入口的 workflow，不是同一條路徑的前後步驟。
+- 進哪一條，取決於觸發事件：main push 走一條，push release tag 走另一條。
+- 它們做的不是複製出很多份不同 image，而是把同一次 build 出來的 image 內容貼上不同 tag。
+- 所以 tag 是名稱層，image digest 才是底下真正的內容指標。
+
 ## Flashcards
