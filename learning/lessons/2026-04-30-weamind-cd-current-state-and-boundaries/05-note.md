@@ -269,3 +269,38 @@
 - 如果它沒其他 tag 了，才可能在之後被 registry 視為 untagged 內容並逐步清理。
 
 ## Flashcards
+
+- 為什麼 WeaMind 現在只能說有 `CI` + image publishing，還不能說有完整 `CD`？ #DevOps #card
+	- app repo 已會驗證、build 並 publish image
+	- 但 infra repo 仍追 `latest`，Git 沒正式記錄 cluster 要採用哪個完整版本
+	- 缺的是 artifact 之後到 deployment config，再到 deployment state 的正式鏈路
+
+- `imagePullPolicy: Always` 在這題裡真正保證什麼？ #DevOps #card
+	- 它只保證新 Pod 建立或重建時重新拉 image
+	- 不保證 registry 裡的 `latest` 一更新，既有 Pod 就會自動換版
+	- 關鍵要問的是 apply 之後有沒有導致新 Pod 被建立
+
+- 第一版正式 deploy source 為什麼要追完整 release version，而不是 `latest`、minor 或 major？ #DevOps #card
+	- `latest` 太模糊而且會漂移
+	- minor / major 也會前移，本質上仍是 mutable alias
+	- 完整 release version 最 immutable、可追溯、可回滾，也最好溝通
+
+- `sha-<short_sha>` 在這題裡的定位是什麼？ #DevOps #card
+	- 它比 `latest` 更可追溯，能指回具體 commit
+	- 但它比較像 debug 與追 build 來源的工程識別
+	- 它不是最適合人類溝通的正式 deploy source
+
+- app repo 和 infra repo 在 WeaMind 第一版 `CD` 裡應怎麼分工？ #DevOps #card
+	- app repo 負責 build / publish image，並定義正式 release version
+	- infra repo 負責宣告 cluster 要跑哪個版本，保存 deployment state，並決定何時 deploy
+	- 兩者切開後，production 版本採用責任才不會混層
+
+- 為什麼第一版不建議讓 app repo 直接拿 cluster credentials 改叢集？ #DevOps #card
+	- 會把 artifact 產出責任和 deployment state 控制權混在一起
+	- 也會讓 repo 邊界、權限分工與 production 採版決策變模糊
+	- 更穩的邊界是讓 app repo 停在 infra repo PR
+
+- WeaMind 第一版最小可落地 `CD` 鏈路應怎麼收？ #DevOps #card
+	- app repo 發佈完整 release，release workflow push 正式版本 image
+	- 接著自動對 infra repo 開 PR，只更新 `Deployment` 採用的完整版本
+	- review / merge 後，再由 infra repo 一側決定人工或自動 deploy
