@@ -39,10 +39,11 @@ imagePullPolicy: Always
 1. 開發者 push code 到 app repo 的 `main`。
 2. `CI` workflow 先跑品質檢查、型別檢查、測試與 Docker build validation。
 3. 若 `CI` 成功，`publish-ghcr.yml` 被 `workflow_run` 觸發。
-4. workflow build Docker image，push 到 `ghcr.io/kyomind/weamind`。
+4. workflow checkout `github.event.workflow_run.head_sha`，build Docker image，push 到 `ghcr.io/kyomind/weamind`。
 5. 產出至少兩種 tag：
    - `latest`
    - `sha-<short_sha>`
+   其中 `sha-<short_sha>` 應從同一個 `workflow_run.head_sha` 計算，才會和實際 image 內容一致。
 6. infra repo 的 Deployment 一直引用 `ghcr.io/kyomind/weamind:latest`。
 7. 只有在 Pod 後續真的被重建、rollout 或 restart 時，node 才會重新去拉 image。
 

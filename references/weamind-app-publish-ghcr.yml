@@ -33,9 +33,12 @@ jobs:
 
       - name: Compute tags
         id: meta
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          SHORT_SHA="${GITHUB_SHA::7}"
+          SHORT_SHA="${HEAD_SHA::7}"
           echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+          echo "full_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294

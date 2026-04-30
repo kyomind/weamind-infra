@@ -28,6 +28,10 @@ W8 的最低目標不是把整套 production CD 一次做完，而是把 deploym
 - main push 後，CI 成功再 publish 到 GHCR
 - release tag 發佈正式版本 image
 
+main push path 的 `sha-<short_sha>` tag 應該和實際 checkout / build 的 commit 一致。
+
+因為 `publish-ghcr.yml` 是由 `workflow_run` 觸發，`GITHUB_SHA` 代表的是 default branch 的最後 commit，不一定等於剛通過 CI 的 commit。這條路徑若要保持可追溯性，tag 應該從 `github.event.workflow_run.head_sha` 計算，讓 checkout ref、image 內容與 `sha-<short_sha>` tag 指向同一個 commit。
+
 目前 infra repo 的 Deployment 仍直接引用：
 
 ```yaml
@@ -108,8 +112,9 @@ W8 最推薦先理解並驗收的鏈路是：
 1. WeaMind 為什麼現在不算完整 CD
 2. 為什麼正式 deploy version 不該追 latest
 3. app repo 與 infra repo 各自應負責什麼
-4. 第一版最合理的自動化鏈路是什麼
-5. rollback 與 release 邊界應該怎麼講
+4. `workflow_run` 觸發的 publish workflow 為什麼應該用 `workflow_run.head_sha` 產生 `sha-<short_sha>` tag
+5. 第一版最合理的自動化鏈路是什麼
+6. rollback 與 release 邊界應該怎麼講
 
 ## 這份 reference 的用途
 
