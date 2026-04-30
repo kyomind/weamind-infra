@@ -65,4 +65,44 @@
 - 若 apply 後沒有新 Pod，被更新的 `latest` 也不一定會進到現有 Pod。
 - 所以真正要問的不是「有沒有 apply」，而是：**這次 apply 之後，有沒有導致新的 Pod 被建立。**
 
+### 為什麼 `1.1` 這種 minor tag 會自動追到新 patch
+
+- 這是 Q2 的延伸追問，應放在 note，不塞回主答案。
+- 關鍵不是 Git tag 自己會變，而是 registry 端的 docker tag 可以被 release workflow 重新貼到新的 image digest 上。
+- 例如 Git 裡的 `v1.1.4` 仍然是固定的 tag，不會自己移動。
+- 但 release image publish workflow 可以在發佈 `1.1.4` 時，同時把同一個 image 標成 `1.1.4`、`1.1`、`1`。
+- 這樣之後，registry 裡的 `1.1` 就會前移到最新的 `1.1.x` patch。
+- 所以會移動的是 docker tag，例如 `1.1`；不會移動的是 Git tag，例如 `v1.1.4`。
+- 若 release 流程沒有額外把 `1.1` 或 `1` 這些 tag 一起推上去，它們就不會自動追到新的 patch 版本。
+- 這也正是為什麼 minor / major 雖然方便，但仍然不是最穩的正式 deploy source：它們本質上是會前移的別名，不是固定版本點。
+
+### 這是 GHCR 自己會做，還是 workflow 設定出來的
+
+- 這也是 Q2 的延伸追問，應放在 note，不塞回主答案。
+- 更準確的答案是：**不是 GHCR 自己幫你維護 minor / major tag，而是 image publish workflow 主動把這些 tag push 上去。**
+- GHCR / registry provider 做的事情比較像「保存你 push 上來的 image 與 tags」。
+- 如果 workflow 只 push `1.1.4`，GHCR 不會自己額外幫你生出 `1.1` 或 `1`。
+- ⭐️如果 workflow 在發佈 `1.1.4` 時，同時 push `1.1.4`、`1.1`、`1`，GHCR 就會把這些 tag 都指到同一個 image digest。
+- 所以 minor / major 之所以會前移，不是 registry provider 自動幫你升級，而是 **release workflow 在新版本發佈時，主動把舊 tag 重新指向新 image。**
+- 最短版可收成：**GHCR 不負責決定 tag 策略；真正決定哪些 tag 存在、哪些 tag 會前移的是 publish / release workflow。**
+
+### WeaMind 目前是哪一種情況
+
+- 這也是獨立 note，因為它是在把上面的通用機制對回 WeaMind 現況。
+- 目前手上已經有兩份 app repo 帶回來的 workflow 快照。
+- 第一條是 [references/weamind-app-publish-ghcr.yml](references/weamind-app-publish-ghcr.yml)，對應 main push 後的持續發佈路徑。
+- 這條路徑會 push：
+	- `latest`
+	- `sha-<short_sha>`
+- 第二條是 [references/weamind-app-publish-release.yml](references/weamind-app-publish-release.yml)，對應 release tag 發佈路徑。
+- 這條路徑會在 push `v*` tag 時產出：
+	- 完整版本 tag，例如 `1.1.4`
+	- minor tag，例如 `1.1`
+	- major tag，例如 `1`
+- 所以 WeaMind 目前的情況已經可以講得很直接：
+	- main push 會推 `latest` 與 `sha`
+	- release tag 會另外推完整版、minor、major
+- 這也代表 minor / major 的前移不是 GHCR 自動處理，而是 workflow 明確設定出來的結果。
+- 最短版可收成：**WeaMind 已實作兩條 image publish 路徑：main push 產出 `latest` 與 `sha`，release tag 產出完整版、minor、major；tag 的存在與前移都來自 workflow，不是 GHCR 自動處理。**
+
 ## Flashcards

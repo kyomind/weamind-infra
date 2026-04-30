@@ -13,3 +13,5 @@
 - 若之後新對話要複用這種題型，先回看 `learning/lessons/2026-03-16-deployment-basics/05-note.md` 的「為什麼第 4 題是高價值的 command drill？」再決定是否沿用。
 - `05-note.md` 的正式版型以 `learning/lessons/lesson-template.md` 為準，不在 repo memory 重複維護同一套結構規則。
 - lesson 過程中補寫 `05-note.md` 時，預設優先採 append 模式追加新 note；只有明顯為了同主題關聯性與可讀性，才插回前面既有段落之間。
+- QA 只保留主答案與最小修正；延伸追問、額外原理、旁支理解預設移到 `05-note.md`。
+- Flashcards 只有在使用者明確下指令時才建立或更新；不要在補 note 或補 QA 時順手新增。
