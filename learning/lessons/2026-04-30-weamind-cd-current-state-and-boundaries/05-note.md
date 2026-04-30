@@ -133,4 +133,95 @@
 - 它們做的不是複製出很多份不同 image，而是把同一次 build 出來的 image 內容貼上不同 tag。
 - 所以 tag 是名稱層，image digest 才是底下真正的內容指標。
 
+### 為什麼看起來像重複，因為它們其實真的各自會 build
+
+- 這也是很合理的追問，而且不只是你會卡住。
+- 直接看這兩份 workflow，任何人都很容易先得到同一個直覺：**它們都在 build，那不就是重複做了兩次嗎？**
+- 這個直覺沒有錯，因為從 workflow 定義來看，兩條路徑確實都是各自 build。
+- main push 路徑會 build 一次，然後 push `latest` 與 `sha-<short_sha>`。
+- release tag 路徑也會再 build 一次，然後 push 完整版、minor、major。
+
+### 所以它們不是「不重複 build」，而是「不是同一條流程內的重複步驟」
+
+- 更準確的說法不是「它們沒有重複」，而是：**它們是兩條分開觸發的 publish workflow，各自有自己的 build-and-push。**
+- 也就是說，從 CI/CD pipeline 設計角度看，它們是兩個入口，不是一個 workflow 裡先 build 再把同一份產物拿去不同地方 reuse。
+- 所以如果只問「這兩個 YAML 會不會各自 build」，答案其實是：**會。**
+
+### 什麼情況下只會走一條
+
+- 若今天只是一般 main push，沒有建立 release tag，那通常只會走 main push 這條路。
+- 這時只會 build 一次，push `latest` 與 `sha`。
+
+### 什麼情況下兩條都可能走
+
+- 若某個 commit 先進到 main，之後你又替這個 commit 打了 `v1.1.4` 這種 release tag，那兩條路就可能都跑。
+- 第一條先因為 main push 而 build 一次。
+- 第二條再因為 push release tag 而 build 一次。
+- 這種情況下，**兩條 workflow 確實可能對同一份程式碼各 build 一次。**
+
+### 那這樣算不算浪費，或設計錯誤
+
+- 不一定算錯，而是取決於團隊想優化哪一件事。
+- 這種設計的好處是：
+	- main push 與 release tag 可以各自獨立運作
+	- 每條路徑的觸發條件與 tag 策略很清楚
+	- workflow 比較直白，不需要先引入跨 workflow 共用 artifact 的複雜設計
+- 代價也很明確：
+	- 某些情況下會對同一份程式碼重複 build
+	- build 時間與 compute 會多花一份
+	- 若未來很在意效率，才可能再往「一次 build，多處 reuse」的方向優化
+
+### 目前這兩條路比較像什麼
+
+- 它們比較像兩個獨立窗口：
+	- 一個窗口負責持續交付中的 `latest` / `sha`
+	- 一個窗口負責正式 release 的 version tags
+- 兩個窗口都會各自做一次 build-and-push。
+- 所以如果你覺得「看起來就是分開進行的」，這個感覺其實是對的。
+
+### 最短版收斂
+
+- 對，這兩條 workflow 目前是分開進行的，而且都各自會 build。
+- 它們不是共享同一次 build 結果的設計。
+- 若只有 main push，通常只跑第一條。
+- 若某個 commit 後續又被打成 release tag，兩條都可能跑，於是同一份程式碼可能被 build 兩次。
+- 這不是你看錯，而是目前 workflow 設計本來就比較偏「路徑清楚」而不是「避免重複 build」。
+
+### 當 `1.1.4` 發佈後，舊的 `1` / `1.1` tag 會發生什麼事
+
+- 這也是很自然的追問，因為一旦接受 minor / major 會前移，下一個問題一定是：**舊的 tag 會被怎麼處理？**
+- 更準確的說法是：通常不是先把舊 tag 顯式刪掉，再新增新 tag。
+- 比較接近實際機制的是：**同名 tag 被重新指向新的 image digest。**
+- 也就是說，當 release workflow 把 `1.1.4`、`1.1`、`1` 一起 push 上去時：
+	- `1.1.4` 會成為新的固定版本點
+	- `1.1` 這個 tag 會從原本指向舊 digest，改成指向 `1.1.4` 對應的新 digest
+	- `1` 也會一樣前移到新的 digest
+
+### 那舊 image 上的 `1` / `1.1` 算不算被刪掉
+
+- 從「tag 關聯」的角度看，可以說 **舊 image 失去了 `1` 或 `1.1` 這些 tag**。
+- 也就是說，舊 digest 不再被這些 mutable tag 指著。
+- 但這不等於整個舊 image 內容立刻從 registry 消失。
+
+### 舊 image 會不會還留在 registry 裡
+
+- 要看它是否還有其他引用。
+- 如果舊 image 還有別的 tag 指著它，例如完整版本 tag `1.1.3`，那它當然還在。
+- 如果舊 image 沒有任何 tag 了，registry 可能把它視為 untagged manifest。
+- 這種 untagged 內容通常也不是當下立刻物理刪除，而是之後由 registry 的清理 / garbage collection / retention 規則決定何時清掉。
+
+### 所以具體機制比較像什麼
+
+- 不要把它想成「先 delete 舊 tag，再 create 新 tag」的手動流程。
+- 更接近的心智模型是：**tag 是指標，push 同名 tag 的新 image 時，registry 會把這個指標改指到新 digest。**
+- 舊 digest 若還有其他 tag 或 digest reference，就繼續存在。
+- 舊 digest 若不再被任何 tag 指到，就變成 untagged，之後是否清理要看 registry 規則。
+
+### 最短版收斂
+
+- `1` 和 `1.1` 這種 tag 前移時，本質上是「重新指向新 digest」。
+- 舊 image 不一定立刻被刪掉；只是舊 digest 不再被這些 tag 指向。
+- 如果舊 image 還有完整版本 tag，例如 `1.1.3`，它就還在。
+- 如果它沒其他 tag 了，才可能在之後被 registry 視為 untagged 內容並逐步清理。
+
 ## Flashcards
