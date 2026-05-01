@@ -68,7 +68,7 @@
 因此：
 
 1. 若問題是「今天該不該建 `03-command.md`」、「QA 能不能先放答題引導」、「`05-note.md` 初始化能先放什麼」，應以本檔為準。
-2. 若問題是「今天新 lesson 要先開哪些檔案」、「每份檔案最小空殼長什麼樣」，才看對應 template：常態 lesson 看 `lesson-template.md`，implement-heavy mode 看 `references/lesson-plugins/implement-heavy-lesson-template.md`。
+2. 若問題是「今天新 lesson 要先開哪些檔案」、「每份檔案最小空殼長什麼樣」，才看對應 template：常態 lesson 看 `lesson-template.md`，implement-heavy mode 看 `references/lesson-plugins/implementation/implement-heavy-lesson-template.md`。
 3. 模板裡若出現較長的規則段落，應優先檢查是否其實該搬回本檔，而不是讓 template 自己長成第二份 README。
 
 一句話原則：README 管規則，template 管骨架。
@@ -94,7 +94,7 @@ mode 的合法 enum、決策來源與 plugin 索引，統一以 `references/less
 
 1. 先看本檔，確認今天已經進入 lesson，而不是還停在 prework 判斷。
 2. 再看當天計畫的 `Lesson mode`；合法值與對應入口以 `references/lesson-plugins/lesson-modes.md` 為準。
-3. 若 `Lesson mode` 是 `normal`，改讀 `lesson-template.md`；若是 `implement-heavy`，改讀 `references/lesson-plugins/implement-heavy-mode.md` 與 `references/lesson-plugins/implement-heavy-lesson-template.md`。
+3. 若 `Lesson mode` 是 `normal`，改讀 `lesson-template.md`；若是 `implement-heavy`，改讀 `references/lesson-plugins/implementation/implement-heavy-mode.md` 與 `references/lesson-plugins/implementation/implement-heavy-lesson-template.md`。
 
 ---
 
@@ -124,9 +124,9 @@ mode 的合法 enum、決策來源與 plugin 索引，統一以 `references/less
 正式開始 lesson 前，建議至少確認：
 
 1. 今天是否已先在 `learning/README.md` 完成流程判斷；若需要 prework，應先完成 prework，再進入 lesson。
-2. lesson 檔案結構是否符合本檔與對應骨架；常態 lesson 看 `lesson-template.md`，implement-heavy mode 看 `references/lesson-plugins/implement-heavy-lesson-template.md`。
+2. lesson 檔案結構是否符合本檔與對應骨架；常態 lesson 看 `lesson-template.md`，implement-heavy mode 看 `references/lesson-plugins/implementation/implement-heavy-lesson-template.md`。
 3. 若當天計畫已明確指定 command-heavy mode，是否已另外讀取 `references/lesson-plugins/command-heavy-mode.md`，而不是把例外規格混在本檔內一起看。
-4. 若當天計畫已明確指定 implement-heavy mode，是否已另外讀取 `references/lesson-plugins/implement-heavy-mode.md`，並同步讀取 `references/lesson-plugins/implement-heavy-lesson-template.md`。
+4. 若當天計畫已明確指定 implement-heavy mode，是否已另外讀取 `references/lesson-plugins/implementation/implement-heavy-mode.md`，並同步讀取 `references/lesson-plugins/implementation/implement-heavy-lesson-template.md`。
 5. 若當天計畫沒有指定 mode，內部流程是否仍是 QA → command → report；若當天計畫已指定 mode，`01-outline.md` 是否已把這個決策與實際流程順序寫成提醒。
 6. `03-command.md` 若存在，是否真的符合 command drill 的節奏，而不是單純指令清單。
 7. `04-report.md` 是否保留回填空間，而不是一開始就預寫完整答案。
@@ -159,7 +159,7 @@ mode 的合法 enum、決策來源與 plugin 索引，統一以 `references/less
 
 5. `03-command.md`
 
-若當天計畫已明確指定 implement-heavy mode，請直接改讀 `references/lesson-plugins/implement-heavy-mode.md` 與 `references/lesson-plugins/implement-heavy-lesson-template.md`，並建立 implement-heavy mode 專用的 5 份檔案。
+若當天計畫已明確指定 implement-heavy mode，請直接改讀 `references/lesson-plugins/implementation/implement-heavy-mode.md` 與 `references/lesson-plugins/implementation/implement-heavy-lesson-template.md`，並建立 implement-heavy mode 專用的 5 份檔案。
 
 範例：
 

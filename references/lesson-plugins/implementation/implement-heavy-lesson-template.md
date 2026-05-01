@@ -1,7 +1,7 @@
 # Implement-Heavy Lesson Template
 
 > 用途：只在今天已明確套用 implement-heavy mode 時使用。
-> 使用方式：先讀 `learning/README.md`、`learning/lessons/README.md`、`implement-heavy-mode.md`，確認今天真的屬於 implement-heavy mode，再用本檔建立 mode 專用骨架。
+> 使用方式：先讀 `learning/README.md`、`learning/lessons/README.md`、`references/lesson-plugins/implementation/implement-heavy-mode.md`，確認今天真的屬於 implement-heavy mode，再用本檔建立 mode 專用骨架。
 > 原則：本檔只提供 implement-heavy 骨架，不重寫 mode 的判斷條件與自檢規則。
 
 ---
@@ -127,6 +127,10 @@ implement-heavy mode 預設直接建立五份檔案：
 1. step 數量不設上限；若後續發現某一步過大，應直接往下拆成新的 `Step N`，不要勉強維持少量大步驟。
 2. `06-implementation.md` 不需要在每一輪對話後即時逐字更新。若某個 step 會經過多輪討論、試錯或策略收斂，可以先在互動中推進，等到出現較大的進展、形成一段可複習的證據鏈，或該 step 結尾時，再把主要結果擇要回填。
 3. 若某個 step 目前只完成設計稿或查詢草案，`實際執行內容` 可以先完整保留操作稿；`結果` 應明寫尚未實作驗證，`AI 判讀與收斂` 也只應收斂到是否已可進入實作，不應提前寫成已驗證完成。
+
+## Session 開場提醒
+
+- `06-implementation.md` 的實際帶法不要寫死在模板裡；開場規則、step 推進與提問邊界改讀 `references/lesson-plugins/implementation/implementation-guide.md`。
 
 ## 驗收訊號與回退點
 

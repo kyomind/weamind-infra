@@ -8,7 +8,7 @@
 
 它的角色是先把這次討論收斂成可回看的設計紀錄，讓之後真的要落成文件時，不需要再從零回想「當初到底想解什麼問題、打算怎麼改」。
 
-補記：後續已正式落成 `references/lesson-plugins/implement-heavy-mode.md`，並同步更新 `learning/lessons/README.md` 與 `learning/lessons/lesson-template.md`。本檔保留的是設計討論脈絡，不是最新規則本體。
+補記：後續已正式落成 `references/lesson-plugins/implementation/implement-heavy-mode.md`，並同步更新 `learning/lessons/README.md` 與 `learning/lessons/lesson-template.md`。本檔保留的是設計討論脈絡，不是最新規則本體。
 
 再補記：這次討論之後，實際落地結果又往前推了一步，已不只是一份 mode 規格文件，而是連 mode enum、計畫層決策來源與 implement-heavy 專用 template 都已補齊。詳見下方「後續實際落地結果」。
 
@@ -263,7 +263,7 @@ command-heavy mode 目前仍維持：
 
 正式規則檔已建立為：
 
-- `references/lesson-plugins/implement-heavy-mode.md`
+- `references/lesson-plugins/implementation/implement-heavy-mode.md`
 
 目前 implement-heavy 已不再只是概念補充，而是有明確流程、檔案角色、初始化規格與自檢條件的正式 plugin 文件。
 
@@ -274,7 +274,7 @@ command-heavy mode 目前仍維持：
 實際採用的做法是：
 
 - 常態 template 回到 `01-05`
-- implement-heavy 另有自己的專用骨架：`references/lesson-plugins/implement-heavy-lesson-template.md`
+- implement-heavy 另有自己的專用骨架：`references/lesson-plugins/implementation/implement-heavy-lesson-template.md`
 
 這樣可避免一般 lesson 每次都被 `06` / `07` 的特殊骨架干擾。
 

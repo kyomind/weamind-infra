@@ -63,8 +63,8 @@ lesson 是否套用某個 mode，應由當天計畫先明示。
 讀取文件：
 
 1. `learning/lessons/README.md`
-2. `references/lesson-plugins/implement-heavy-mode.md`
-3. `references/lesson-plugins/implement-heavy-lesson-template.md`
+2. `references/lesson-plugins/implementation/implement-heavy-mode.md`
+3. `references/lesson-plugins/implementation/implement-heavy-lesson-template.md`
 4. `learning/lessons/lesson-template.md`
 
 ---
