@@ -443,6 +443,140 @@
 
 - 已完成
 
+### Step 13
+
+#### 這一步要驗證什麼
+
+- 若第一版 shell script 已經收斂了輸入、責任邊界與輸出模板，那它的內部執行順序最小應該怎麼排，才便於實作、除錯與重跑。
+
+#### 預計採取的動作
+
+- 先提出第一版 script 的建議執行順序，確認哪些步驟必須先做、哪些步驟可以延後處理。
+- 再把這個順序對齊成真正實作時的骨架，避免下一步一寫 script 就把驗證、clone、改檔、push、開 PR 混在一起。
+
+#### 實際執行內容
+
+- 本次由 AI 與使用者協作實作
+- AI 先提出第一版 shell script 的建議執行順序，依序為：驗證輸入參數、組出固定字串、取得 `weamind-infra` 工作目錄、建立或切換 branch、更新 deployment image、檢查是否真的有 diff、建立 commit、push branch、建立 PR。
+- 使用者同意這個順序。
+- 這個順序背後的核心切法，是先把 script 內部的本地 repo 狀態處理乾淨，再做遠端 branch push，最後才建立 PR；不要把驗證、改檔、push、PR 建立混成一團。
+- AI 也特別把「檢查是否真的有 diff」保留成一個獨立步驟，因為若 target repo 已經是相同 version，第一版就不應再繼續 commit、push、開 PR。
+
+#### 結果
+
+- Step 13 已把第一版 shell script 的最小執行順序收斂完成。
+- 目前較合理的第一版順序是：先驗證輸入並組出模板，再處理 target repo working tree，確認有實際 diff 之後才進入 commit、push、PR 建立。
+- 這個順序把失敗點切得更清楚：參數問題、target repo 取得問題、改檔問題、Git push 問題、PR 建立問題，都能在不同階段被辨識，而不是全部堆在最後一起炸開。
+
+#### AI 判讀與收斂
+
+- Step 13 的短結論是：第一版 script 的執行順序，應優先追求可除錯性與可重跑性，而不是追求把所有動作壓成最短流程。
+- 這個收斂的關鍵在於先把本地 repo 狀態做對，再把它轉成遠端 branch，最後才包成 PR。這不只比較符合 Git 的自然操作順序，也讓之後任何失敗都比較容易定位在「哪一層出問題」。
+- 到這一步為止，第一版 script 的設計已經收斂到相當具體：輸入、責任邊界、輸出模板、內部執行順序都已成形。下一個自然步驟就不再是抽象設計，而是開始把這個 script 真正寫出來。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 14
+
+#### 這一步要驗證什麼
+
+- 若前面已把第一版 shell script 的設計收斂完成，那接下來在 WeaMind app repo 落地實作時，應該直接在 `main` 修改，還是應先開分支、修改 script 與 release workflow，再用 PR 驗證，才比較符合這次變更的風險與邊界。
+
+#### 預計採取的動作
+
+- 先對齊這次變更的實際範圍：不只新增一個 script，還會修改 release workflow，使它在 release path 上呼叫該 script。
+- 再依這個變更範圍決定：app repo 應採分支 + PR 還是直接在 `main` 進行，並以此作為後續實作的落地方式。
+
+#### 實際執行內容
+
+- 本次由 AI 與使用者協作實作
+- 使用者先提出疑問：若只是新增一個 script，是否可以直接在 `main` 做；但進一步思考後也意識到，這次其實不只新增 script，還會一起修改 app repo 的 release workflow，因此分支與 PR 可能仍然比較合理。
+- AI 判斷：這次不應直接在 `main` 修改，而應先在 app repo 開一個工作分支，再把 script 與 workflow 變更放在同一個 PR 中。理由不是形式，而是這次的變更已經明確碰到 release path，本身就值得保留獨立 diff、驗證點與回退點。
+- 實際執行上，AI 先確認 WeaMind app repo 當下工作樹乾淨、位於 `main`，接著建立分支 `feat/release-infra-pr-script`。
+- 在該分支上，AI 新增 `scripts/open_infra_version_pr.sh`，並修改 `publish-release.yml`，讓 release image push 完成後以最薄方式呼叫這支 script。
+- 針對這個實作 slice，AI 也立即做窄驗證：先用 `bash -n` 檢查 shell script 語法，再用診斷確認 workflow 與 script 兩個檔案都沒有錯誤；之後又補了一次小修正，把 workflow 的呼叫方式改為 `bash ./scripts/open_infra_version_pr.sh ...`，避免依賴 executable bit。
+
+#### 結果
+
+- Step 14 的結論已收斂：這次 app repo 的變更應採分支 + PR，而不是直接在 `main` 修改。
+- 這個決策也已經實際落地：目前 WeaMind app repo 的第一版實作已經放在 `feat/release-infra-pr-script` 分支上，包含一支新的 infra PR shell script，以及 release workflow 對它的最小串接。
+- 目前已完成的窄驗證結果是：`bash -n` 通過，workflow 與 script 的檔案診斷也都通過。
+
+#### AI 判讀與收斂
+
+- Step 14 的短結論是：只要這次變更已經碰到 release workflow，就不再只是「加一個小工具檔」而已；它已經屬於 release path 的行為修改，因此應保留分支與 PR 作為最小安全邊界。
+- 這一步的關鍵不是追求形式上的 Git 流程完整，而是讓這次變更能夠被清楚 review、獨立驗證、必要時獨立回退。對 release path 來說，這種邊界是值得保留的。
+- 到這一步為止，第一版設計不只完成紙上收斂，也已經正式進入 app repo 實作。下一個更自然的問題，不再是「要不要這樣做」，而是「這支 script 在實際 release 執行時，權限與 runtime 行為是否都能跑通」。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 15
+
+#### 這一步要驗證什麼
+
+- 若第一版 release workflow 已經接上跨 repo PR script，那正式版應使用的專用 token 最小需要哪些權限，才足夠對 `weamind-infra` clone、push branch、建立或更新 PR，同時避免沿用過大的既有憑證。
+
+#### 預計採取的動作
+
+- 先根據第一版 script 的實際動作，反推出 token 真正需要覆蓋的 GitHub 能力範圍。
+- 再收斂成一個適合使用者到 GitHub GUI 建立 fine-grained token 的最小權限清單，避免把權限給得過寬。
+
+#### 實際執行內容
+
+- 本次由 AI 與使用者協作實作
+- AI 先根據第一版 script 的實際動作反推正式 token 的最小權限範圍，指出這顆 token 真正需要覆蓋的能力其實很窄：讀取 `kyomind/weamind-infra`、push branch、建立或更新 PR。
+- AI 因此建議正式版改採 fine-grained personal access token，而不是沿用先前從 `gh` CLI 現成憑證接進 secret 的做法。
+- 在 repository access 上，AI 建議只選 `kyomind/weamind-infra`，不要放寬到所有 repositories。
+- 在 repository permissions 上，AI 建議第一版先只開兩項最小權限：`Contents: Read and write` 與 `Pull requests: Read and write`；其餘如 Actions、Issues、Secrets、Administration 等都先不開。
+- 使用者同意這個最小權限方向，並實際到 GitHub GUI 建立新的 fine-grained token，之後用它覆蓋 WeaMind app repo 既有的 `WEAMIND_INFRA_PR_TOKEN` secret。
+
+#### 結果
+
+- Step 15 已把正式版跨 repo token 的最小權限方向收斂完成。
+- 目前較合理的第一版正式配置，是使用只限 `kyomind/weamind-infra` 的 fine-grained PAT，並只開 `Contents: Read and write` 與 `Pull requests: Read and write`。
+- 使用者也已完成 token 建立與 secret 覆蓋，因此第一版 release workflow 現在已經不再依賴先前那種來自 `gh` CLI 現成憑證的臨時 wiring。
+
+#### AI 判讀與收斂
+
+- Step 15 的短結論是：正式版權限應該根據 script 的實際動作反推，而不是直接複用一顆用途更廣的既有憑證。
+- 這一步的關鍵不是「一定要用 GUI」，而是把 token 的權限邊界縮到剛好覆蓋 clone、push branch、建立或更新 PR 這三件事。對 WeaMind 第一版來說，fine-grained PAT 正好能把這個邊界鎖得很清楚。
+- 到這一步為止，權限設計本身已經完成；下一個自然的問題不再是「該給什麼權限」，而是「這組權限在真實 release path 上能不能跑通」。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 16
+
+#### 這一步要驗證什麼
+
+- 若正式 token 已經建立並覆蓋到 `WEAMIND_INFRA_PR_TOKEN`，那第一版 release path 在真實 runtime 中是否真的能成功完成 clone `weamind-infra`、push branch、建立或更新 PR。
+
+#### 預計採取的動作
+
+- 先決定第一版要用哪種方式做 runtime 驗證，例如直接推送 app repo 分支並開 PR，或進一步做一次真實 release 觸發。
+- 再依選定的驗證方式，觀察 release workflow 的實際行為與失敗點，確認目前這組權限與 script 實作是否足夠跑通。
+
+#### 實際執行內容
+
+- 待回填
+
+#### 結果
+
+- 待回填
+
+#### AI 判讀與收斂
+
+- 待回填
+
+#### 目前狀態
+
+- 骨架已建立
+
 補充：若今天的主線超過 2 個步驟，直接繼續往下新增 `Step 3`、`Step 4`、`Step 5`。每個 step 盡量只承接一個主要驗證點或一組緊密相關的操作，避免單一步驟過大。
 
 補充：回填 step 時，優先保留主要決策、關鍵操作、代表性證據、結果與 AI 收斂，不需要把每次中間來回或所有試錯細節完整照錄。
