@@ -600,19 +600,27 @@
 
 #### 實際執行內容
 
-- 待回填
+- 本次由 AI 與使用者協作實作
+- 使用者先同意：PR merge 後的 deploy 動作，第一版不做 merge 後全自動，而是保留為人工觸發的標準化指令。
+- AI 提出第一版收斂方向：不要做一條過長的大命令，而是把 `kubectl apply -f manifests/` 與 `kubectl rollout status deployment/weamind -n weamind` 收進同一個 `deploy` target；若之後發現部署有問題，再提供一個明確的回退入口。
+- 使用者修正命名語意：`rollout` 本身是動詞與狀態觀察語境，真正的回退動作應該對應 `kubectl rollout undo`，因此第二個 target 應該是 `rollback`。
+- AI 依這個修正回頭調整 infra repo 的 `Makefile`：`deploy` 內含 apply + rollout status，另外新增 `rollback` 對應 `kubectl rollout undo deployment/weamind -n weamind`。
 
 #### 結果
 
-- 待回填
+- Step 18 已把 PR merge 後的第一版人工 deploy 操作收斂成 repo 內的標準入口。
+- 目前 `Makefile` 已提供兩個 target：`deploy` 會依序執行 `kubectl apply -f manifests/` 與 `kubectl rollout status deployment/weamind -n weamind`，`rollback` 則對應 `kubectl rollout undo deployment/weamind -n weamind`。
+- 這代表 merge 後 deploy 這一段，第一版已不再需要靠記憶手打長指令，而是能用一致的 repo 命令入口來操作；若部署出問題，也有一個明確的回退入口可用。
 
 #### AI 判讀與收斂
 
-- 待回填
+- Step 18 的短結論是：在 release 後自動開 infra PR 已成立的前提下，merge 後 deploy 這一段第一版應先採人工觸發，但命令入口要標準化。
+- 這次把 `deploy` 收成 apply + rollout status，並另加 `rollback` 對應 rollout undo，是比較準確的第一版語意切法：deploy 負責正常上線，rollback 負責發現問題時回退。
+- 到這一步為止，WeaMind 第一版 CD 已經形成一條更完整的人工/自動混合路徑：release 後自動開 infra PR，PR merge 後由人工透過 `make deploy` 完成 cluster 更新與觀察，必要時再用 `make rollback` 回退。
 
 #### 目前狀態
 
-- 骨架已建立
+- 已完成
 
 補充：若今天的主線超過 2 個步驟，直接繼續往下新增 `Step 3`、`Step 4`、`Step 5`。每個 step 盡量只承接一個主要驗證點或一組緊密相關的操作，避免單一步驟過大。
 
