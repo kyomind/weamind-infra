@@ -572,13 +572,13 @@
 
 #### 結果
 
-- Step 17 已完成真實 runtime 驗證：完整 release tag `v1.2.2` 確實會觸發 app repo 的 release workflow，並在 GHCR publish 後接著對 `weamind-infra` 開出對應 PR。
+- Step 16 已完成真實 runtime 驗證：完整 release tag `v1.2.2` 確實會觸發 app repo 的 release workflow，並在 GHCR publish 後接著對 `weamind-infra` 開出對應 PR。
 - 這次的最終結果是成功建立 `weamind-infra` PR #4，證明 release-to-infra PR 這條最小 CD 路徑已經能跑通。
 - 但也同時確認：第一版並不是一次就順利到底，中間確實有 `git push` 認證問題，需要補上 `gh auth setup-git` 後再重新執行 script。
 
 #### AI 判讀與收斂
 
-- Step 17 的短結論是：這條 release-to-infra PR CD 路徑已經被真實 release tag 驗證過，而且最後成功開出 `weamind-infra` PR #4。
+- Step 16 的短結論是：這條 release-to-infra PR CD 路徑已經被真實 release tag 驗證過，而且最後成功開出 `weamind-infra` PR #4。
 - 這次驗證也帶出一個很實際的教訓：跨 repo automation 不只是「token 有沒有放對」，還包含 target repo 工作目錄內的 git 認證安裝是否完整；也就是說，`gh repo clone` 成功不代表 `git push` 一定能直接成功。
 - 對 WeaMind 這第一版來說，這個結果已經足夠證明核心設計是對的：release tag 能驅動 GHCR publish，publish 後能驅動跨 repo PR，最後在 infra repo 上留下可 review 的 version update PR。
 - 下一個自然步驟，不是再重做一次相同驗證，而是把這次失敗與修正記進 note，方便之後回顧為什麼第一次會卡在認證、以及 script 為什麼需要 `gh auth setup-git`。
@@ -587,7 +587,7 @@
 
 - 已完成
 
-### Step 17
+### Step 18
 
 #### 這一步要驗證什麼
 
