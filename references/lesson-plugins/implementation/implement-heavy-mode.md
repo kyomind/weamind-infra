@@ -36,13 +36,7 @@
 
 ## 預設骨架
 
-若今天明確屬於 implement-heavy mode，建立 lesson 骨架時預設直接建立：
-
-1. `01-outline.md`
-2. `02-qa.md`
-3. `04-report.md`
-4. `05-note.md`
-5. `06-implementation.md`
+若今天明確屬於 implement-heavy mode，建立 lesson 骨架時預設使用 implement-heavy 專用的 5 檔骨架；完整檔案清單與欄位形狀以 `references/lesson-plugins/implementation/implement-heavy-lesson-template.md` 為準。
 
 這裡和常態 lesson 最大的差異是：
 

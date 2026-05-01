@@ -1,6 +1,6 @@
 # Implementation Docs
 
-這個子目錄只負責 `06-implementation.md` 相關的操作規範，不處理 mode 選擇，也不負責 lesson 骨架。
+這個子目錄負責 implement-heavy lesson 的 mode、骨架與 `06-implementation.md` 帶法，但三者的責任必須切開，不要互相膨脹。
 
 ## 分工
 
@@ -17,4 +17,4 @@
 
 - mode 檔回答「什麼時候用 implement-heavy」。
 - template 檔回答「骨架怎麼長」。
-- implementation 子目錄回答「`06-implementation.md` 實際怎麼進行」。
+- guide 檔回答「`06-implementation.md` 實際怎麼進行」。
