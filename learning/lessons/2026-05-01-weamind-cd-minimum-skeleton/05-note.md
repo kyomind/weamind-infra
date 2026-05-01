@@ -26,6 +26,32 @@
 - **這種做法在 GitHub Actions、config repo、GitOps 相關流程中都很常見**，因為它有幾個第一版很實用的優點：容易理解、容易 debug、所有變更都留在 target repo 的 PR 歷史裡，而且 review 邊界清楚。
 - 更成熟或更大規模的做法當然存在，例如 `repository_dispatch`、另一個專職 workflow、GitHub App，或 image automation controller；但對 WeaMind 第一版來說，直接 clone target repo、改檔、push branch、開 PR，是最常見也最容易落地的起手式之一。
 
+### 問題：Fine-grained token 為什麼是目前比較推薦的做法
+
+- 使用者觀察：`Fine-grained personal access token` 看起來是 GitHub 目前比較推薦的做法，想知道它是不是現在較好的實踐，以及好在哪裡。
+- AI 回答：以這次 WeaMind 的第一版跨 repo PR 自動化來說，答案大致是「是」，因為它比傳統 PAT 更容易把權限縮到剛好夠用。
+- 最核心的差別在於：fine-grained token 可以把權限縮到特定 repo，甚至只開少數幾個 repository permissions；不像傳統 PAT 常常是一次拿到較寬的 scope，再用「人記得不要亂用」來補治理。
+- 以這次場景來說，我們只需要讓 app repo 的 workflow 對 `weamind-infra` 做三件事：clone、push branch、建立或更新 PR。fine-grained token 很適合把權限鎖成只覆蓋這三件事，例如只給 `Contents: Read and write` 與 `Pull requests: Read and write`，而且 repo 只選 `weamind-infra`。
+- 它比較好的地方，不是單純「比較新」，而是更符合最小權限原則：若 secret 洩漏，影響面也比較容易被限制在單一 repo、單一用途，而不是連其他 repo 或其他 GitHub 能力一起暴露。
+- 但更精確地說，fine-grained token 是「目前這個階段比較好的預設」，不代表它永遠是最終型態。若之後要把這條路做成更正式的多 repo automation、多人治理、可審計機器身分，GitHub App 往往會比 PAT 更進一步。
+- 因此對 WeaMind 第一版來說，較合理的評價是：fine-grained token 是比沿用現成 CLI 憑證、或使用傳統寬 scope PAT 更好的實踐；它不是最重的治理方案，但作為第一版的正式收斂點，已經相當合理。
+
+### 問題：Fine-grained token、classic PAT、GitHub App 在這次情境下怎麼選
+
+- 使用者追問：若放在 WeaMind 這次「app repo release 後對 infra repo 提出 version update PR」的情境裡，`fine-grained token`、`classic PAT`、`GitHub App` 這三種做法應該怎麼看。
+- AI 回答：可以把它們理解成三種不同重量級的授權方案，不是單純誰新誰舊，而是看目前場景需要多窄的權限、多少治理、以及願不願意承受設定成本。
+- `Fine-grained token`：最適合 WeaMind 第一版目前這種單一路徑、單一 target repo、動作可明確縮小的場景。它的優點是設定成本不高，但已能把 repo 與權限範圍縮得很窄；缺點是本質上仍然是 PAT，機器身份與審計能力不如 GitHub App。
+- `Classic PAT`：通常不是這次情境的優先答案。它能做事，但 scope 往往較粗，容易為了完成一條小路徑就把權限開得偏大。若是歷史包袱或某些 GitHub 功能限制，classic PAT 仍可能出現，但作為新的第一版實作選擇，通常不如 fine-grained token 合理。
+- `GitHub App`：權限治理、機器身份、可審計性通常都更好，也更像較長期、較正式的解法。它特別適合多 repo、自動化規模更大、多人協作、或明確需要把「人類 token」與「系統身份」徹底分開的場景。
+- 但對 WeaMind 這次第一版來說，GitHub App 的成本目前仍偏高，因為它會把注意力從「先把 release -> infra PR 路徑做通」轉移到 app 建立、安裝範圍、權限設定、私鑰管理與 token 取得流程。
+- 所以若只看這次的實際需求，較合理的排序通常是：第一版先用 fine-grained token 把路做通；classic PAT 不作為優先選項；若之後這條路真的變成長期核心基礎設施，再評估升級成 GitHub App。
+- 一句話收斂：在 WeaMind 這次情境裡，fine-grained token 是目前最平衡的第一版答案；classic PAT 偏舊且容易過權；GitHub App 更正式，但現階段重量較重。
+
+### 問題：release-to-infra PR 第一次跑通時，實際卡在什麼地方
+
+- 詳細失敗緣由、修正方式與 `GH_TOKEN` / fine-grained token 命名釐清，另見 `references/phase2/w8-release-to-infra-auth-debug.md`。
+- 主 note 只保留結果：第一次卡在 target repo 的 git push 認證安裝，後續以 `gh auth setup-git` 補齊後成功建立 `weamind-infra` PR #4。
+
 ## Flashcards
 
 <!-- 待 lesson 過程中回填 -->

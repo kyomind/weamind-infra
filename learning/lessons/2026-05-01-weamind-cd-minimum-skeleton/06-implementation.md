@@ -563,6 +563,43 @@
 
 #### 實際執行內容
 
+- 本次由使用者在 WeaMind app repo 端手動建立並推送完整 release tag `v1.2.2`，讓 `publish-release.yml` 走真實的 release workflow。
+- AI 先前已確認這條路的觸發條件是 `on.push.tags: ["v*"]`，因此這次 runtime 驗證的真正入口確實是完整 `v*` tag push，而不是一般 commit。
+- release workflow 成功完成 GHCR image publish，並進一步嘗試呼叫 `scripts/open_infra_version_pr.sh`，最後成功在 `kyomind/weamind-infra` 建立 PR #4。
+- 這次驗證的過程不是完全順利：第一次執行時，`git push` 在 target repo 工作目錄內卡住，錯誤訊息是 `fatal: could not read Username for 'https://github.com': No such device or address`。
+- 後續修正是在 `scripts/open_infra_version_pr.sh` 的 clone 與進入 repo 之後補上 `gh auth setup-git`，讓目前的 `GH_TOKEN` 能轉成 git push 可用的認證設定。
+- 修正後，因為 GitHub Actions 不會自動重跑舊 run，所以使用者改以手動方式補跑 script，最終成功建立 `weamind-infra` PR #4，分支名稱為 `bump-weamind-1.2.2`。
+
+#### 結果
+
+- Step 17 已完成真實 runtime 驗證：完整 release tag `v1.2.2` 確實會觸發 app repo 的 release workflow，並在 GHCR publish 後接著對 `weamind-infra` 開出對應 PR。
+- 這次的最終結果是成功建立 `weamind-infra` PR #4，證明 release-to-infra PR 這條最小 CD 路徑已經能跑通。
+- 但也同時確認：第一版並不是一次就順利到底，中間確實有 `git push` 認證問題，需要補上 `gh auth setup-git` 後再重新執行 script。
+
+#### AI 判讀與收斂
+
+- Step 17 的短結論是：這條 release-to-infra PR CD 路徑已經被真實 release tag 驗證過，而且最後成功開出 `weamind-infra` PR #4。
+- 這次驗證也帶出一個很實際的教訓：跨 repo automation 不只是「token 有沒有放對」，還包含 target repo 工作目錄內的 git 認證安裝是否完整；也就是說，`gh repo clone` 成功不代表 `git push` 一定能直接成功。
+- 對 WeaMind 這第一版來說，這個結果已經足夠證明核心設計是對的：release tag 能驅動 GHCR publish，publish 後能驅動跨 repo PR，最後在 infra repo 上留下可 review 的 version update PR。
+- 下一個自然步驟，不是再重做一次相同驗證，而是把這次失敗與修正記進 note，方便之後回顧為什麼第一次會卡在認證、以及 script 為什麼需要 `gh auth setup-git`。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 17
+
+#### 這一步要驗證什麼
+
+- 若 WeaMind app repo 的 release path 已經合併到 `main`，那要真正驗證 `release -> weamind-infra PR` 這條自動化路徑，是否必須由使用者在 app repo 上實際建立並推送一個完整 release tag，例如 `v1.2.2`，讓 GitHub Actions 走真實的 release workflow。
+
+#### 預計採取的動作
+
+- 先對齊這次 runtime 驗證的真正觸發條件：不是單純再做一個普通 commit，而是要有一個符合 `v*` 規則的真實 tag 被推送到 GitHub。
+- 再由使用者在 WeaMind app repo 端手動完成這次 release tag 的建立與推送，並觀察對應 CI 是否成功產出 release image、執行 cross-repo PR script、以及對 `weamind-infra` 開出 version update PR。
+
+#### 實際執行內容
+
 - 待回填
 
 #### 結果
