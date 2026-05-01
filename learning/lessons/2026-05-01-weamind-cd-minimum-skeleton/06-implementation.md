@@ -337,6 +337,112 @@
 
 - 已完成
 
+### Step 10
+
+#### 這一步要驗證什麼
+
+- 若第一版要在 app repo 內真正接上 `release -> weamind-infra PR`，這段跨 repo 更新邏輯應該如何落地，才符合目前 repo 的實作習慣，不把大段腳本硬塞進 GitHub Actions YAML。
+
+#### 預計採取的動作
+
+- 先以 WeaMind app repo 既有 `scripts/` 目錄為準，收斂第一版應新增一個專用 shell script，負責更新 `weamind-infra` 的 deployment image 並建立 PR。
+- 再決定 workflow 最小應只保留哪些責任，例如傳入 release version，再呼叫該 script；其餘 branch / commit / PR metadata 盡量收在 script 內部。
+
+#### 實際執行內容
+
+- 本次由 AI 與使用者協作實作
+- 使用者先提出偏好：第一版若用 shell 會比 Python 更安全，因為 Python 在 runner 中還要多考慮執行環境，對這個任務來說沒有明顯必要。
+- AI 隨後對照 WeaMind app repo 既有 `scripts/` 內容，確認目前 repo 本來就同時存在 shell 與 Python script，但偏 workflow orchestration、repo 操作、文字替換這類任務，主要都是以 shell 為主。
+- AI 與使用者因此先收斂：第一版應新增一個專用 shell script，負責執行 release 後的 repo automation；GitHub Actions workflow 只保留版本解析與呼叫 script 的薄層責任，不再把大段邏輯直接塞進 YAML。
+
+#### 結果
+
+- Step 10 對 script 形式的結論已收斂：第一版應使用 shell，而不是 Python。
+- 這個 script 的角色，應是承接 `release -> weamind-infra PR` 這條最小自動化路徑中的 repo automation 工作，例如更新 deployment image、準備 branch、提交 commit、建立 PR。
+- workflow 本身則應維持精簡，只負責提供 release version 並呼叫這個 script；不再把主要流程邏輯直接寫在 workflow YAML 中。
+
+#### AI 判讀與收斂
+
+- Step 10 的短結論是：第一版跨 repo 更新邏輯，應落在 WeaMind app repo 的專用 shell script，而不是內嵌在 GitHub Actions YAML，也不需要為了這個任務額外引入 Python 執行環境假設。
+- 這一步的核心理由不是「Python 不好」，而是這個任務本質上就是一串 shell 世界的操作：`git`、文字替換、`gh pr create`。第一版直接用 shell 更貼近任務本質，也更符合目前 repo 既有 script 風格。
+- 這一步完成後，後續就能把下一個實作問題收斂成更具體的 script 邊界：檔名、輸入參數、哪些行為要做、哪些行為暫時不做。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 11
+
+#### 這一步要驗證什麼
+
+- 若第一版要新增一個專用 shell script 來承接 `release -> weamind-infra PR`，那它的檔名、最小輸入參數、責任範圍與刻意不做的事應該怎麼切，才不會一開始就把邊界做得過大。
+
+#### 預計採取的動作
+
+- 先根據目前已收斂的事實點，提出第一版 shell script 的最小介面草案：檔名、必要參數、預設寫死的常數，以及 workflow 只需要傳入哪些值。
+- 再把 script 內應負責的動作和暫時不納入第一版的責任分開，避免後續一邊實作一邊擴張範圍。
+
+#### 實際執行內容
+
+- 本次由 AI 與使用者協作實作
+- 使用者同意：在 Step 10 已先確定使用 shell 後，下一步應先把 script 的邊界定清楚，再回頭處理跨 repo 權限；順序上不應先掉進 token 細節。
+- AI 依照目前已收斂的 repo 事實，提出第一版最小介面草案：script 檔名可先定為 `scripts/open_infra_version_pr.sh`，輸入先只收一個 release version，例如 `1.2.2`。
+- AI 也同步說明第一版先不要把 repo 名稱、base branch、目標檔案路徑、image repo 都做成參數，因為在 WeaMind 這條第一版路徑裡，這些值目前都屬於固定事實：target repo 是 `kyomind/weamind-infra`、base branch 是 `main`、要改的檔案是 `manifests/deployment.yaml`、image repo 是 `ghcr.io/kyomind/weamind`。
+- AI 與使用者因此先收斂：workflow 第一版只需要把 release version 傳給 script；其餘常數與 PR 產生流程，先由 script 內部負責。
+- 對於責任邊界，AI 進一步切開：第一版 script 應負責驗證參數、取得 `weamind-infra` 工作目錄、建立 branch、更新 deployment image、建立 commit、push branch、建立 PR；但不負責自動 merge、實際 deploy、同時更新多個 manifests、做多 repo 通用化，也不在這一步先處理權限治理細節。
+
+#### 結果
+
+- Step 11 已先把第一版 shell script 的最小介面與責任邊界收斂完成。
+- 目前較合理的第一版命名方向，是 `scripts/open_infra_version_pr.sh`。
+- 第一版最小輸入參數先只收 release version；其餘 repo 與檔案相關資訊先維持為 script 內部常數，不急著抽象化成通用參數。
+- 第一版責任範圍，已收斂為「對 infra repo 提出 version update PR 所需的最小 Git automation」；超出這個範圍的治理、部署與通用化工作先明確排除。
+
+#### AI 判讀與收斂
+
+- Step 11 的短結論是：第一版不要急著設計一個通用的 cross-repo automation 工具，而是先做一個明確服務 WeaMind 目前場景的專用 shell script。
+- 這個收斂的關鍵不是偷懶，而是避免在第一版過早參數化。只要 target repo、base branch、目標檔案與 image repo 目前都沒有變體需求，就不該先把它們包裝成可配置介面，否則只會讓 script 的表面靈活度增加，但真正可驗證性下降。
+- 這一步完成後，下一個更自然的問題就不是「script 要不要再更通用」，而是「這個 script 建 branch、commit、PR metadata 時要採什麼固定模板」，也就是把第一版的輸出格式再收斂一層。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 12
+
+#### 這一步要驗證什麼
+
+- 若第一版的 branch name、commit message、PR title、PR body 都應由 shell script 產生，那這些輸出格式最小應該長什麼樣，才足夠表達 version update 意圖，又不會把 metadata 設計得過重。
+
+#### 預計採取的動作
+
+- 先根據 Step 8 已收斂的最小 PR metadata 原則，提出第一版固定模板草案。
+- 再確認這些模板中，哪些值應由 workflow 傳入，哪些值應由 script 根據 release version 與既有常數自行組出。
+
+#### 實際執行內容
+
+- 本次由 AI 與使用者協作實作
+- AI 先提出第一版固定模板草案：branch name 可採 `infra/bump-weamind-1.2.2`，commit message 與 PR title 可採 `chore: bump weamind image to 1.2.2`，PR body 則保留最小必要資訊，包含目標檔案、image tag 變更與 release reference。
+- 使用者隨後修正兩個關鍵點。第一，branch name 不需要再加 `infra/` 前綴，因為目標 repo 本來就是 infra repo；在這個脈絡下，`bump-weamind-1.2.2` 已經足夠表意。第二，commit message 不需要刻意採 conventional commit；對這個單人專案來說，直接使用 `Bump weamind image to 1.2.2` 這種更貼近既有 repo 風格的寫法即可。
+- AI 接受這個修正，並與使用者收斂：第一版 branch name 採 `bump-weamind-<version>`，commit message 採 `Bump weamind image to <version>`，PR title 與 commit message 保持一致，PR body 則延續前面已同意的最小結構。
+- 對於 workflow 與 script 的責任切分，雙方也保持一致：workflow 只負責把 release version 傳進 script；branch name、commit message、PR title、PR body 都由 script 根據 version 與既有常數組出。
+
+#### 結果
+
+- Step 12 已把第一版四個輸出欄位的模板方向收斂完成。
+- 目前較合理的第一版模板如下：branch name 為 `bump-weamind-<version>`，commit message 為 `Bump weamind image to <version>`，PR title 與 commit message 相同，PR body 則只保留 deployment image 變更與 release reference。
+- 這個收斂也明確排除了兩種不必要的第一版設計：不需要再加 `infra/` 這類在 target repo 內語意重複的前綴，也不需要為了形式一致而硬套 conventional commit。
+
+#### AI 判讀與收斂
+
+- Step 12 的短結論是：第一版 template 應優先追求 repo 內語意自然、可搜尋、可重跑，而不是追求抽象上的一致命名體系。
+- 使用者對 branch name 與 commit message 的修正是合理的，因為這兩個欄位本來就應該服從 target repo 的在地語境，而不是沿用外部通用規則。對 `weamind-infra` 來說，branch 再加 `infra/` 前綴只是重複資訊；對目前的 commit 風格來說，直接寫 `Bump weamind image to <version>` 也比硬套 `chore:` 更自然。
+- 這一步完成後，script 的輸入、邊界與輸出模板都已基本收斂。下一個更自然的問題就不再是「文字怎麼命名」，而是「這個 script 內部的實際執行順序要怎麼排」，也就是開始進入真正的實作步驟。
+
+#### 目前狀態
+
+- 已完成
+
 補充：若今天的主線超過 2 個步驟，直接繼續往下新增 `Step 3`、`Step 4`、`Step 5`。每個 step 盡量只承接一個主要驗證點或一組緊密相關的操作，避免單一步驟過大。
 
 補充：回填 step 時，優先保留主要決策、關鍵操作、代表性證據、結果與 AI 收斂，不需要把每次中間來回或所有試錯細節完整照錄。
