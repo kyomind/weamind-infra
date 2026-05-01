@@ -52,6 +52,25 @@
 - 詳細失敗緣由、修正方式與 `GH_TOKEN` / fine-grained token 命名釐清，另見 `references/phase2/w8-release-to-infra-auth-debug.md`。
 - 主 note 只保留結果：第一次卡在 target repo 的 git push 認證安裝，後續以 `gh auth setup-git` 補齊後成功建立 `weamind-infra` PR #4。
 
+### 問題：為什麼不直接在 workflow / script 裡一路使用 `WEAMIND_INFRA_PR_TOKEN`
+
+- 使用者提問：既然 secret 本來就叫 `WEAMIND_INFRA_PR_TOKEN`，那 workflow 與 script 是否直接一路使用這個名稱就好，何必再另外映射成 `GH_TOKEN`。
+- AI 回答：如果只看「少一層命名」，直接用 `WEAMIND_INFRA_PR_TOKEN` 確實比較直覺；但若考慮工具邊界，我仍偏向保留現在這種做法：secret 名稱維持 repo / 用途語意，進到 runtime 時再映射成 `GH_TOKEN`。
+- 理由是：`WEAMIND_INFRA_PR_TOKEN` 這個名字比較像業務語意，說明這顆 secret 是「給 WeaMind release-to-infra PR 用的 token」；而 `GH_TOKEN` 則是 `gh` CLI 與相關認證流程熟悉的慣例入口，屬於工具語意。
+- 這樣分開後，邊界會更清楚：repo 層面知道這顆 secret 是做什麼的，script / CLI 層面則只依賴一個標準化的 `GH_TOKEN` 入口。
+- 如果未來要換 secret 名稱、換 token 來源，甚至改成其他 credential provider，script 本身也比較不需要跟著改成 repo-specific 命名。
+- 但反過來說，使用者的直覺也不是錯的：若整個流程都只服務這一條單一路徑，而且不打算重用 script，把 `WEAMIND_INFRA_PR_TOKEN` 直接傳進 script 也可以，只是那樣會讓 script 更直接依賴 repo-specific 命名。
+- 一句話收斂：我會偏向「secret 名稱保留業務語意，runtime 變數採工具慣例」；不是因為一定更高級，而是因為這樣比較容易分清楚 repo 邊界與 CLI 邊界。
+
+### 問題：`GH_TOKEN` 這個名字是不是我們自己臨時取的
+
+- 使用者整理：這次 script 裡大量使用 `gh` CLI，而 `gh` CLI 很常需要 token 當成 GitHub API 與認證的入口，所以我們才按照常見慣例把 runtime 環境變數命名為 `GH_TOKEN`。
+- AI 確認：這個理解是對的，而且比「只是想把名字縮短」更精確。
+- 更準確地說，`GH_TOKEN` 不是我們這次流程裡臨時發明的命名，而是因為 script 內部確實在使用 `gh` CLI，所以順著它常見的 token 慣例入口去接。
+- 也因此，這個命名應該被理解成「工具導向」而不是「業務導向」：重點不是 token 服務哪一條業務流程，而是這支 script 內有一個主要工具叫 `gh`，它需要一個穩定、熟悉的 token 入口。
+- 若今天這支 script 沒有使用 `gh` CLI，而是改成純 `git`、`curl` GitHub API，或其他工具鏈，那 runtime 環境變數名稱就不一定還會叫 `GH_TOKEN`，因為那時候依賴的工具慣例可能已經不同。
+- 所以更完整的說法是：我們現在用 `GH_TOKEN`，不是因為這條流程天生就該叫這個名字，而是因為目前這支 script 的主要 GitHub 操作工具是 `gh` CLI。
+
 ## Flashcards
 
 <!-- 待 lesson 過程中回填 -->
