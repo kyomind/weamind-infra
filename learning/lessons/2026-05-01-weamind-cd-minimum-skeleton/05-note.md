@@ -73,4 +73,37 @@
 
 ## Flashcards
 
-<!-- 待 lesson 過程中回填 -->
+- WeaMind 第一版 CD 真正打通到哪裡？ #DevOps #card
+	- 自動化只到 `release -> infra PR`
+	- app repo release 會自動更新 infra repo 的 image version PR
+	- merge 後不自動 apply 到 cluster
+
+- 為什麼第一版故意停在 infra PR，不直接做 release -> cluster？ #DevOps #card
+	- 這是在保留 human gate
+	- app repo 只能提出 infra 變更，不能直接改 runtime state
+	- 先把風險控制在 review / merge 邊界
+
+- 為什麼 infra repo 要追完整 release version，而不是 `latest`？ #DevOps #card
+	- 因為第一版要讓 Git 明確記錄正式 deploy source
+	- `latest` 比較像持續變動的發佈路徑，不適合當正式 deployment state
+	- 最小 diff 就是更新 `manifests/deployment.yaml` 的 image 行
+
+- WeaMind 這次的跨 repo PR，本質上在做什麼？ #DevOps #card
+	- 本質是 app repo workflow 拿到 target repo 工作目錄後做一次正常 Git 變更提案
+	- 會改檔、push branch、再對 target repo 開 PR
+	- 不是抽象的跨 infra magic
+
+- 為什麼這次會用 `GH_TOKEN` 這個名字？ #DevOps #card
+	- 因為 script 主要使用 `gh` CLI
+	- `GH_TOKEN` 是偏工具慣例的 runtime 入口
+	- `WEAMIND_INFRA_PR_TOKEN` 則保留 repo / 用途語意
+
+- 為什麼 `gh repo clone` 成功，`git push` 還是可能失敗？ #DevOps #card
+	- clone 成功不代表 target repo 內的 git 認證已完整安裝
+	- 這次真實卡點是 `git push` 缺少可用認證橋接
+	- 所以 script 後來補上 `gh auth setup-git`
+
+- PR merge 後，第一版為什麼先保留 `make deploy` / `make rollback`？ #DevOps #card
+	- 因為 merge 後仍想保留人工確認點
+	- `deploy` 對應 `apply + rollout status`
+	- `rollback` 對應 `kubectl rollout undo`
