@@ -70,8 +70,9 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 
 1. implement-heavy mode 一旦套用，預設就是 implementation-first；這不是臨時例外，而是 mode 本身的正式流程。
 2. `06` 階段預設採協作模式，不把實作主體做成答題測驗；短版 QA 收斂留到實作後的 `02-qa.md`。
-3. `01-outline.md` 應明確寫出今天套用了這個 mode，讓 AI 不需要自行猜測。
-4. implement-heavy mode 改的是 lesson 內部流程，不影響是否需要 prework 的上層判斷。
+3. 每一個 step 都必須有使用者參與，而且每完成一個 step 就應停下來，不得由 AI 自動連做多個 step。
+4. `01-outline.md` 應明確寫出今天套用了這個 mode，讓 AI 不需要自行猜測。
+5. implement-heavy mode 改的是 lesson 內部流程，不影響是否需要 prework 的上層判斷。
 
 ---
 
