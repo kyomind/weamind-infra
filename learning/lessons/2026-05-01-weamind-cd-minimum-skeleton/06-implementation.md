@@ -132,6 +132,174 @@
 
 - 已完成
 
+### Step 4
+
+#### 這一步要驗證什麼
+
+- 若 version update PR 要更新 `manifests/deployment.yaml` 的 image 欄位，第一版最合理的目標格式應該是完整 release version、minor / major tag，還是 `latest`。
+
+#### 預計採取的動作
+
+- 對照 app repo 的 release image publish workflow 與 `references/phase2/w8-cd-minimum-spec.md`，確認 infra repo 第一版應追哪一種 image tag 格式。
+
+#### 實際執行內容
+
+- 本次由 AI 與使用者協作實作
+- AI 對照 `references/weamind-app-publish-release.yml` 與 `references/phase2/w8-cd-minimum-spec.md`，確認 app repo release workflow 會產出完整版本、minor、major 三層 tag。
+- 使用者明確同意：第一版 version update PR 必須追完整 release version，而不是 `latest`、minor 或 major tag。
+- 額外驗證時，AI 先嘗試用 `gh api` 查 GHCR package versions，但目前登入缺少 `read:packages` scope，因此改以公開 package 頁面補證據，確認目前可見 tag 類型同時包含 `latest`、`sha-*`、完整版本、minor、major。
+
+#### 結果
+
+- app repo release workflow 目前會從像 `v1.2.1` 這類 Git tag 解析出 `1.2.1`、`1.2`、`1` 三層 image tag。
+- `references/phase2/w8-cd-minimum-spec.md` 已明確收斂：第一版正式 deploy source 應該是完整 release version tag。
+- GHCR 公開 package 頁面目前也能看到 `latest`、`sha-*`、`1.2.1`、`1.2`、`1` 這幾類 tag 同時存在，表示完整 release version 並不是理論上的格式，而是目前真的存在的可用 tag。
+- 因此若 version update PR 要更新 `manifests/deployment.yaml` 的 image 欄位，第一版最合理的目標格式應該是完整 release version image tag。
+
+#### AI 判讀與收斂
+
+- Step 4 的短結論是：version update PR 若要更新 `manifests/deployment.yaml` 的 image 欄位，第一版應改成完整 release version image tag，例如 `ghcr.io/kyomind/weamind:1.2.1`，而不是 `latest`、minor 或 major tag。
+- 這一步也順便補強了一個實務面結論：完整 release version 不只是 spec 上的偏好，而是 app repo workflow 與 GHCR 現況都已支援的格式。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 5
+
+#### 這一步要驗證什麼
+
+- 若 app repo 之後要自動開一個 infra repo 的 version update PR，第一版最小 diff 應該長什麼樣，才既誠實又足以表達 deployment state 的更新。
+
+#### 預計採取的動作
+
+- 以 `manifests/deployment.yaml` 的 image 欄位為中心，先收斂這個 PR 在第一版是否只需要更新單一 image 行，以及這樣的 diff 應如何表達完整 release version 變更。
+
+#### 實際執行內容
+
+- 本次由 AI 與使用者協作實作
+- AI 先根據前面已完成的 Step 3 與 Step 4，提出第一版最小 diff 應只改 `manifests/deployment.yaml` 的 image 行，不額外擴張到其他檔案或 metadata。
+- 使用者同意：第一版 version update PR 的最小 diff，應只更新 `manifests/deployment.yaml` 的 image 行，將 `latest` 改成對應的完整 release version。
+
+#### 結果
+
+- 第一版最小 diff 的修改面，仍只落在 `manifests/deployment.yaml` 的 image 欄位。
+- 這個 diff 的核心表達方式，是把 `ghcr.io/kyomind/weamind:latest` 改成對應的完整 release version，例如 `ghcr.io/kyomind/weamind:1.2.1`。
+- 目前沒有額外證據顯示第一版一定還需要同步修改其他 manifests、附帶 metadata，或加入更多 deployment state 欄位。
+
+#### AI 判讀與收斂
+
+- Step 5 的短結論是：第一版 version update PR 的最小 diff，應只更新 `manifests/deployment.yaml` 的 image 行，將 `latest` 改成對應的完整 release version。
+- 這一步讓第一版 skeleton 又往前收斂了一層：現在不只知道該改哪個檔案、該用哪種 tag，也已經知道最小 PR 內容應該保持在單行 image 變更，不額外膨脹。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 6
+
+#### 這一步要驗證什麼
+
+- 若 app repo 之後要自動產生 infra repo 的 version update PR，這個 PR 的產生點應該掛在 WeaMind 的哪一條流程上，才不會和目前 `latest` / `sha-*` 的 main 路徑混在一起。
+
+#### 預計採取的動作
+
+- 對照 WeaMind app repo 目前的 `publish-ghcr.yml` 與 `publish-release.yml`，確認 version update PR 第一版應附著在 release image publish path，而不是 main 分支的持續 publish path。
+- 若這個判斷成立，再把之後的測試目標先對齊成新增一個 release，例如 `1.2.2`。
+
+#### 實際執行內容
+
+- 本次由 AI 與使用者協作實作
+- AI 對照 WeaMind app repo 的 `publish-ghcr.yml` 與 `publish-release.yml`，確認目前 main 路徑會持續產出 `latest` / `sha-*`，release 路徑才會產出完整 release version、minor、major。
+- 使用者同意：只有在有新的 release 發生時，才需要對 `weamind-infra` 提交新的 version update PR；普通 `latest` 更新不需要開這個 PR。
+- 使用者也先把後續測試目標對齊成新增一個 release，例如 `1.2.2`。
+
+#### 結果
+
+- `publish-ghcr.yml` 對應的是 main 分支上的持續 publish path，主要產出 `latest` 與 `sha-*`。
+- `publish-release.yml` 對應的是 release image publish path，會從 `v*` tag 解析出完整 release version、minor、major。
+- 因此 infra repo 的 version update PR 若要代表正式 deploy version 更新，第一版就不應掛在 main 的持續 publish path。
+- 更精確地說：只有在新的 release 發生時，才需要對 `weamind-infra` 開一個新的 version update PR；普通 `latest` 更新不需要。
+
+#### AI 判讀與收斂
+
+- Step 6 的短結論是：第一版 infra version update PR 的產生點，應掛在 WeaMind app repo 的 release image publish path，而不是 main 分支的 `latest` / `sha-*` publish path。
+- 這一步也把觸發條件收得更精確：不是每次 image 更新都要對 infra repo 開 PR，而是只有在新的 release 發生時才需要；若後續要實測，目標可先對齊新增 release `1.2.2`。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 7
+
+#### 這一步要驗證什麼
+
+- 第一版 infra version update PR 的實作形式，應該是由 app repo workflow 直接改 `weamind-infra` branch 並開 PR，還是先產生 patch / commit 資料，再由其他動作送出，才比較符合目前專案邊界與可維護性。
+
+#### 預計採取的動作
+
+- 先比較兩種最小做法的責任邊界與操作成本：
+- app repo workflow 直接對 `weamind-infra` 建 branch、提交 image 更新、再開 PR。
+- app repo workflow 只產生變更內容或 patch，再由另一層流程負責送出 PR。
+
+#### 實際執行內容
+
+- 本次由 AI 與使用者協作實作
+- AI 先比較兩種做法：
+- app repo 的 release workflow 直接對 `weamind-infra` 建 branch、修改 image 行並開 PR。
+- app repo 只產生 patch / commit 資料，再由另一層流程或另一個系統負責送出 PR。
+- 使用者與 AI 一致偏向第一種，因為第一版目標是最小、可落地、可驗證，不需要先多拆一層中介流程。
+- 作為補充理解，AI 也整理第二種做法的常見實踐：例如先輸出 patch 檔、先產生 machine-readable artifact 給另一個 workflow 消費，或由 GitOps / release orchestration 層統一代送 PR。
+
+#### 結果
+
+- 第一版較合理的做法，是讓 app repo 的 release workflow 直接對 `weamind-infra` 建 branch、提交 image 更新並開 PR。
+- 這樣已足夠表達 deploy version 更新，而且與前面已收斂的「單行 image diff」相容，不需要再額外設計一個 patch 交接層。
+- 第二種做法不是錯，但通常更適合在下列情境出現：
+- PR 送出責任要集中在另一個 orchestration workflow。
+- 需要先把變更產物標準化，供多個環境或多個 infra repo 重複消費。
+- 想讓 app repo 只負責產生 version intent，而不直接持有跨 repo 寫入權限。
+
+#### AI 判讀與收斂
+
+- Step 7 的短結論是：第一版 infra version update PR 的實作形式，應以 app repo 的 release workflow 直接對 `weamind-infra` 建 branch、提交 image 更新並開 PR 為主；先不額外拆成 patch 產生層與另一個送 PR 流程。
+- 第二種方式的常見實踐可以理解成「先產生變更意圖，再由另一層系統送出 PR」；它比較適合更大規模或更強調權限分層的情境，但對 WeaMind 第一版來說會先增加抽象與維護成本。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 8
+
+#### 這一步要驗證什麼
+
+- 若第一版由 app repo release workflow 直接對 `weamind-infra` 開 PR，這個 PR 的 branch name、commit message、PR title 與 PR body 最小應該長什麼樣，才足夠表達 version update 意圖，又不會膨脹成過度設計。
+
+#### 預計採取的動作
+
+- 先收斂第一版最小 PR metadata 應包含哪些資訊：release version、變更檔案、變更內容、是否需要附上 release 對應來源。
+- 再判斷 branch / commit / title / body 是否都應採固定模板，以及模板應壓到多短。
+
+#### 實際執行內容
+
+- 本次由 AI 與使用者協作實作
+- AI 先提出第一版最小 PR metadata 應保持精簡：branch name、commit message、PR title 都直接帶 release version，PR body 只保留變更檔案、image 從哪個版本改到哪個版本，以及對應的 release。
+- 使用者同意先採最小做法，因為這次變更面很小，不需要把 PR body 膨脹成長篇說明。
+
+#### 結果
+
+- 第一版可接受的最小 metadata 方向是：branch name 帶 release version，commit message 與 PR title 直接表達 image bump，PR body 只保留變更檔案、image tag 變更與對應 release。
+- 這類 infra version update PR 第一版不需要展開 app 層改動摘要；若要補充來源，附 release reference 即可。
+
+#### AI 判讀與收斂
+
+- Step 8 的短結論是：第一版 infra version update PR 的 metadata 應保持最小且直接，夠清楚表達 deployment version 更新即可，不需要過度設計。
+- app 層變更摘要與 release reference 的取捨，改整理到 `05-note.md`，避免 `06-implementation.md` 在這一步重複展開。
+
+#### 目前狀態
+
+- 已完成
+
 補充：若今天的主線超過 2 個步驟，直接繼續往下新增 `Step 3`、`Step 4`、`Step 5`。每個 step 盡量只承接一個主要驗證點或一組緊密相關的操作，避免單一步驟過大。
 
 補充：回填 step 時，優先保留主要決策、關鍵操作、代表性證據、結果與 AI 收斂，不需要把每次中間來回或所有試錯細節完整照錄。
