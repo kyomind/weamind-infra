@@ -7,12 +7,14 @@
 
 ## 今日實作主題
 
-- 以 WeaMind 現有 release 與 infra 邊界為基礎，做出第一版可驗收的 CD 最小 skeleton。
+- 以 WeaMind 現有 release 與 infra 邊界為基礎，實作完成第一版可運作的 CD：讓 app repo 在新 release 發生時，能自動對 `weamind-infra` 提出 version update PR。
 
 ## 今日實作順序
 
-1. 先確認 infra repo 目前的 deployment state 還停在哪裡，以及它和今天目標之間的最小差距。
-2. 再決定第一個最誠實的落點應該是 version state、流程 skeleton，還是最小自動化骨架。
+1. 先確認 infra repo 目前的 deployment state 與第一版 CD 目標之間的最小差距。
+2. 收斂第一版 CD 所需的最小設計與責任邊界，避免把 deploy automation 一次做太多。
+3. 在 app repo 接上 release -> infra version update PR 這條最小自動化路徑。
+4. 用新的 release 實際驗證 `weamind-infra` 是否能收到對應 PR。
 
 ## 使用提醒
 
@@ -29,11 +31,13 @@
 
 ### 驗收訊號
 
-- repo 內能指出目前 deployment state 的真實位置，並能說清楚今天第一個最小落點準備落在哪一層。
+- app repo 在新的 release 發生後，能自動對 `weamind-infra` 開出 version update PR。
+- PR 內容只更新 `manifests/deployment.yaml` 的 image 行，並改成完整 release version。
+- 我們能實際看到第一版 CD 的核心路徑已經打通，而不只是停在方案或 skeleton。
 
 ### 回退點
 
-- 若今天還不能安全落成真正 automation，至少保留清楚的 skeleton 與版本邊界，不假裝已完成 deploy automation。
+- 若今天還不能完整打通 release -> infra PR，至少保留已驗證過的設計收斂與最小 workflow 草稿，不假裝第一版 CD 已經完成。
 
 ### Step 1
 
@@ -295,6 +299,39 @@
 
 - Step 8 的短結論是：第一版 infra version update PR 的 metadata 應保持最小且直接，夠清楚表達 deployment version 更新即可，不需要過度設計。
 - app 層變更摘要與 release reference 的取捨，改整理到 `05-note.md`，避免 `06-implementation.md` 在這一步重複展開。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 9
+
+#### 這一步要驗證什麼
+
+- 若第一版要由 app repo 的 release workflow 直接對 `weamind-infra` 建 branch 並開 PR，最小可行的權限與憑證做法應該是什麼，才足以跨 repo 寫入，又不會過度放大權限。
+
+#### 預計採取的動作
+
+- 先對照 WeaMind app repo 目前 workflow 內已有的權限設定，確認現有 `GITHUB_TOKEN` 主要只覆蓋 repo 內讀取與 package publish。
+- 再比較第一版跨 repo PR 可能需要的最小做法，例如 PAT、fine-grained token，或後續更正式的 GitHub App / bot 方案。
+
+#### 實際執行內容
+
+- 本次由 AI 與使用者協作實作
+- AI 先指出：WeaMind app repo 目前並沒有現成的跨 repo PR 權限或流程，這是正常現象，因為這條 path 以前從未實作過。
+- 使用者與 AI 一致認為：第一版應先採最常見、最通用、最容易落地的做法，先把 release workflow 到 infra PR 這條路做通，再視需要升級成更正式的方案。
+- AI 補充比較：第一版可先考慮最小可行的跨 repo token 做法，例如 PAT 或 fine-grained token；GitHub App / bot 方案保留給之後真的出現權限治理或多 repo 擴張需求時再升級。
+
+#### 結果
+
+- 現有 WeaMind app repo workflow 主要只有 repo 內讀取與 package publish 權限，還沒有跨 repo branch push / PR 的現成配置。
+- 對 WeaMind 第一版來說，較合理的方向不是一開始就上 GitHub App 或更分層的 orchestration，而是先用最常見、最可落地的跨 repo token 做法把流程做通。
+- 這代表第一版的權限策略應該追求：足夠完成跨 repo branch 更新與開 PR，但不要把設計提前膨脹成更重的治理方案。
+
+#### AI 判讀與收斂
+
+- Step 9 的短結論是：第一版應先用最常見、最通用、最容易落地的跨 repo token 做法，把 app repo release workflow 直接對 `weamind-infra` 建 branch 並開 PR 這條路做通；GitHub App / bot 等更正式方案留到後續真的有需要時再升級。
+- 這一步的核心不是選最漂亮的權限架構，而是先選最容易做成、最容易 debug、也最容易解釋的做法。對目前這個階段來說，這個順序比一開始就追求最完整的治理更正確。
 
 #### 目前狀態
 
