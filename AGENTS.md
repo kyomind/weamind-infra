@@ -60,11 +60,11 @@ Default to a learning coach / interviewer posture, not a build consultant postur
 
 ## Learning Workflow
 
-### Entry Rule
+Use `learning/README.md` as the entry router for learning work.
 
 When the user says "start today's lesson" or begins a new lesson topic, solve the workflow question first. Do not jump straight into questions or file creation.
 
-The required reading order is progressive:
+The required reading order is progressive and conditional:
 
 1. Read `learning/README.md`
 2. Decide whether today needs external prework or can go straight into an internal lesson
@@ -74,60 +74,25 @@ The required reading order is progressive:
 
 If you are not sure whether today needs external concept-building first, ask the user. Do not silently skip that decision.
 
-### Prework Before Lesson
+For prework naming, structure, handoff, and homework-style follow-ups, treat `learning/prework/README.md` as the source of truth.
 
-If the topic needs external pure-knowledge prep:
-
-1. Create `learning/prework/YYYY-MM-DD-slug.md`
-2. Let the user complete the prework with an external ChatGPT-like tool
-3. Only then create or enter `learning/lessons/YYYY-MM-DD-slug/`
-
-Do not start internal lesson QA or command drill before the required prework is done.
+For lesson internals such as QA, command drill, report, notes, file skeletons, and mode-specific rules, treat `learning/lessons/README.md` as the source of truth.
 
 ### Self-Check Before Starting
 
-After creating prework or lesson files, run a document self-check before the actual lesson begins.
-
-At minimum:
+After creating prework or lesson files, run a document self-check before the actual lesson begins:
 
 - compare the work against `learning/README.md`
 - compare it against the second-level README actually in use
 - if a new lesson skeleton was created, compare it against `learning/lessons/lesson-template.md`
-- if a new lesson skeleton was created, explicitly verify `05-note.md` initialization against `learning/lessons/README.md` rather than relying on memory; in particular, `Notes` and `Flashcards` should still be empty except for optional HTML comment placeholders
 
 Fix structural problems before continuing.
 
-### Internal Lesson Flow
-
-Once inside a lesson, the default flow is:
-
-`QA -> command -> report`
-
-Only allow `command` before `QA` if `01-outline.md` explicitly explains why that exception is better for that lesson.
-
 When a lesson is already in progress and the user says only "continue" or "繼續", treat that as continuing the current interactive lesson turn, not as permission to auto-complete the remaining lesson files.
 
-In that situation:
+Use the current lesson files and `learning/lessons/README.md` to identify whether the lesson is currently in `QA`, `command`, or `report`; continue one appropriate interaction step, and wait for the user's answer or command output when the lesson is still interactive.
 
-1. first identify whether the lesson is currently in `QA`, `command`, or `report`
-2. if it is in `QA` or `command`, continue with the next single interaction step and wait for the user's answer or command output
-3. only move into `report` consolidation after the interactive part is finished, or when the user explicitly asks for consolidation
-
-During command drill, when presenting three candidate commands, render them together in a single `bash` code block rather than as plain bullets or inline text.
-
-## Lesson Execution Rules
-
-Use the standard lesson structure under `learning/lessons/`:
-
-- `01-outline.md` defines scope and sequence
-- `02-qa.md` contains 3 to 5 small repo-backed questions
-- `03-command.md` is optional and comes after QA by default
-- `04-report.md` is the lesson-level conclusion page
-- `05-note.md` holds extensions, temporary conclusions, and flashcards
-
-For detailed lesson-file responsibilities, QA style, command drill structure, terminology, and note boundaries, treat `learning/lessons/README.md` as the source of truth.
-
-AGENTS.md should stay at the workflow and collaboration-rule level, not duplicate lower-level formatting details that already live in the lessons README.
+AGENTS.md should stay at the workflow and collaboration-rule level. Keep detailed learning-file rules in the lower-level README files so they are loaded only when relevant.
 
 ### Scope Discipline
 
@@ -235,4 +200,8 @@ Use these as the primary references when you need repo-grounded context:
 - `.privatedocs/weamind/`
 - `references/`
 
-Treat `AGENTS.md` as the project's main prompt and update it directly when stable instruction-level changes are needed.
+## AGENTS.md as the project main prompt
+
+- Treat `AGENTS.md` as the project's sole main prompt.
+- `CLAUDE.md` is a synchronized copy of `AGENTS.md`; if you are already reading `CLAUDE.md`, you do not need to read `AGENTS.md` again.
+- When main instruction-related changes are needed, edit `AGENTS.md` directly.
