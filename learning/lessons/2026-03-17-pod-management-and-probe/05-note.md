@@ -102,10 +102,10 @@
 ### Pod 在 control-plane 與 worker 的成本差異
 
 - 使用者最後收斂出的問題是：能不能把 Pod 理解成在 control-plane 與 worker 兩邊都會有資源消耗，只是形式不同。
-- 這個理解方向是對的，但更精準的說法是：Pod 在 control-plane 主要有控制面成本，在 worker 主要有執行期成本。
+- 這個理解方向是對的，但更精準的說法是：Pod 在 control-plane 主要有**控制面成本**，在 worker 主要有**執行期成本**。
 - 在 control-plane，Pod 是 API 物件，成本來自 API Server、scheduler、controller 的觀察與協調，以及 datastore 對 Pod 狀態的保存。
 - 在 worker，Pod 則是承載 containers 的運行單位，這一側才會出現比較直覺的 CPU、記憶體、sandbox、網路等執行期開銷。
-- 所以如果面試或複習時要用一句話收斂，可以說：Pod 在 control-plane 是一筆要被管理的物件，在 worker 才是實際承載 container 的運行單位。
+- ⭐️所以如果面試或複習時要用一句話收斂，可以說：**Pod 在 control-plane 是一筆要被管理的物件，在 worker 才是實際承載 container 的運行單位。**
 
 ## Flashcards
 

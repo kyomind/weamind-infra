@@ -605,3 +605,47 @@ Kubernetes 官方文件對這點講得很直接：kube-scheduler 會用 Pod / co
 這是 Kubernetes 官方文件明確寫的行為，所以最後 scheduler 看到的其實還是 request，只是那個 request 是被預設補出來的，不是 scheduler 直接拿 limit 來排。
 
 一句話收斂：**scheduler 平常看的是 `requests`；`limits` 主要管執行期上限。**
+
+## kubelet 最常做的事情有哪些？
+
+可以抓三大塊：
+
+- **Watch API Server**：看有沒有 Pod 被指派到自己這台 node
+- **協調 container runtime**：把 Pod 規格變成真正執行的 container
+- **回報狀態**：持續向 API Server 回報 node 狀態與 Pod 狀態
+
+執行期還會一直做：跑 probe、管 volume mount、收 logs / metrics。
+
+一句話記法：kubelet 是 node 上的 agent，負責把 API Server 上的 Pod 規格變成實際執行的 container，並持續維護與回報狀態。
+
+## Deployment 常見的 rollout 策略有哪些？
+
+兩種：
+
+- **RollingUpdate（預設）**：漸進式交接，新 Pod 起來、舊 Pod 退場交替進行，可用 `maxSurge` / `maxUnavailable` 控制節奏，服務不中斷但新舊版本會短暫並存
+- **Recreate**：先把舊 Pod 全部停掉再建新 Pod，簡單但會短暫停機，適合不能同時跑兩個版本的情境
+
+一句話記法：RollingUpdate 是漸進換血、服務不斷；Recreate 是先關再開、乾淨但會停機。
+
+## Blue-Green 和 Canary 不是 Deployment 原生策略嗎？
+
+不是。Deployment 的 `spec.strategy.type` 只有 `RollingUpdate` 和 `Recreate` 兩種。
+
+Blue-Green 和 Canary 是更上層的部署模式，需要額外工具或手動編排，例如：
+
+- 手動管理兩個 Deployment + Service 切換
+- Argo Rollouts、Flagger 等 CD 工具
+- Service Mesh 做流量分流
+
+一句話記法：Deployment 原生只有兩種策略；Blue-Green / Canary 是更高層的模式，Kubernetes 不直接提供。
+
+## 為什麼 DaemonSet 和 StatefulSet 也有 rollout？
+
+因為它們也會遇到「舊版本換新版本」的情境。
+
+- DaemonSet：每個 node 跑一份 Pod，更新時每台 node 上的 Pod 都要換過
+- StatefulSet：有狀態服務，Pod 有穩定身份，更新時通常按順序逐一換版
+
+只要是「管一組 Pod 且需要版本更新」的 controller，就會有 rollout 議題。差別在於各自的更新順序、節奏、狀態保證不同。
+
+一句話記法：rollout 是 controller 把舊版 Pod 換成新版的過程；Deployment、DaemonSet、StatefulSet 都管 Pod，所以都有這個需求。
