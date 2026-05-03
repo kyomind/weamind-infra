@@ -57,7 +57,6 @@
         "git for-each-ref": true,
         "git reflog": true
     },
-    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
     "python.terminal.activateEnvironment": false,
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": false,
