@@ -153,6 +153,29 @@
 - `status.loadBalancer.ingress` 出現 `10.0.0.3`、`10.0.0.4`、`10.0.0.5`，則是在告訴你 **目前這份 Ingress 對外宣告的入口資訊包含哪些 IP**。這不等於 Hetzner LB 一定會把流量送到三台，但它能幫你把 Ingress 規則和實際入口能力對起來。
 - 所以最實用的記法是：**`kubectl get ingress -o yaml` 讓你一次看到 controller 是誰、host/path 怎麼匹配、後端 Service 是誰、TLS 憑證綁哪裡，以及它目前對外宣告了哪些入口 IP。**
 
+### HTTP→HTTPS redirect 已透過 Traefik Middleware 補上
+
+- 這則是後續 review 確認：原本在 note 裡指出的「HTTP→HTTPS redirect 缺口」，現在已經補上。
+- 實作方式是 **Traefik Middleware**，見 [manifests/middleware-https-redirect.yaml](../../../manifests/middleware-https-redirect.yaml)：宣告一個 `redirectScheme` middleware，把 `scheme` 設成 `https`、`permanent: true` 做 301 redirect。
+- [manifests/ingress.yaml](../../../manifests/ingress.yaml) 則透過 annotation `traefik.ingress.kubernetes.io/router.middlewares: weamind-https-redirect@kubernetescrd` 把這個 middleware 套用到入口。
+- 這代表現在外部 HTTP 打 `k8s.kyomind.tw` 會先被 Traefik redirect 到 HTTPS，不再直接回應未加密內容。
+
+### 為什麼 redirect 不能搬到 Hetzner LB 這一層
+
+- 這則是 2026-05-03 的 review 確認：有人建議「把 HTTP→HTTPS redirect 搬到 Hetzner LB 來做會更乾淨」，但這對 WeaMind **不可行**。
+- 核心原因：若要讓 Hetzner LB 做 HTTP redirect，LB 必須從 TCP passthrough 改成 **HTTP 模式**，這代表 **TLS termination 會從 Traefik 搬到 Hetzner LB**。
+- 但 WeaMind 的 TLS 方案是 **cert-manager + DNS-01**，憑證生命週期在 K8s 內管理；這個架構之所以存在，是因為 **Hetzner Managed Certificate 和 Cloudflare DNS 不相容**。
+- 詳細歷史脈絡見 [07-implementation-note.md](07-implementation-note.md)：「為什麼不能把 TLS termination 再拉回 Hetzner LB」。
+- 所以目前 Traefik Middleware 做 redirect 是配合這個架構的正確做法，不需要改動。
+
+### 為什麼 Hetzner LB 做 redirect 就必須改成 HTTP 模式
+
+- 這是 Hetzner LB **產品設計的限制**，不是所有 Load Balancer 的通用行為。
+- 根據 [07-implementation-note.md](07-implementation-note.md) 的實際操作記錄：當你在 Hetzner LB 把 service protocol 從 `http` 改成 `https` 時，UI 會立刻要求 `Add certificates`，並出現 `HTTP-Redirect (301)` 選項。
+- 這代表 Hetzner LB 的 redirect 功能是 **綁在 HTTPS service 上的**：要啟用 redirect，LB service 就必須是 HTTP/HTTPS 模式（L7），不能維持 TCP passthrough（L4）。
+- 換句話說，在 Hetzner LB 這個產品裡，**redirect 和 TLS termination 是綁在一起的**。你無法只讓 LB 做 redirect 而不讓它做 TLS termination。
+- 其他雲廠商的 LB 可能有不同設計，但這裡討論的是 WeaMind 實際使用的 Hetzner LB 行為。
+
 ## Flashcards
 
 - 為什麼 WeaMind 的 Hetzner LB 後端只放 worker？ #DevOps #card
