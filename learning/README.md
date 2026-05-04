@@ -15,6 +15,10 @@
 - `learning/lessons/README.md` 負責 lesson 內部規格。
 - `learning/prework/README.md` 負責 prework 規格。
 
+## AI 工作規則
+
+以下章節是 `learning/` 的目錄局部工作規則。AI 只有在 root `AGENTS.md` 路由到本檔處理學習流程時，才應使用這些規則。
+
 ---
 
 ## 三層分工

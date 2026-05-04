@@ -29,6 +29,10 @@
 3. 做 Why、trade-off、debug sequence 追問。
 4. 做每日驗收與面試式練習。
 
+## AI 工作規則
+
+以下章節是 `learning/prework/` 的目錄局部工作規則。AI 只有在 `learning/README.md` 已判斷需要外部預習或 lesson 後補強 homework 後，才應使用這些規則。
+
 ---
 
 ## 與 lesson 的先後順序

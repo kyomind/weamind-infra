@@ -27,6 +27,10 @@
 - prework 是外部預習。
 - lessons 是內部對照與驗收。
 
+## AI 工作規則
+
+以下章節是 `learning/lessons/` 的目錄局部工作規則。AI 只有在 `learning/README.md` 已判斷進入 lesson 流程後，才應使用這些規則。
+
 ---
 
 ## 和 prework 的分工
