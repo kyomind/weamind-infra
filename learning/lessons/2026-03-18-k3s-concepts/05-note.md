@@ -1,5 +1,5 @@
 # 2026-03-18 K3s Concepts Notes
-
+複習：2026-05-04
 ## 學習注意事項
 
 ### 外部預習回帶重點
@@ -73,7 +73,7 @@
 - 所以這題最穩的可講版是：不同環境下 `ROLES` 顯示可能不同，甚至 worker 常常就是 `<none>`；排程限制不應建立在這個顯示欄位上，而應建立在你明確可控的 node labels、taints 與 selectors 上。
 
 ### Worker node 上不是所有事情都一定要經過 kubelet
-
+🐱：有簡單版看複習note即可
 - 使用者進一步追問：如果把範圍縮到單一 worker node 本身，那是不是凡是和這台 worker 有關的事情，都一定要經由 kubelet 處理。
 - 這題要先把「和這台 node 有關」拆成兩層。第一層是 Kubernetes workload lifecycle，也就是 Pod 被指派到這台 node 後，怎麼建立 sandbox、拉 image、啟動 containers、回報 Pod / node 狀態。這一層裡，kubelet 確實是核心 agent，幾乎所有 Pod 落地相關流程都會經過它協調。
 - 第二層是 node 上所有其他事情。這一層就不能說都要經過 kubelet，因為 worker node 上還有很多不是由 kubelet 直接掌管的部分，例如 container runtime 本身、CNI / dataplane、kube-proxy、CSI node plugin，以及更底層的 Linux OS、systemd、磁碟、網路介面與防火牆設定。
@@ -149,7 +149,7 @@ strategy:
 5. 接著再重複同樣節奏：先補新的 v2，再降一個舊的 v1，直到最後變成 3 個 v2。
 
 - 這裡 `maxUnavailable: 1` 的作用，不是說 controller 一定要先讓 1 個 Pod 掛掉，而是說更新過程中，最多容忍有 1 個本來應該可用的 Pod 暫時不可用；不能讓可用容量掉得更多。
-- 所以在 `replicas: 3` 的情境下，這組設定可白話理解成：更新時總 Pod 數最多可到 4，但可用 Pod 數不應低到少於 2 太多。
+- ⭐️所以在 `replicas: 3` 的情境下，這組設定可白話理解成：更新時總 Pod 數最多可到 4，可用 Pod 數不應低於 2。
 - 這也說明兩個參數是一起工作的：`maxSurge` 讓你能先加新 Pod，`maxUnavailable` 則限制你不能把可用容量掉得太兇。
 
 ## Flashcards

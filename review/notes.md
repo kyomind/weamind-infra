@@ -649,3 +649,36 @@ Blue-Green 和 Canary 是更上層的部署模式，需要額外工具或手動�
 只要是「管一組 Pod 且需要版本更新」的 controller，就會有 rollout 議題。差別在於各自的更新順序、節奏、狀態保證不同。
 
 一句話記法：rollout 是 controller 把舊版 Pod 換成新版的過程；Deployment、DaemonSet、StatefulSet 都管 Pod，所以都有這個需求。
+
+## Deployment conditions 白話解釋
+
+Deployment conditions 就是 Kubernetes 用來回答「這個 Deployment 現在狀況怎麼樣」的狀態欄位，可以想成健康報告上的幾個勾選項目。
+
+日常最常看的兩個：
+
+- **Available**：現在有沒有足夠的 Pod 在跑？True 代表服務可用，False 代表還在起來或掛了
+- **Progressing**：更新有沒有在順利進行？True 代表正在更新或上次更新已成功，False 代表卡住了
+
+比較少見但要知道的：
+
+- **ReplicaFailure**：建 Pod 過程有沒有出錯？出現這個通常代表有問題，例如 image 拉不下來、資源不夠
+
+一句話收斂：跑 `kubectl get deployment -o yaml` 看 conditions 區塊，主要就是在看這幾個問題的答案。
+
+## Worker node 上不是所有事情都經過 kubelet
+
+簡單分兩層：
+
+- Pod 生命週期：kubelet 幾乎都會經手。Pod 排到這台 node 後，建 container、拉 image、跑 probe、回報狀態，都是 kubelet 在協調
+- 其他 node 層面的事：不一定經過 kubelet。例如 container runtime 本身、CNI 網路、kube-proxy、CSI，以及更底層的 OS、systemd、防火牆設定
+
+一句話記法：問「Pod 怎麼跑起來」，kubelet 一定在核心路徑；問「node 上所有事情」，kubelet 不是唯一入口。
+
+## `maxSurge` 和 `maxUnavailable` 各自在限制什麼
+
+這兩個值一個管「可以**多多少**」，另一個管「可以**少多少**」：
+
+- `maxSurge`：rolling update 時，最多能超出目標副本數多少新 Pod。用資源換更平滑的交接
+- `maxUnavailable`：更新過程中，最多可暫時少掉多少可用 Pod。用來限制服務可用性的下降幅度
+
+一句話記法：`maxSurge` 是先多開幾個新的，`maxUnavailable` 是允許先少掉幾個舊的。

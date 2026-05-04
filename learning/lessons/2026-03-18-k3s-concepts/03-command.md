@@ -1,5 +1,5 @@
 # 2026-03-18 K3s Concepts Command
-
+複習：2026-05-03
 ## 今日指令練習目標
 
 把今天 lesson 的 K3s、kubeconfig 與 rollout 補強對到實際觀察入口：
