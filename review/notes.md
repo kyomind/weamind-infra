@@ -682,3 +682,24 @@ Deployment conditions 就是 Kubernetes 用來回答「這個 Deployment 現在�
 - `maxUnavailable`：更新過程中，最多可暫時少掉多少可用 Pod。用來限制服務可用性的下降幅度
 
 一句話記法：`maxSurge` 是先多開幾個新的，`maxUnavailable` 是允許先少掉幾個舊的。
+
+## CPU 資源單位 `250m` 怎麼理解
+
+`m` 是 millicores，千分之一個 CPU 核心。
+
+- `1000m` = 1 個完整 CPU 核心
+- `250m` = 0.25 核 = 1/4 核
+- `100m` = 0.1 核 = 10% CPU
+
+所以 `requests.cpu: 250m` 代表這個 container 至少要保證能用到 1/4 核的 CPU 時間。
+
+一句話記法：`m` 是毫核，`1000m = 1 核`，`250m` 就是 1/4 核。
+
+## CreateContainerError 和 CrashLoopBackOff 差在哪
+
+兩者卡住的階段不同：
+
+- `CreateContainerError`：container 還沒成功建立。優先查 ConfigMap / Secret 引用、volume 掛載、env 設定是否有誤。WeaMind 有過 `invalid UTF-8` 案例，根因是 Secret 使用方式錯誤
+- `CrashLoopBackOff`：container 建立成功但 app 啟動後反覆 crash。優先查 app logs、啟動指令、健康檢查
+
+一句話記法：CreateContainerError 是「還沒生出來」，CrashLoopBackOff 是「生出來但一直掛」。
