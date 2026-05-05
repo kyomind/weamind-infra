@@ -18,7 +18,7 @@
 
 ## 和 Lessons README 的分工
 
-`learning/lessons/README.md` 仍是 `learning/lessons/` 的主規則檔。
+`learning/lessons/AGENTS.md` 仍是 `learning/lessons/` 的主規則檔。
 
 本檔只補充三件事：
 
@@ -28,8 +28,8 @@
 
 換句話說：
 
-1. prework 是否需要，仍由 `learning/README.md` 判斷。
-2. lesson 的常態檔案責任，仍以 `learning/lessons/README.md` 為準。
+1. prework 是否需要，仍由 `learning/AGENTS.md` 判斷。
+2. lesson 的常態檔案責任，仍以 `learning/lessons/AGENTS.md` 為準。
 3. 只有當天已判定為 implement-heavy mode，才把本檔當成額外增量規則來讀。
 
 ---
@@ -114,7 +114,7 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 
 即使今天是 implement-heavy mode，下列常態規則仍然不變：
 
-1. 是否需要 prework，仍先回 `learning/README.md` 判斷。
+1. 是否需要 prework，仍先回 `learning/AGENTS.md` 判斷。
 2. `04-report.md` 仍在互動完成後再收斂，不預先代寫。
 3. `05-note.md` 仍保留一般 lesson 的延伸問答、暫時結論與卡片素材。
 4. 真正的 lesson 完成標準，仍應回到能否把這次變更、驗收與 trade-off 講清楚。
@@ -125,10 +125,11 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 
 若今天判定為 implement-heavy mode，建議讀取順序為：
 
-1. 先讀 `learning/README.md`，確認今天確實要進 lesson，且 prework 判斷已完成。
-2. 再讀 `learning/lessons/README.md`，確認 lesson 的通用結構與檔案分工。
-3. 再讀本檔，套用 implement-heavy mode 的正式流程、5 檔骨架與 06 初始化規則。
-4. 建骨架時再讀 `references/lesson-plugins/implementation/implement-heavy-lesson-template.md`，建立 implement-heavy 專用骨架。
-5. `02-qa.md`、`04-report.md`、`05-note.md` 的共通骨架，仍回 `learning/lessons/lesson-template.md`。
+1. 先讀 `learning/AGENTS.md`，確認今天確實要進 lesson，且 prework 判斷已完成。
+2. 再讀 `learning/lessons/AGENTS.md`，確認 lesson 的通用結構與檔案分工。
+3. 再讀 `references/lesson-plugins/implementation/AGENTS.md`，確認 implementation plugin 內各檔案的責任邊界。
+4. 再讀本檔，套用 implement-heavy mode 的正式流程、5 檔骨架與 06 初始化規則。
+5. 建骨架時再讀 `references/lesson-plugins/implementation/implement-heavy-lesson-template.md`，建立 implement-heavy 專用骨架。
+6. `02-qa.md`、`04-report.md`、`05-note.md` 的共通骨架，仍回 `learning/lessons/lesson-template.md`。
 
-一句話原則：常態規則留在 `README.md`，實作型 lesson 的重心與 06 規格留在本檔，按需揭露。
+一句話原則：常態規則留在 `learning/lessons/AGENTS.md`，實作型 lesson 的重心與 06 規格留在本檔，按需揭露。

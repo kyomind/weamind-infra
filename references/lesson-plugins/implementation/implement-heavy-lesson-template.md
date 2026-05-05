@@ -1,7 +1,7 @@
 # Implement-Heavy Lesson Template
 
 > 用途：只在今天已明確套用 implement-heavy mode 時使用。
-> 使用方式：先讀 `learning/README.md`、`learning/lessons/README.md`、`references/lesson-plugins/implementation/implement-heavy-mode.md`，確認今天真的屬於 implement-heavy mode，再用本檔建立 mode 專用骨架。
+> 使用方式：先讀 `learning/AGENTS.md`、`learning/lessons/AGENTS.md`、`references/lesson-plugins/implementation/AGENTS.md`、`references/lesson-plugins/implementation/implement-heavy-mode.md`，確認今天真的屬於 implement-heavy mode，再用本檔建立 mode 專用骨架。
 > 原則：本檔只提供 implement-heavy 骨架，不重寫 mode 的判斷條件與自檢規則。
 
 ---

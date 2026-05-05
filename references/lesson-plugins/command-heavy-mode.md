@@ -18,7 +18,7 @@
 
 ## 和 Lessons README 的分工
 
-`README.md` 仍是 `learning/lessons/` 的主規則檔。
+`learning/lessons/AGENTS.md` 仍是 `learning/lessons/` 的主規則檔。
 
 本檔只補充兩件事：
 
@@ -84,8 +84,8 @@
 
 若今天判定為 command-heavy mode，建議讀取順序為：
 
-1. 先讀 `learning/README.md`，確認今天確實要進 lesson。
-2. 再讀 `learning/lessons/README.md`，確認 lesson 的通用結構與檔案分工。
+1. 先讀 `learning/AGENTS.md`，確認今天確實要進 lesson。
+2. 再讀 `learning/lessons/AGENTS.md`，確認 lesson 的通用結構與檔案分工。
 3. 最後再讀本檔，只拿 command-heavy 當天真的會用到的增量規則。
 
-一句話原則：常態規則留在 `README.md`，例外高密度節奏留在本檔，按需揭露。
+一句話原則：常態規則留在 `learning/lessons/AGENTS.md`，例外高密度節奏留在本檔，按需揭露。
