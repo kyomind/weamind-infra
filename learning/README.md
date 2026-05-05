@@ -19,8 +19,8 @@
 
 ## 閱讀入口
 
-新的學習操作應先由 root `AGENTS.md` route 到 `learning/AGENTS.md`。
+新的學習操作入口是 root `AGENTS.md`，再分流到 `learning/AGENTS.md`。
 
-若已判斷要進入 lesson，讀 `lessons/README.md` 建立方向，再依需要讀 `lessons/AGENTS.md`。
+lesson 流程的導覽在 `lessons/README.md`；AI 工作規則在 `lessons/AGENTS.md`。
 
-若已判斷需要外部預習或 homework 型補強，讀 `prework/README.md` 建立方向，再依需要讀 `prework/AGENTS.md`。
+prework 與 homework 型補強的導覽在 `prework/README.md`；AI 工作規則在 `prework/AGENTS.md`。

@@ -33,10 +33,10 @@
 
 - `03-command.md`
 
-若當天明確是 implement-heavy mode，請依 `learning/lessons/plugins/lesson-modes.md` 與 implementation plugin 文件建立對應骨架。
+implement-heavy mode 的骨架與規格入口在 `learning/lessons/plugins/lesson-modes.md` 與 implementation plugin 文件。
 
 ## 閱讀入口
 
-進入 lesson 流程前，應先由 `learning/AGENTS.md` 完成「是否需要 prework」的判斷。
+lesson 流程承接 `learning/AGENTS.md` 的 prework decision。
 
-已確認要進 lesson 時，再讀本目錄的 `AGENTS.md` 取得 lesson 內部 routing；依 active file 再讀 `rules/` 內對應細則。
+本目錄的 `AGENTS.md` 提供 lesson 內部 routing；`rules/` 提供 active file 對應細則。
