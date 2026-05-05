@@ -4,7 +4,7 @@
 
 這份文件只處理 lesson 流程中的 command-heavy mode 例外規格。
 
-它不是 lessons 的常態 README，而是按需讀取的補充說明。
+它是按需讀取的 command-heavy 補充規則。
 
 適用情境：
 
@@ -27,7 +27,7 @@
 
 換句話說：
 
-1. 常態規則仍以 `README.md` 為準。
+1. 常態規則仍以 `learning/lessons/AGENTS.md` 與 `learning/lessons/rules/command.md` 為準。
 2. 只有當天已判定為 command-heavy mode，才把本檔當成額外增量規則來讀。
 
 ---

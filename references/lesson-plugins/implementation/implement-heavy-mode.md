@@ -4,7 +4,7 @@
 
 這份文件只處理 lesson 流程中的 implement-heavy mode 例外規格。
 
-它不是 lessons 的常態 README，而是按需讀取的補充說明。
+它是按需讀取的 implement-heavy 補充規則。
 
 適用情境：
 

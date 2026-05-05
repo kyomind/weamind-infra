@@ -1,8 +1,8 @@
 # Lesson Template
 
 > 用途：建立新 lesson 時，直接用這份模板產生當天 lesson 的檔案骨架。
-> 使用方式：先讀 `README.md`，確認今天已經要進入 lesson 流程，再用本檔建立骨架。
-> 原則：規則、判斷條件與正式格式一律以 `README.md` 為準；本檔只保留骨架，不重複維護規則。
+> 使用方式：先讀 `AGENTS.md`，確認今天已經要進入 lesson 流程，再用本檔建立骨架。
+> 原則：規則、判斷條件與正式格式一律以 `AGENTS.md` 與 `rules/` 為準；本檔只保留骨架，不重複維護規則。
 
 補充：若今天明確屬於 command-heavy mode 或 implement-heavy mode，先回對應外掛檔；本模板只負責常態骨架，不取代 mode 規格。
 
@@ -339,6 +339,6 @@
 
 ## 開 lesson 時的最小流程
 
-1. 先看 `README.md`。
+1. 先看 `AGENTS.md`；依 active file 讀取 `rules/` 內對應細則。
 2. 再用這份模板建立當天需要的檔案。
 3. 依 lesson 實際進行狀況回填內容。
