@@ -223,6 +223,49 @@
 
 #### 實際執行內容
 
+- 本次由使用者實作
+- 使用者第一次執行 `terraform plan -var="project_id=$(gcloud config get-value project 2>/dev/null)"` 時，人位於 `terraform/`，不是 `terraform/gcp-free-tier-vm/`。
+- Terraform 當場回覆 `Error: No configuration files`，因為目前工作目錄下沒有任何 `.tf` 設定檔。
+- 進一步確認後，`main.tf`、`variables.tf`、`provider.tf`、`outputs.tf` 等檔案都在 `terraform/gcp-free-tier-vm/`，不是在 `terraform/` 根目錄。
+- 使用者之後切到 `terraform/gcp-free-tier-vm/`，再次執行同一條 `terraform plan`，這次成功展開 execution plan。
+- 成功的 plan 清楚顯示 Terraform 打算建立 3 個資源：`google_compute_firewall.allow_http`、`google_compute_firewall.allow_https`、`google_compute_instance.free_tier_vm`。
+- 在 VM 規格上，也已經直接看到這次最重要的 Free Tier 邊界都有正確落下：`machine_type = e2-micro`、`name = free-tier-vm`、`zone = us-east1-b`、boot disk `size = 25`、`type = pd-standard`，以及 `access_config.network_tier = STANDARD`。
+- 在 outputs 區塊中，`instance_name`、`instance_zone`、`machine_type`、`project_id` 已能在 plan 階段直接看到，而 `external_ip` 仍維持 `known after apply`。
+
+#### 結果
+
+- 這次失敗不是 provider、ADC、輸入值或 GCP API 問題。
+- 真正原因是執行目錄錯誤：Terraform 只會讀目前所在目錄的設定檔，而 `terraform/` 根目錄沒有 `.tf` 檔，所以無法產生 plan。
+- 修正工作目錄後，第一次有效的 `terraform plan` 已成功完成。
+- 這份 plan 目前的收斂非常清楚：`3 to add, 0 to change, 0 to destroy`，也就是 1 台 VM 加上 2 條 firewall，沒有額外雜訊資源。
+- 這也證明目前的 Terraform 骨架、輸入值、provider 與認證前提都已經接起來了。
+
+#### AI 判讀與收斂
+
+- 這是一個典型但很有價值的第一層 debug：先分辨是「設定壞了」還是「工具根本沒讀到設定」。
+- 這次訊號很乾淨，因為 `No configuration files` 直接指向工作目錄，而不是 Terraform schema 或雲端權限。
+- 在切到正確目錄後，成功的 plan 又補上第二層確認：不只工具能讀到設定，連資源類型、主要 spec 值與 outputs 邊界也都符合預期。
+- plan 最後那句關於 `-out` 的 note，不是在說這次 plan 有問題，而是在提醒：如果現在直接跑 `terraform apply`，Terraform 會重新計算一次當下狀態；它不保證一定和這次螢幕上看到的 plan 逐欄完全一致。
+- 因此 Step 5 可以正式收斂為已完成；下一步若要繼續，才適合新開 step 處理 apply 前最後確認。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 6
+
+#### 這一步要驗證什麼
+
+- 在真正執行 `terraform apply` 前，是否已經把最後一批會影響結果判讀的確認點收乾淨。
+
+#### 預計採取的動作
+
+- 先用剛完成的 `plan`，回頭確認這次要建立的資源集合與原本 lesson 範圍一致。
+- 再確認目前是否接受兩條 firewall 規則、`project_id` output 暫時保留，以及 external IP 會在 apply 後才知道。
+- 最後再確認這次 apply 若真的往下做，預期要觀察的重點是什麼，不把 apply 做成純按鍵動作。
+
+#### 實際執行內容
+
 - 待回填
 
 #### 結果

@@ -38,6 +38,18 @@
 - 也就是說，`terraform apply` 後你在終端機、state 檔、或之後若保留 plan / output 紀錄，都可能看到真實 project ID。
 - 目前這個 repo 已忽略 `terraform.tfstate`，所以主要風險不在 Git 自動提交，而是在你是否把真實 output 貼進 lesson、截圖或公開紀錄。
 
+### `-out`、state 與 apply 的關係
+
+- `terraform plan` 預設只是把「目前算出來的執行計畫」印到螢幕上，並不會把這份 plan 自動固定下來。
+- 所以你這次看到的最後一句 note，重點不是在警告 plan 失敗，而是在提醒：如果你下一步直接跑 `terraform apply`，Terraform 會在那個當下重新計算一次最新的 plan，再依照重新計算後的結果去執行。
+- 這代表畫面上這份 plan 和之後 `apply` 實際採取的動作，通常會很接近，但 Terraform 不保證兩者一定逐欄完全相同。
+- 造成差異的來源可能很多，例如：你改了 `.tf` 檔、輸入值變了、雲端現況變了，或 provider 在重新查詢 API 後拿到不同資訊。
+- 如果你想把「剛剛看到的這份 plan」凍結成一個明確的執行單，就要在 `plan` 時加上 `-out`，例如 `terraform plan -out=tfplan ...`。
+- 之後再用 `terraform apply tfplan`，Terraform 就不是重新現場計算，而是直接套用剛剛存下來的那份 plan。
+- `state` 跟 `plan` 不是同一件事：`plan` 是這次準備要做什麼，`state` 則是 Terraform 對「目前已受它管理的資源狀態」所保留的記錄。
+- 更精準地說，`plan` 是一次性的比較結果；`state` 是後續每次 `plan` / `apply` 都會拿來參照的基準之一。
+- 可以先把三者壓成一句話：**不用 `-out` 的 `plan` 只是螢幕上的預覽；`apply` 預設會重新計算；`state` 則是 Terraform 用來理解目前世界長什麼樣的狀態記錄。**
+
 ### 哪些名稱是 schema 固定，哪些才是你能自訂的
 
 - 在 Terraform 裡，最容易混淆的是「看起來都像名字」，但其實有些是 provider schema 固定的，有些才是你自己命名的。
