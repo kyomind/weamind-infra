@@ -1,7 +1,7 @@
 # Implement-Heavy Lesson Template
 
 > 用途：只在今天已明確套用 implement-heavy mode 時使用。
-> 使用方式：先讀 `learning/AGENTS.md`、`learning/lessons/AGENTS.md`、`references/lesson-plugins/implementation/AGENTS.md`、`references/lesson-plugins/implementation/implement-heavy-mode.md`，確認今天真的屬於 implement-heavy mode，再用本檔建立 mode 專用骨架。
+> 使用方式：先讀 `learning/AGENTS.md`、`learning/lessons/AGENTS.md`、`learning/lessons/plugins/implementation/AGENTS.md`、`learning/lessons/plugins/implementation/implement-heavy-mode.md`，確認今天真的屬於 implement-heavy mode，再用本檔建立 mode 專用骨架。
 > 原則：本檔只提供 implement-heavy 骨架，不重寫 mode 的判斷條件與自檢規則。
 
 ---
@@ -127,11 +127,11 @@ implement-heavy mode 預設直接建立五份檔案：
 1. step 數量不設上限；若後續發現某一步過大，應直接往下拆成新的 `Step N 小標題`，不要勉強維持少量大步驟。
 2. 新增一個 step 時，預設先只建立骨架：至少寫到 `#### 預計採取的動作`；`實際執行內容`、`結果`、`AI 判讀與收斂` 先維持待填，等這一步真的走完再回填。
 3. 每個 step 的 `實際執行內容` 第一個 bullet，應先標記這次主要由誰實作，例如：`本次由 AI 實作`、`本次由使用者實作`；若屬於明確分段協作，也可以寫成 `本次由 AI 與使用者協作`。
-4. `06-implementation.md` 的帶法、回填時機與例外情況，統一回 `references/lesson-plugins/implementation/implementation-guide.md`，本模板只保留骨架直接需要的提醒。
+4. `06-implementation.md` 的帶法、回填時機與例外情況，統一回 `learning/lessons/plugins/implementation/implementation-guide.md`，本模板只保留骨架直接需要的提醒。
 
 ## Session 開場提醒
 
-- `06-implementation.md` 的實際帶法不要寫死在模板裡；開場規則、step 推進、提問邊界與回填原則改讀 `references/lesson-plugins/implementation/implementation-guide.md`。
+- `06-implementation.md` 的實際帶法不要寫死在模板裡；開場規則、step 推進、提問邊界與回填原則改讀 `learning/lessons/plugins/implementation/implementation-guide.md`。
 
 ## 驗收訊號與回退點
 

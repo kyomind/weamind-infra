@@ -53,7 +53,7 @@ lesson 是否套用某個 mode，應由當天計畫先明示。
 讀取文件：
 
 1. `learning/lessons/AGENTS.md`
-2. `references/lesson-plugins/command-heavy-mode.md`
+2. `learning/lessons/plugins/command-heavy-mode.md`
 3. `learning/lessons/lesson-template.md`
 
 ### `implement-heavy`
@@ -63,9 +63,9 @@ lesson 是否套用某個 mode，應由當天計畫先明示。
 讀取文件：
 
 1. `learning/lessons/AGENTS.md`
-2. `references/lesson-plugins/implementation/AGENTS.md`
-3. `references/lesson-plugins/implementation/implement-heavy-mode.md`
-4. `references/lesson-plugins/implementation/implement-heavy-lesson-template.md`
+2. `learning/lessons/plugins/implementation/AGENTS.md`
+3. `learning/lessons/plugins/implementation/implement-heavy-mode.md`
+4. `learning/lessons/plugins/implementation/implement-heavy-lesson-template.md`
 5. `learning/lessons/lesson-template.md`
 
 ---

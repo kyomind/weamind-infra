@@ -4,7 +4,7 @@
 
 `learning/lessons/` 存放 repo-backed lesson 記錄。
 
-使用本檔處理 lesson 的進入條件、mode routing、標準檔案與 active-turn routing。各檔案的細部寫法放在 `rules/`，依當前階段按需讀取。
+使用本檔處理 lesson 的進入條件、mode routing、標準檔案與 active-turn routing。標準檔案細則放在 `rules/`，mode 擴充規格放在 `plugins/`，依當前階段按需讀取。
 
 ## 進入條件
 
@@ -20,13 +20,13 @@ lesson 適用於：
 
 ## Lesson Mode
 
-每日計畫若進入 lesson，應先明示 `Lesson mode`。合法值與讀取順序以 `references/lesson-plugins/lesson-modes.md` 為準。
+每日計畫若進入 lesson，應先明示 `Lesson mode`。合法值與讀取順序以 `learning/lessons/plugins/lesson-modes.md` 為準。
 
 常見 routing：
 
 - `normal`：讀本檔、相關 `rules/`，建立常態 lesson 時再讀 `lesson-template.md`。
-- `command-heavy`：讀本檔後，再讀 `references/lesson-plugins/command-heavy-mode.md`。
-- `implement-heavy`：讀本檔後，再讀 `references/lesson-plugins/implementation/AGENTS.md`、`implement-heavy-mode.md`、`implement-heavy-lesson-template.md`。
+- `command-heavy`：讀本檔後，再讀 `learning/lessons/plugins/command-heavy-mode.md`。
+- `implement-heavy`：讀本檔後，再讀 `learning/lessons/plugins/implementation/AGENTS.md`、`implement-heavy-mode.md`、`implement-heavy-lesson-template.md`。
 
 `01-outline.md` 負責鏡像當天已決定的 mode 與實際流程順序。
 
@@ -57,11 +57,11 @@ implement-heavy mode 使用該 mode 專用骨架，通常包含 `06-implementati
 
 - `01-outline.md`：讀本檔的「Outline Rules」與 `lesson-template.md`。
 - `02-qa.md`：讀 `rules/qa.md`。
-- `03-command.md`：讀 `rules/command.md`；command-heavy mode 另讀 `references/lesson-plugins/command-heavy-mode.md`。
+- `03-command.md`：讀 `rules/command.md`；command-heavy mode 另讀 `learning/lessons/plugins/command-heavy-mode.md`。
 - `04-report.md`：讀 `rules/report-note.md`。
 - `05-note.md`：讀 `rules/report-note.md`。
 - `## Flashcards`：lesson 收尾後再讀 `.github/prompts/generate-flashcards.prompt.md` 統一生成或精修。
-- `06-implementation.md`：讀 `references/lesson-plugins/implementation/implementation-guide.md`。
+- `06-implementation.md`：讀 `learning/lessons/plugins/implementation/implementation-guide.md`。
 
 ## Outline Rules
 
@@ -121,7 +121,7 @@ normal lesson 預設流程：
 
 建立或更新 lesson 後，確認：
 
-- mode 與讀取文件符合 `references/lesson-plugins/lesson-modes.md`
+- mode 與讀取文件符合 `learning/lessons/plugins/lesson-modes.md`
 - 檔案結構符合本檔與對應 template
 - active file 的細部規則已讀取對應 `rules/`
 - `04-report.md` 保留給 lesson 收尾，不在互動開始前預寫成標準答案

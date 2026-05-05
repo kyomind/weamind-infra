@@ -25,9 +25,9 @@
 
 ### mode 例外
 
-1. 若今天明確屬於 command-heavy mode，先讀 `references/lesson-plugins/command-heavy-mode.md`。
-2. 若今天明確屬於 implement-heavy mode，先讀 `references/lesson-plugins/implementation/implement-heavy-mode.md`。
-3. implement-heavy mode 的專用骨架不放在本檔，改讀 `references/lesson-plugins/implementation/implement-heavy-lesson-template.md`。
+1. 若今天明確屬於 command-heavy mode，先讀 `learning/lessons/plugins/command-heavy-mode.md`。
+2. 若今天明確屬於 implement-heavy mode，先讀 `learning/lessons/plugins/implementation/implement-heavy-mode.md`。
+3. implement-heavy mode 的專用骨架不放在本檔，改讀 `learning/lessons/plugins/implementation/implement-heavy-lesson-template.md`。
 
 ---
 

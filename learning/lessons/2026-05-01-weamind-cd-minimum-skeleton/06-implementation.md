@@ -25,7 +25,7 @@
 
 ## Session 開場提醒
 
-- `06-implementation.md` 的實際帶法不要寫死在模板裡；開場規則、step 推進與提問邊界改讀 `references/lesson-plugins/implementation/implementation-guide.md`。
+- `06-implementation.md` 的實際帶法不要寫死在模板裡；開場規則、step 推進與提問邊界改讀 `learning/lessons/plugins/implementation/implementation-guide.md`。
 
 ## 驗收訊號與回退點
 

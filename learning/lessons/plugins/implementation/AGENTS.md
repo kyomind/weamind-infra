@@ -4,13 +4,13 @@
 
 ## 分工
 
-1. `references/lesson-plugins/implementation/AGENTS.md`
+1. `learning/lessons/plugins/implementation/AGENTS.md`
    - 只負責說明 implementation 類文件的責任邊界。
-2. `references/lesson-plugins/implementation/implement-heavy-mode.md`
+2. `learning/lessons/plugins/implementation/implement-heavy-mode.md`
    - 只負責 implement-heavy mode 的適用情境、lesson flow 與和 QA / report 的關係。
-3. `references/lesson-plugins/implementation/implement-heavy-lesson-template.md`
+3. `learning/lessons/plugins/implementation/implement-heavy-lesson-template.md`
    - 只負責 `01-outline.md` 與 `06-implementation.md` 的初始化骨架。
-4. `references/lesson-plugins/implementation/implementation-guide.md`
+4. `learning/lessons/plugins/implementation/implementation-guide.md`
    - 負責 `06-implementation.md` 的實際帶法，例如 session 開場、step 推進、提問邊界與回填原則。
 
 ## 邊界提醒

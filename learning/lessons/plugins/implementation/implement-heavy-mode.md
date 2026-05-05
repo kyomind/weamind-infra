@@ -36,7 +36,7 @@
 
 ## 預設骨架
 
-若今天明確屬於 implement-heavy mode，建立 lesson 骨架時預設使用 implement-heavy 專用的 5 檔骨架；完整檔案清單與欄位形狀以 `references/lesson-plugins/implementation/implement-heavy-lesson-template.md` 為準。
+若今天明確屬於 implement-heavy mode，建立 lesson 骨架時預設使用 implement-heavy 專用的 5 檔骨架；完整檔案清單與欄位形狀以 `learning/lessons/plugins/implementation/implement-heavy-lesson-template.md` 為準。
 
 這裡和常態 lesson 最大的差異是：
 
@@ -46,7 +46,7 @@
 
 建立骨架時：
 
-1. `01-outline.md`、`06-implementation.md` 應優先參考 `references/lesson-plugins/implementation/implement-heavy-lesson-template.md`。
+1. `01-outline.md`、`06-implementation.md` 應優先參考 `learning/lessons/plugins/implementation/implement-heavy-lesson-template.md`。
 2. `02-qa.md`、`04-report.md`、`05-note.md` 仍沿用 `learning/lessons/lesson-template.md` 的常態模板。
 
 ---
@@ -55,7 +55,7 @@
 
 implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson 主體改成 implementation-first。
 
-`06-implementation.md` 的 session 開場方式、step 推進、提問邊界、驗證證據寫法與回填原則，應改讀 `references/lesson-plugins/implementation/implementation-guide.md`；本檔只保留 mode 層規則，不再承擔 `06` 的細部帶法。
+`06-implementation.md` 的 session 開場方式、step 推進、提問邊界、驗證證據寫法與回填原則，應改讀 `learning/lessons/plugins/implementation/implementation-guide.md`；本檔只保留 mode 層規則，不再承擔 `06` 的細部帶法。
 
 建議節奏：
 
@@ -103,8 +103,8 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 
 `06-implementation.md` 是 implement-heavy mode 的主戰場，但它的初始化欄位、step 形狀、回填時機與自檢規則，應分別由下列文件承接：
 
-1. 骨架長相：`references/lesson-plugins/implementation/implement-heavy-lesson-template.md`
-2. 實際帶法：`references/lesson-plugins/implementation/implementation-guide.md`
+1. 骨架長相：`learning/lessons/plugins/implementation/implement-heavy-lesson-template.md`
+2. 實際帶法：`learning/lessons/plugins/implementation/implementation-guide.md`
 
 本檔只保留 mode 層原則：今天的主體在 `06`，而不是在 `02-qa.md` 或 `03-command.md`。
 
@@ -127,9 +127,9 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 
 1. 先讀 `learning/AGENTS.md`，確認今天確實要進 lesson，且 prework 判斷已完成。
 2. 再讀 `learning/lessons/AGENTS.md`，確認 lesson 的通用結構與檔案分工。
-3. 再讀 `references/lesson-plugins/implementation/AGENTS.md`，確認 implementation plugin 內各檔案的責任邊界。
+3. 再讀 `learning/lessons/plugins/implementation/AGENTS.md`，確認 implementation plugin 內各檔案的責任邊界。
 4. 再讀本檔，套用 implement-heavy mode 的正式流程、5 檔骨架與 06 初始化規則。
-5. 建骨架時再讀 `references/lesson-plugins/implementation/implement-heavy-lesson-template.md`，建立 implement-heavy 專用骨架。
+5. 建骨架時再讀 `learning/lessons/plugins/implementation/implement-heavy-lesson-template.md`，建立 implement-heavy 專用骨架。
 6. `02-qa.md`、`04-report.md`、`05-note.md` 的共通骨架，仍回 `learning/lessons/lesson-template.md`。
 
 一句話原則：常態規則留在 `learning/lessons/AGENTS.md`，實作型 lesson 的重心與 06 規格留在本檔，按需揭露。

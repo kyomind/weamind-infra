@@ -11,9 +11,10 @@
 - `README.md`：說明這個目錄的用途、檔案分工與閱讀入口。
 - `AGENTS.md`：lesson 內部 AI 工作規則、進入條件、檔案結構與互動節奏。
 - `rules/`：QA、command、report、note 的按需細部規則。
+- `plugins/`：command-heavy、implement-heavy 等 mode 擴充規格。
 - `lesson-template.md`：常態 lesson 的檔案骨架與最小範例。
 
-一句話區分：`AGENTS.md` 管規則，`lesson-template.md` 管骨架。
+一句話區分：`AGENTS.md` 管 routing，`rules/` 管標準檔案細則，`plugins/` 管 mode 擴充，`lesson-template.md` 管骨架。
 
 ## 標準檔案
 
@@ -32,7 +33,7 @@
 
 - `03-command.md`
 
-若當天明確是 implement-heavy mode，請依 `references/lesson-plugins/lesson-modes.md` 與 implementation plugin 文件建立對應骨架。
+若當天明確是 implement-heavy mode，請依 `learning/lessons/plugins/lesson-modes.md` 與 implementation plugin 文件建立對應骨架。
 
 ## 閱讀入口
 
