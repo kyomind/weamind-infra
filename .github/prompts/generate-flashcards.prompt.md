@@ -20,7 +20,7 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 
 卡片格式與 lesson 規格以：
 
-- `learning/lessons/README.md`
+- `learning/lessons/AGENTS.md`
 - `learning/lessons/lesson-template.md`
 
 為準。
@@ -52,7 +52,7 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 ### 輔助理解來源
 
 1. `01-outline.md`
-2. `learning/lessons/README.md`
+2. `learning/lessons/AGENTS.md`
 3. `learning/lessons/lesson-template.md`
 
 重點不是平均地從每份檔案抽句子，而是判斷哪裡已經出現真正成熟的理解。
@@ -97,7 +97,7 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 
 - `<lesson>/04-report.md`
 - `<lesson>/05-note.md`
-- `learning/lessons/README.md`
+- `learning/lessons/AGENTS.md`
 - `learning/lessons/lesson-template.md`
 
 若存在，也讀取：
@@ -141,7 +141,7 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 3. 合併明顯重複、但其實在講同一個概念的卡片
 4. 用更穩、更短、更好重講的版本取代明顯偏散或偏碎的舊卡片
 
-卡片寫法應符合 `learning/lessons/README.md` 的規則：
+卡片寫法應符合 `learning/lessons/AGENTS.md` 的規則：
 
 1. `Flashcards` 區塊內直接放 bullet list Markdown
 2. 每張卡片只放一個概念
@@ -193,5 +193,5 @@ description: "Generate or refine one lesson's flashcards from completed QA, comm
 3. 卡片保留 lesson 特定價值，而不是泛化成空泛 Kubernetes 常識
 4. 每張卡片都能獨立成立，且一眼看出它在回答什麼
 5. 沒有把同一個觀念用近義說法重複做成多張卡
-6. 更新後的 `05-note.md` 仍符合 `learning/lessons/README.md` 的卡片格式
+6. 更新後的 `05-note.md` 仍符合 `learning/lessons/AGENTS.md` 的卡片格式
 7. 卡片集中在 `05-note.md`，沒有額外分出第二份卡片檔
