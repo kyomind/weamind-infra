@@ -1,6 +1,6 @@
 # Lessons
 
-`learning/lessons/` 用來存放 VS Code 內部學習記錄。
+`learning/lessons/` 用來存放 repo-backed lesson 記錄。
 
 這裡只放 repo 內對照與驗收：WeaMind 實際架構、YAML、流量路徑、debug sequence、QA、command drill、report 與 note。
 
@@ -10,6 +10,7 @@
 
 - `README.md`：說明這個目錄的用途、檔案分工與閱讀入口。
 - `AGENTS.md`：lesson 內部 AI 工作規則、進入條件、檔案結構與互動節奏。
+- `rules/`：QA、command、report、note 的按需細部規則。
 - `lesson-template.md`：常態 lesson 的檔案骨架與最小範例。
 
 一句話區分：`AGENTS.md` 管規則，`lesson-template.md` 管骨架。
@@ -37,4 +38,4 @@
 
 進入 lesson 流程前，應先由 `learning/AGENTS.md` 完成「是否需要 prework」的判斷。
 
-已確認要進 lesson 時，再讀本目錄的 `AGENTS.md` 取得 lesson 內部規則。
+已確認要進 lesson 時，再讀本目錄的 `AGENTS.md` 取得 lesson 內部 routing；依 active file 再讀 `rules/` 內對應細則。
