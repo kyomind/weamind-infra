@@ -14,7 +14,7 @@
 
 ## 目錄
 
-- `lessons/`：VS Code 內部的 repo-backed lesson、QA、command drill、report 與 note。
+- `lessons/`：repo-backed lesson、QA、command drill、report 與 note。
 - `prework/`：外部 AI 預習大綱，以及少數 lesson 後補強 homework。
 
 ## 閱讀入口

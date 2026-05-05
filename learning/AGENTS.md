@@ -42,7 +42,7 @@
 - 使用者缺基本機制或詞彙
 - 主題涉及多方案比較或外部服務流程
 - 主題需要先理解 controller、驗證流程、networking、IaC 或平台概念
-- 直接進 VS Code lesson 會大幅變成通用概念解釋
+- 直接進 repo-backed lesson 會大幅變成通用概念解釋
 
 判斷不清楚時，先問一個短 readiness question：
 
