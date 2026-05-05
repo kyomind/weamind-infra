@@ -76,7 +76,7 @@
 2. `02-qa.md`：記錄今天的專案問題、回答摘要與修正。
 3. `03-command.md`：若今天有 command drill，再用來記錄指令、觀察目標、輸出判讀與操作手感。
 4. `04-report.md`：收斂今天真正學到的內容。
-5. `05-note.md`：記錄延伸問答、暫時結論與卡片整理。
+5. `05-note.md`：記錄延伸問答、暫時結論；`Flashcards` 保留到 lesson 收尾後統一生成。
 
 ## 這次要追問的 Why / How 題
 
@@ -307,7 +307,7 @@
 
 ## `05-note.md` 模板
 
-初始化提醒：只有 `學習注意事項` 可以先回填；`Notes` 與 `Flashcards` 在建立骨架時必須先留空。若需要佔位，最多只保留 HTML comment 這類特殊註記，用來提示之後會長內容；這不算真正已回填內容。等 lesson 過程中真的出現延伸問答、暫時結論或卡片素材後，再往裡面補。
+初始化提醒：只有 `學習注意事項` 可以先回填；`Notes` 與 `Flashcards` 在建立骨架時必須先留空。若需要佔位，最多只保留 HTML comment 這類特殊註記，用來提示之後會長內容；這不算真正已回填內容。lesson 過程中出現的延伸問答與暫時結論先補進 `Notes`；`Flashcards` 等 lesson 收尾後再統一生成或精修。
 
 <template example 05-note.md>
 # YYYY-MM-DD Lesson Title Notes
@@ -332,7 +332,7 @@
 
 ## Flashcards
 
-<!-- 初始化時保持空白；若需要佔位，可只保留這類特殊註記。等 lesson 過程中真的整理出卡片素材後再填。 -->
+<!-- 初始化與課程互動中保持空白；lesson 收尾後再用 generate-flashcards prompt 統一生成或精修。 -->
 </template example 05-note.md>
 
 ---

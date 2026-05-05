@@ -5,10 +5,10 @@
 讀取本檔處理：
 
 - `04-report.md`
-- `05-note.md`
-- `05-note.md` 裡的 `## Flashcards`
+- `05-note.md` 的結構、`學習注意事項` 與 `Notes`
+- `05-note.md` 裡 `## Flashcards` 的保留位置與格式
 
-產生或精修卡片時，另讀 `.github/prompts/generate-flashcards.prompt.md`。
+`## Flashcards` 在 lesson 收尾後才處理；產生或精修卡片時，另讀 `.github/prompts/generate-flashcards.prompt.md`。
 
 ## `04-report.md`
 
@@ -36,7 +36,7 @@ Report 寫作原則：
 
 ## `05-note.md`
 
-`05-note.md` 承接 lesson 中途的延伸問答、補充說明、暫時結論與卡片整理。
+`05-note.md` 承接 lesson 中途的延伸問答、補充說明與暫時結論。
 
 固定結構：
 
@@ -51,7 +51,7 @@ Report 寫作原則：
 - 待驗證的 repo 對照點
 - 使用者延伸提問與 AI 補充
 - 尚未收斂進 `04-report.md` 的暫時結論
-- 最後保留的卡片整理
+- 收尾後產生的 flashcards
 
 Note 寫作原則：
 
@@ -60,6 +60,7 @@ Note 寫作原則：
 - `學習注意事項` 與 `Notes` 內部用 H3 分組。
 - 初始化時，`學習注意事項` 可以先有外部預習內容；`Notes` 與 `Flashcards` 保持空白或只放 HTML comment 佔位。
 - QA、command、implementation 的額外追問若超出當前最小閉環，整理到 `Notes`。
+- 課程互動中更新 `學習注意事項` 與 `Notes`；`## Flashcards` 保留到 lesson 收尾後統一處理。
 
 ## Flashcards
 
@@ -67,8 +68,8 @@ Note 寫作原則：
 
 卡片整理原則：
 
-- 只有在 lesson 過程中真的整理出卡片後才填寫。
+- 課程互動中保持空白或保留既有卡片，不在互動中即時新增。
+- lesson 收尾並完成 `04-report.md` 校準後，再用 `.github/prompts/generate-flashcards.prompt.md` 統一生成或精修。
 - 卡片直接放在 `## Flashcards` 底下，用 bullet list Markdown。
 - 每張卡片只放一個概念。
 - 優先保留三個月後仍值得複習的 repo-specific 理解。
-- 精修或補齊卡片時，使用 `.github/prompts/generate-flashcards.prompt.md`。

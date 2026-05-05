@@ -116,7 +116,7 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 
 1. 是否需要 prework，仍先回 `learning/AGENTS.md` 判斷。
 2. `04-report.md` 仍在互動完成後再收斂，不預先代寫。
-3. `05-note.md` 仍保留一般 lesson 的延伸問答、暫時結論與卡片素材。
+3. `05-note.md` 仍保留一般 lesson 的延伸問答與暫時結論；`Flashcards` 保留到 lesson 收尾後統一生成。
 4. 真正的 lesson 完成標準，仍應回到能否把這次變更、驗收與 trade-off 講清楚。
 
 ---

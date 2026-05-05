@@ -90,7 +90,7 @@ implement-heavy mode 預設直接建立五份檔案：
 1. `01-outline.md`：宣告今天套用 implement-heavy mode，並寫清楚流程、邊界、驗收與回退點。
 2. `02-qa.md`：記錄 post-implementation QA 的短版定位題、使用者回答摘要與 AI 修正。
 3. `04-report.md`：收斂今天真正學到的內容。
-4. `05-note.md`：記錄一般 lesson 延伸問答、實作補充、暫時結論與卡片整理。
+4. `05-note.md`：記錄一般 lesson 延伸問答、實作補充與暫時結論；`Flashcards` 保留到 lesson 收尾後統一生成。
 5. `06-implementation.md`：記錄今天的主要實作 step，包含必要的驗證證據。
 
 ## 這份 lesson 的完成標準
