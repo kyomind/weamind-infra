@@ -6,7 +6,7 @@
 
 1. 判斷今天該不該用 implement-heavy mode。
 2. 定義 lesson 骨架要建立哪些檔案。
-3. 重寫 `learning/lessons/README.md` 的共通 lesson 規則。
+3. 重寫 `learning/lessons/AGENTS.md` 的共通 lesson 規則。
 
 ## 開場契約
 
