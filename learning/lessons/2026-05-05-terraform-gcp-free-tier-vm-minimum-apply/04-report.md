@@ -13,6 +13,7 @@
 - 今天最先要分清楚的，不是 HCL 寫得對不對，而是 Terraform CLI、gcloud auth、project、billing、API 這些 preflight gate 是否已經通過。
 - 第一版 Terraform 骨架先收斂成 provider、variables、compute instance、必要 firewall 與 outputs，是因為今天的目標是留下最小可驗證 IaC workflow 證據，不是一次展開完整網路或 IAM 設計。
 - 用來證明這台 VM 沒偏離 Free Tier 邊界的最小證據，至少包含：`machine_type = e2-micro`、`zone = us-east1-b`、disk `size = 25` / `type = pd-standard`、external network tier `STANDARD`，以及 apply 後真的拿到 external IP。
+- 也已能用自己的話區分 HCL、plan、apply、state 四者的角色：HCL 是目標狀態宣告，plan 是差異預覽，apply 是執行變更，state 則是 Terraform 用來記錄真實資源狀態與資源對應關係的依據。
 
 ## 使用者原本卡住什麼
 
