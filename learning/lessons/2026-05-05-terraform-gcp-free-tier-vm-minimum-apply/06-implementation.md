@@ -41,7 +41,7 @@
 - 若 Terraform CLI、GCP auth、billing 或 API 沒準備好，今天就停在 preflight gate 與 `.tf` 骨架，不硬做失真的 apply。
 - 若某個資源設計把範圍拉向完整 VPC / IAM 規劃，回退到 default network 與最小 firewall 規則。
 
-### Step 1
+### Step 1 Preflight Gate
 
 #### 這一步要驗證什麼
 
@@ -88,7 +88,7 @@
 
 - 已完成
 
-### Step 2
+### Step 2 Terraform 骨架建立
 
 #### 這一步要驗證什麼
 
@@ -128,7 +128,7 @@
 
 - 已完成
 
-### Step 3
+### Step 3 檔案分工閱讀
 
 #### 這一步要驗證什麼
 
@@ -167,7 +167,7 @@
 
 - 已完成
 
-### Step 4
+### Step 4 值流與 Outputs 閱讀
 
 #### 這一步要驗證什麼
 
@@ -208,7 +208,7 @@
 
 - 已完成
 
-### Step 5
+### Step 5 第一次 Terraform Plan
 
 #### 這一步要驗證什麼
 
@@ -252,7 +252,7 @@
 
 - 已完成
 
-### Step 6
+### Step 6 Apply 前確認
 
 #### 這一步要驗證什麼
 
@@ -288,7 +288,7 @@
 
 - 已完成
 
-### Step 7
+### Step 7 第一次 Terraform Apply
 
 #### 這一步要驗證什麼
 
@@ -328,7 +328,7 @@
 
 - 已完成
 
-### Step 8
+### Step 8 Post-Apply 資源檢查
 
 #### 這一步要驗證什麼
 
@@ -365,7 +365,7 @@
 
 - 已完成
 
-### Step 9
+### Step 9 Terraform State 閱讀
 
 #### 這一步要驗證什麼
 
@@ -404,7 +404,7 @@
 
 - 已完成
 
-### Step 10
+### Step 10 Terraform Destroy 收尾
 
 #### 這一步要驗證什麼
 
