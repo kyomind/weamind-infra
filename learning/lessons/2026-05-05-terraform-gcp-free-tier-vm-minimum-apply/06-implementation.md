@@ -88,6 +88,46 @@
 
 - 已完成
 
+### Step 7
+
+#### 這一步要驗證什麼
+
+- 在前面 `plan` 與 apply 前確認都完成後，這份 Terraform 設定是否真的能在 GCP 上建立出預期的最小資源。
+
+#### 預計採取的動作
+
+- 由使用者在 `terraform/gcp-free-tier-vm/` 親手執行第一次 `terraform apply`。
+- apply 過程中先觀察 Terraform 是否真的建立 1 台 VM 與 2 條 firewall。
+- apply 完成後，先記下 outputs，特別是 `external_ip` 是否已出現。
+- 若 apply 失敗，再分辨是 GCP API、配額 / Free Tier 邊界、還是資源建立階段的 schema / policy 問題。
+
+#### 實際執行內容
+
+- 本次由使用者實作
+- 使用者在 `terraform/gcp-free-tier-vm/` 執行第一次 `terraform apply`，這次沒有用 `-var` 額外帶入 `project_id`，而是直接讓 Terraform 進入互動式提問。
+- Terraform 先提示 `var.project_id` 尚未提供，並顯示說明文字 `GCP project ID for the free-tier VM exercise.`；接著由使用者手動輸入這次要使用的 project ID。
+- 變數補齊後，Terraform 重新展開 apply 前的 execution plan，內容仍和前一個 step 的 plan 一致：建立 2 條 firewall 與 1 台 VM。
+- 使用者在 approval prompt 輸入 `yes` 後，Terraform 依序建立 `google_compute_firewall.allow_http`、`google_compute_firewall.allow_https` 與 `google_compute_instance.free_tier_vm`。
+- 最終 apply 成功完成，輸出顯示 `Resources: 3 added, 0 changed, 0 destroyed`，而且 `external_ip` 已在 outputs 中實際出現。
+
+#### 結果
+
+- 這份 Terraform 設定已成功在 GCP 上建立出預期的最小資源集合：1 台 VM 加 2 條 firewall。
+- 這次 apply 的實際結果與先前的 plan 一致，沒有額外長出 lesson 範圍外的資源。
+- apply 完成後，outputs 已成功回傳 `external_ip`、`instance_name`、`instance_zone`、`machine_type` 與 `project_id`；其中 `external_ip` 已從 `known after apply` 變成實際可觀察值。
+- 因此 Step 7 的核心驗證已完成：這份最小 Terraform 骨架不只可讀、可 plan，也真的可 apply。
+
+#### AI 判讀與收斂
+
+- 這一步補上的是 IaC workflow 最關鍵的最後一段證據：前面的 HCL、provider、auth 與 plan 並不是停在靜態檢查，而是真的成功建立出雲端資源。
+- 這次過程也順便驗證了一個很實用的 Terraform 行為：若必要 variable 沒有預先提供，Terraform 在互動模式下會直接要求使用者補值，對單人手動練習很方便；但若放到 CI/CD 或非互動環境，就不能依賴這種補值方式。
+- apply 完成後，最值得記住的觀察點是：`external_ip` 這類要等資源真正建立後才知道的欄位，只有在 apply 完成後才會從 `known after apply` 變成具體值。
+- 因此 Step 7 可以收斂為已完成；若要再往下走，下一步就不該再重複 apply，而是新開 step 做 post-apply 檢查或 cleanup 決策。
+
+#### 目前狀態
+
+- 已完成
+
 ### Step 2
 
 #### 這一步要驗證什麼
@@ -266,16 +306,24 @@
 
 #### 實際執行內容
 
-- 待回填
+- 本次由 AI 與使用者協作實作
+- 先回頭用剛完成的 `terraform plan` 檢查這次要建立的資源集合，確認目前仍維持 lesson 原本預期的最小範圍：1 台 VM 加 2 條 firewall，沒有額外長出 VPC、subnetwork、IAM 或其他不在今天目標內的資源。
+- 接著逐一確認 apply 前的三個關鍵判讀點：目前接受保留兩條 firewall 規則、接受 `project_id` output 先保留、也接受 `external_ip` 必須等 apply 後才會真正出現。
+- 最後再把 apply 後真正要觀察的重點說清楚：不是只看指令有沒有成功，而是要看 VM 是否真的建立、external IP 是否出現，以及輸出結果是否仍符合這次 Free Tier 最小規格。
 
 #### 結果
 
-- 待回填
+- apply 前最後確認已完成。
+- 這次 plan 所代表的資源集合與 lesson 範圍一致，沒有超出今天的最小 Terraform 練習邊界。
+- 目前對兩條 firewall 規則、`project_id` output 與 `external_ip` 的判讀邊界都已確認可接受。
+- 因此從 lesson 結構來看，現在已具備進入 apply step 的條件。
 
 #### AI 判讀與收斂
 
-- 待回填
+- Step 6 的價值，不是在技術上新增什麼設定，而是在真正 apply 前，先把「我們準備接受什麼結果」說清楚。
+- 這一步完成後，後面的 apply 就不再只是機械式往下按，而是帶著明確觀察目標去驗證：資源數量是否正確、external IP 是否出現、以及最後產物是否仍在 Free Tier 練習邊界內。
+- 因此 Step 6 可以收斂為已完成；下一步若要繼續，就應新開 apply step，而不是再回頭改這一版 plan。
 
 #### 目前狀態
 
-- 未開始
+- 已完成

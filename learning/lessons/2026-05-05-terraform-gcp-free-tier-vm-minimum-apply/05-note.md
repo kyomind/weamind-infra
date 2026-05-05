@@ -81,6 +81,14 @@
 - `project_id` 在目前這份設定裡沒有 `default`，所以它的真值通常是在你執行 `plan` 或 `apply` 前，透過實際輸入來源才被決定。
 - 可以先把這件事壓成一句話：**`project_id` 的真值通常不是寫死在程式裡，而是在執行前，由實際輸入來源決定。**
 
+### variable 沒先提供時，Terraform 會怎麼做
+
+- 今天的 `terraform apply` 多驗證了一件事：如果某個必要 variable 沒有 `default`，而你也沒有用 `-var`、`-var-file`、環境變數或 `terraform.tfvars` 先提供，Terraform 會在互動模式下直接提示你輸入。
+- 這也是為什麼這次會先看到 `var.project_id` 的說明文字，然後才讓使用者手動輸入值。
+- 對單人手動練習來說，這個行為很方便，因為你就算忘了先帶 `-var`，Terraform 也不會立刻失敗，而是先給你補值機會。
+- 但這種方便只成立在互動式終端機；如果是 CI/CD、腳本自動化或其他非互動環境，就不能期待 Terraform 停下來等人輸入。
+- 可以先把它記成一句話：**必要 variable 若沒先提供，Terraform 在互動模式下會要求你當場補值；在非互動環境則通常必須事先把值供應好。**
+
 ## Flashcards
 
 <!-- lesson 過程中再回填 -->
