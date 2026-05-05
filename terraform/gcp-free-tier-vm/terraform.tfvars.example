@@ -1,0 +1,10 @@
+project_id        = "your-gcp-project-id"
+region            = "us-east1"
+zone              = "us-east1-b"
+instance_name     = "free-tier-vm"
+machine_type      = "e2-micro"
+boot_disk_size_gb = 25
+boot_disk_type    = "pd-standard"
+image_project     = "debian-cloud"
+image_family      = "debian-12"
+network_name      = "default"
