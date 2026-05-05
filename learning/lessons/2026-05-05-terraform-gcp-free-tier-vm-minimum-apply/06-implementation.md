@@ -13,8 +13,8 @@
 
 1. 先確認 Terraform CLI、GCP auth、project、billing 與必要 API 的 preflight gate。
 2. 在 `terraform/gcp-free-tier-vm/` 收斂第一版 `.tf` 骨架與參數邊界。
-3. 以 `terraform plan` 驗證 HCL 與資源意圖；若 gate 完整則再進一步做最小 `terraform apply`。
-4. 用 Free Tier checklist 核對結果，並記下後續 drift / destroy 收尾邊界。
+3. 先回頭逐檔閱讀 Step 2 產出的 Terraform 檔案，確認每個檔案各自在做什麼，以及值怎麼流進 provider / resource。
+4. 等檔案角色與主要欄位都讀懂後，再決定是否新增下一個實作 step 去做 `terraform plan`。
 
 ## 使用提醒
 
@@ -55,19 +55,37 @@
 #### 實際執行內容
 
 - 本次由 AI 與使用者協作實作
-- 待回填
+- 使用者先回報本機原本 `terraform` 與 `gcloud` 都不存在。
+- AI 先確認 Homebrew 可用，接著以 `brew tap hashicorp/tap && brew install hashicorp/tap/terraform google-cloud-sdk` 補齊 Terraform 與 Google Cloud CLI。
+- 安裝後重新驗證版本，確認 `terraform v1.15.1` 與 `Google Cloud SDK 566.0.0` 都已可從 PATH 執行。
+- AI 先做最小 gcloud preflight，發現目前沒有預設 project，而且 `gcloud auth list` 顯示本機尚未登入任何 GCP 帳號。
+- 接著由 AI 啟動 `gcloud auth login`，使用者完成瀏覽器登入，成功把既有帳號接到本機 CLI。
+- 登入後再以 `gcloud projects list` 列出目前可用 projects，準備選定今天 Terraform 練習要使用的目標 project。
+- 使用者補充：其中一個原本直覺會選的 project 正處於服務條款申訴情境，因此不適合作為今天的 Terraform 練習環境。
+- AI 先把另一個曾拿來手動開 Free Tier VM 的 project 設成 current project，並嘗試補開 `compute.googleapis.com`；GCP 回傳 `FAILED_PRECONDITION`，明確指出這個 project 目前沒有可用 billing account，因此暫時無法用來啟用 Compute Engine API。
+- 接著 AI 比較其他可用 project 的 Compute Engine API 狀態，確認最後選定的練習 project 已經啟用 `compute.googleapis.com`。
+- AI 再把 current project 切到這個可用 project，並以 `gcloud compute zones list --limit=3` 驗證 Compute Engine 入口可正常讀取。
 
 #### 結果
 
-- 待回填
+- 本機原先卡住的點已確認不是 billing 或 GCP 帳號本身，而是單純缺少 Terraform / gcloud 安裝，以及 gcloud 尚未在這台機器完成登入。
+- Terraform 與 gcloud 現在都已安裝完成，CLI 層前置條件已補齊。
+- gcloud 已成功登入一個可用的使用者帳號。
+- 其中一個原本直覺會選的 project 有服務條款申訴風險，不適合作為今天的練習 project。
+- 另一個你之前手動開過免費 VM 的 project，則因 billing account 不存在，無法啟用 Compute Engine API。
+- 最後選定的練習 project 已啟用 `compute.googleapis.com`，而且 `gcloud compute zones list` 可正常讀取，代表今天要做 Terraform GCE VM 練習時，它是目前最穩定可用的 project。
+- 因此 Step 1 最後採用的是一個已驗證可用、但在公開 lesson 中不直接揭露 ID 的 working project。
 
 #### AI 判讀與收斂
 
-- 待回填
+- Step 1 的完整收斂是：今天最先卡住的不是 Terraform HCL，而是本機 CLI 缺件與 gcloud 尚未登入；補齊後，真正的 project 選擇又受到專案風險與 billing 狀態影響。
+- 若只在原本最直覺的兩個候選 project 二選一，較合理的方向會是那個沒有條款申訴風險的 project；但就今天實作可行性來看，它仍被 billing gate 擋住。
+- 因此為了讓 W9 Day 2 能繼續推進，今天的實作 project 先收斂到目前已驗證可用、但在公開文件中不直接揭露 ID 的 working project。
+- 這代表 Step 1 已完成，下一步可以直接進 `terraform/gcp-free-tier-vm/` 的 `.tf` 骨架。
 
 #### 目前狀態
 
-- 未開始
+- 已完成
 
 ### Step 2
 
@@ -83,58 +101,82 @@
 #### 實際執行內容
 
 - 本次由 AI 與使用者協作實作
-- 待回填
+- 在確認 working project 可用後，AI 直接於 `terraform/gcp-free-tier-vm/` 建立第一版 Terraform 骨架。
+- 新增 `versions.tf`，把 Terraform 與 `hashicorp/google` provider 的版本邊界先固定下來。
+- 新增 `provider.tf`，先用最小 `project` 與 `region` provider 設定收斂 Google provider 入口。
+- 新增 `variables.tf`，把 `project_id`、`region`、`zone`、`instance_name`、`machine_type`、boot disk、image 與 network 等容易調整的值抽成變數。
+- 新增 `main.tf`，先只放一個 `google_compute_instance` 與兩條 firewall rule，對應 HTTP / HTTPS 入口，不展開 VPC、subnetwork、IAM 或 module。
+- 新增 `outputs.tf`，保留 `project_id`、instance name、zone、machine type 與 external IP，讓後續 `plan` / `apply` 與 Free Tier 核對有明確輸出。
+- 新增 `terraform.tfvars.example`，把今天實際採用的起始值示範成 placeholder project ID，加上 `us-east1`、`us-east1-b`、`e2-micro`、`pd-standard` 與 25GB。
+- 額外新增資料夾內 `.gitignore`，先忽略 `.terraform/`、`terraform.tfstate`、`terraform.tfvars` 等執行產物，避免把本地 state 與敏感設定直接帶進 repo。
 
 #### 結果
 
-- 待回填
+- `terraform/gcp-free-tier-vm/` 不再只有 README，而是已具備第一版最小可執行 Terraform 結構。
+- 這版骨架已經能清楚看出 W9 最小實作的五個核心層次：provider、variables、compute instance、必要 firewall、outputs。
+- VM 規格目前先收斂在 Free Tier 可接受邊界：`us-east1` / `us-east1-b`、`e2-micro`、`pd-standard`、25GB、default network、external IP 採 `STANDARD` network tier。
+- 今天刻意沒有把範圍擴到自建 VPC、subnetwork、service account、startup script automation 或 module 化，避免第一版骨架失焦。
 
 #### AI 判讀與收斂
 
-- 待回填
+- Step 2 的短結論是：第一版 `.tf` 骨架不需要很多資源，但必須讓人一眼看出這台 VM 的 Free Tier 意圖與主要規格。
+- 目前的收斂方式是正確的，因為它先把「最小可讀、最小可驗證」放在第一位，而不是過早追求 production-grade Terraform 結構。
+- 這一步完成後，後續 Step 3 就不再是在猜 Terraform 檔該怎麼長，而是直接驗證這份骨架能否穩定跑出 `plan`，以及 provider / auth 會卡在哪一層。
 
 #### 目前狀態
 
-- 未開始
+- 已完成
 
 ### Step 3
 
 #### 這一步要驗證什麼
 
-- 這份第一版 Terraform 設定是否已能穩定產生可讀的 `plan`，以及若 gate 完整時是否可安全進到最小 `apply`。
+- 在真的跑 `plan` 之前，是否已經先看懂 Step 2 產出的 Terraform 骨架，知道每個檔案在解什麼問題。
 
 #### 預計採取的動作
 
-- 執行 `terraform fmt`、`terraform init` 與 `terraform plan`。
-- 若 preflight 條件完整且 `plan` 穩定，再視情況執行一次最小 `terraform apply`。
+- 先閱讀 `versions.tf`、`provider.tf` 與 `variables.tf`。
+- 先講清楚每個檔案的角色，確認 Terraform 工具版本、provider 入口與輸入參數表的分工。
+- 再做 `main.tf` 的第一輪閱讀，只先看整體結構與主要 resource，不急著把所有值流一次講完。
 
 #### 實際執行內容
 
 - 本次由 AI 與使用者協作實作
-- 待回填
+- AI 先帶讀 `versions.tf`，把它收斂成工具版本契約：Terraform 最低版本與 `hashicorp/google` provider 版本範圍都先固定在這裡。
+- 接著帶讀 `provider.tf`，確認它的角色是宣告 Google provider，並從 `var.project_id`、`var.region` 取得操作 GCP 時的 project 與 region。
+- 再帶讀 `variables.tf`，把它收斂成這份 Terraform 的輸入參數表，包含 project、region、zone、instance name、machine type、disk、image 與 network 等值。
+- 最後做 `main.tf` 的第一輪閱讀，只先抓大圖：這個檔案目前有三塊主要內容，分別是 `locals`、一個 `google_compute_instance`，以及兩條 `google_compute_firewall`。
+- 在 VM resource 這一輪先只收斂出幾個主要欄位：`name`、`machine_type`、`zone`、`tags`、`boot_disk`、`network_interface`，並確認最容易影響 spec 的部分是 machine type、disk type/size 與 network tier。
 
 #### 結果
 
-- 待回填
+- 目前已能把 Step 2 產出的 Terraform 骨架分成三層理解：
+- `versions.tf` 是工具版本契約。
+- `provider.tf` 是 Terraform 連到 GCP 的入口。
+- `variables.tf` 是這份設定的輸入參數表。
+- `main.tf` 的第一輪閱讀也已完成，至少已能看懂它的高層結構是「一台 VM + 兩條 firewall」，而不是一大坨看不出邊界的 HCL。
 
 #### AI 判讀與收斂
 
-- 待回填
+- Step 3 的短結論是：在真的跑 `plan` 前，先把檔案分工看懂是對的，因為目前阻力不是 Terraform 語法，而是還沒建立穩定的檔案角色感。
+- 目前最有價值的收斂不是背欄位，而是先知道 `versions/provider/variables/main` 各自負責哪一層；這樣後面再讀值流或跑 `plan` 才不會變成盲看輸出。
+- 下一步不應直接跳回執行，而是把剩下還沒細讀的部分拆成新 step，繼續讀 `main.tf` 與 `outputs.tf`。
 
 #### 目前狀態
 
-- 未開始
+- 已完成
 
 ### Step 4
 
 #### 這一步要驗證什麼
 
-- 無論今天是否真的做到 `apply`，最後能否用明確證據說明 VM 規格是否對齊 Free Tier 邊界，並知道後續 destroy / drift 該怎麼收尾。
+- 在已經看懂檔案分工後，是否能繼續讀懂 `main.tf` 的細部值流與 `outputs.tf` 的角色，而不是急著跑 `plan`。
 
 #### 預計採取的動作
 
-- 用 `references/phase2/w9-iac-minimum-spec.md` 的 checklist 核對 region、zone、machine type、boot disk、network tier、HTTP / HTTPS 與額外 agent / backup 設定。
-- 記下若後續手動改資源，最容易形成 drift 的點。
+- 回到 `main.tf`，把 `boot_disk`、`network_interface`、firewall rule 與 tags 的關係再讀細一層。
+- 再讀 `outputs.tf`，確認哪些值是 apply 後拿來觀察結果的出口。
+- 若這一輪閱讀完成後，再決定是否新增下一個 `plan` 驗證 step。
 
 #### 實際執行內容
 
