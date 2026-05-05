@@ -60,39 +60,39 @@ Default to a learning coach / interviewer posture, not a build consultant postur
 
 ## Learning Workflow
 
-Use `learning/README.md` as the entry router for learning work.
+Use `learning/AGENTS.md` as the entry router for learning work.
 
 When the user says "start today's lesson" or begins a new lesson topic, solve the workflow question first. Do not jump straight into questions or file creation.
 
 The required reading order is progressive and conditional:
 
-1. Read `learning/README.md`
+1. Read `learning/AGENTS.md`
 2. Decide whether today needs external prework or can go straight into an internal lesson
-3. Read `learning/prework/README.md` only if prework is needed
-4. Read `learning/lessons/README.md` only if entering lesson flow
+3. Read `learning/prework/AGENTS.md` only if prework is needed
+4. Read `learning/lessons/AGENTS.md` only if entering lesson flow
 5. Read `learning/lessons/lesson-template.md` only when creating a new lesson skeleton
 
 If you are not sure whether today needs external concept-building first, ask the user. Do not silently skip that decision.
 
-For prework naming, structure, handoff, and homework-style follow-ups, treat `learning/prework/README.md` as the source of truth.
+For prework naming, structure, handoff, and homework-style follow-ups, treat `learning/prework/AGENTS.md` as the source of truth.
 
-For lesson internals such as QA, command drill, report, notes, file skeletons, and mode-specific rules, treat `learning/lessons/README.md` as the source of truth.
+For lesson internals such as QA, command drill, report, notes, file skeletons, and mode-specific rules, treat `learning/lessons/AGENTS.md` as the source of truth.
 
 ### Self-Check Before Starting
 
 After creating prework or lesson files, run a document self-check before the actual lesson begins:
 
-- compare the work against `learning/README.md`
-- compare it against the second-level README actually in use
+- compare the work against `learning/AGENTS.md`
+- compare it against the second-level `AGENTS.md` actually in use
 - if a new lesson skeleton was created, compare it against `learning/lessons/lesson-template.md`
 
 Fix structural problems before continuing.
 
 When a lesson is already in progress and the user says only "continue" or "繼續", treat that as continuing the current interactive lesson turn, not as permission to auto-complete the remaining lesson files.
 
-Use the current lesson files and `learning/lessons/README.md` to identify whether the lesson is currently in `QA`, `command`, or `report`; continue one appropriate interaction step, and wait for the user's answer or command output when the lesson is still interactive.
+Use the current lesson files and `learning/lessons/AGENTS.md` to identify whether the lesson is currently in `QA`, `command`, or `report`; continue one appropriate interaction step, and wait for the user's answer or command output when the lesson is still interactive.
 
-AGENTS.md should stay at the workflow and collaboration-rule level. Keep detailed learning-file rules in the lower-level README files so they are loaded only when relevant.
+Root `AGENTS.md` should stay at the workflow and collaboration-rule level. Keep detailed learning-file rules in lower-level `AGENTS.md` files so they are loaded only when relevant.
 
 ### Scope Discipline
 
@@ -192,6 +192,7 @@ Use these as the primary references when you need repo-grounded context:
 - `PROGRESS.md`
 - `.env.example`
 - `learning/`
+- `learning/AGENTS.md`
 - `.privatedocs/12週計畫.md`
 - `.privatedocs/Phase2三週計畫.md`
 - `.privatedocs/六週版學習計畫.md`
