@@ -15,6 +15,7 @@ W9 的最低目標不是把 Terraform 學到專精，而是完成一版可實作
 - 理解 core workflow：plan / apply / destroy
 - 理解 provider / resource / state 的最小角色分工
 - 以 https://kucw.io/blog/gcp-free-tier/ 那篇教學中的 Free Tier VM 條件為規格，用 Terraform 建出一台等價的 GCP VM
+- 至少知道這台 VM 的 access path 怎麼成立，不能停在「VM 建出來了，但沒有 SSH 方案」
 - 能講清楚 Terraform 與 Kubernetes manifest 的相似與不同
 
 ## W9 的範圍邊界
@@ -32,6 +33,8 @@ W9 在 Phase 2 裡的定位是：
 - 多環境 workspace 策略
 - 大量 provider / resource 覆蓋
 - Google 帳號、billing、project 開通等平台 bootstrap 流程自動化
+
+但第一版也不應漏掉一個太基本的現實問題：若目標 VM 預設會被人登入或操作，至少要補清楚 SSH access 是靠什麼成立。
 
 ## 本週要對齊的 VM 規格
 
@@ -116,6 +119,28 @@ W9 不應只停留在「看過那篇文章」，而要把文章中真正和 VM �
 | Target tags    | `google_compute_instance.tags`                 | 讓 firewall rule 能精準套到這台 VM                 |
 | SSH / metadata | `metadata` 或 `metadata_startup_script`        | 視第一版是否需要 SSH key / startup script 而定     |
 
+## VM access 的最小驗收線
+
+若 W9 的 VM 還保留「人會登入這台機器」這個前提，第一版至少要能回答下面三件事：
+
+- SSH 入口是否存在：例如 22 port 是否有對應 firewall 規則，或是否明確決定只走 IAP / 其他受控入口
+- SSH 身分是怎麼成立：例如 instance metadata / project metadata 的 SSH key，或 OS Login / IAM
+- 這件事由誰負責：Terraform 只先負責把 access path 建起來，還是連 Linux 使用者建立也一起 bootstrap
+
+第一版的最低可接受版本，可以只是：
+
+- 補一條最小 SSH firewall rule
+- 明確採一種 access 方案，例如 metadata SSH key 或 OS Login
+- 實際驗證 `gcloud compute ssh` 或等價方式能登入
+
+更進一步但不是第一優先的延伸，才是：
+
+- 建立個人 Linux 帳號
+- 做較完整的使用者 / sudo / dotfiles bootstrap
+- 把主機初始化與套件安裝做成 startup script 或 Ansible
+
+也就是說，W9 第一版至少要把「能登入」做出來；至於「登入後主機長什麼樣」則可以留給後續 bootstrap 工具處理。
+
 ## 第一版資源輪廓
 
 若只以 W9 的最小目標來看，第一版通常不需要很多資源。
@@ -173,6 +198,7 @@ W9 的最小實作應至少留下這些證據：
 - 一次完整的 `plan`
 - 一次完整的 `apply`
 - 一台符合教學 Free Tier 條件的 GCE VM
+- 至少一條可說清楚並可驗證的 SSH access path
 - 一次對 state / 資源變更的實際觀察
 - 至少一段可用來講 drift 或手動修改風險的說明
 
