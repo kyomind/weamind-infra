@@ -88,46 +88,6 @@
 
 - 已完成
 
-### Step 7
-
-#### 這一步要驗證什麼
-
-- 在前面 `plan` 與 apply 前確認都完成後，這份 Terraform 設定是否真的能在 GCP 上建立出預期的最小資源。
-
-#### 預計採取的動作
-
-- 由使用者在 `terraform/gcp-free-tier-vm/` 親手執行第一次 `terraform apply`。
-- apply 過程中先觀察 Terraform 是否真的建立 1 台 VM 與 2 條 firewall。
-- apply 完成後，先記下 outputs，特別是 `external_ip` 是否已出現。
-- 若 apply 失敗，再分辨是 GCP API、配額 / Free Tier 邊界、還是資源建立階段的 schema / policy 問題。
-
-#### 實際執行內容
-
-- 本次由使用者實作
-- 使用者在 `terraform/gcp-free-tier-vm/` 執行第一次 `terraform apply`，這次沒有用 `-var` 額外帶入 `project_id`，而是直接讓 Terraform 進入互動式提問。
-- Terraform 先提示 `var.project_id` 尚未提供，並顯示說明文字 `GCP project ID for the free-tier VM exercise.`；接著由使用者手動輸入這次要使用的 project ID。
-- 變數補齊後，Terraform 重新展開 apply 前的 execution plan，內容仍和前一個 step 的 plan 一致：建立 2 條 firewall 與 1 台 VM。
-- 使用者在 approval prompt 輸入 `yes` 後，Terraform 依序建立 `google_compute_firewall.allow_http`、`google_compute_firewall.allow_https` 與 `google_compute_instance.free_tier_vm`。
-- 最終 apply 成功完成，輸出顯示 `Resources: 3 added, 0 changed, 0 destroyed`，而且 `external_ip` 已在 outputs 中實際出現。
-
-#### 結果
-
-- 這份 Terraform 設定已成功在 GCP 上建立出預期的最小資源集合：1 台 VM 加 2 條 firewall。
-- 這次 apply 的實際結果與先前的 plan 一致，沒有額外長出 lesson 範圍外的資源。
-- apply 完成後，outputs 已成功回傳 `external_ip`、`instance_name`、`instance_zone`、`machine_type` 與 `project_id`；其中 `external_ip` 已從 `known after apply` 變成實際可觀察值。
-- 因此 Step 7 的核心驗證已完成：這份最小 Terraform 骨架不只可讀、可 plan，也真的可 apply。
-
-#### AI 判讀與收斂
-
-- 這一步補上的是 IaC workflow 最關鍵的最後一段證據：前面的 HCL、provider、auth 與 plan 並不是停在靜態檢查，而是真的成功建立出雲端資源。
-- 這次過程也順便驗證了一個很實用的 Terraform 行為：若必要 variable 沒有預先提供，Terraform 在互動模式下會直接要求使用者補值，對單人手動練習很方便；但若放到 CI/CD 或非互動環境，就不能依賴這種補值方式。
-- apply 完成後，最值得記住的觀察點是：`external_ip` 這類要等資源真正建立後才知道的欄位，只有在 apply 完成後才會從 `known after apply` 變成具體值。
-- 因此 Step 7 可以收斂為已完成；若要再往下走，下一步就不該再重複 apply，而是新開 step 做 post-apply 檢查或 cleanup 決策。
-
-#### 目前狀態
-
-- 已完成
-
 ### Step 2
 
 #### 這一步要驗證什麼
@@ -327,3 +287,71 @@
 #### 目前狀態
 
 - 已完成
+
+### Step 7
+
+#### 這一步要驗證什麼
+
+- 在前面 `plan` 與 apply 前確認都完成後，這份 Terraform 設定是否真的能在 GCP 上建立出預期的最小資源。
+
+#### 預計採取的動作
+
+- 由使用者在 `terraform/gcp-free-tier-vm/` 親手執行第一次 `terraform apply`。
+- apply 過程中先觀察 Terraform 是否真的建立 1 台 VM 與 2 條 firewall。
+- apply 完成後，先記下 outputs，特別是 `external_ip` 是否已出現。
+- 若 apply 失敗，再分辨是 GCP API、配額 / Free Tier 邊界、還是資源建立階段的 schema / policy 問題。
+
+#### 實際執行內容
+
+- 本次由使用者實作
+- 使用者在 `terraform/gcp-free-tier-vm/` 執行第一次 `terraform apply`，這次沒有用 `-var` 額外帶入 `project_id`，而是直接讓 Terraform 進入互動式提問。
+- Terraform 先提示 `var.project_id` 尚未提供，並顯示說明文字 `GCP project ID for the free-tier VM exercise.`；接著由使用者手動輸入這次要使用的 project ID。
+- 變數補齊後，Terraform 重新展開 apply 前的 execution plan，內容仍和前一個 step 的 plan 一致：建立 2 條 firewall 與 1 台 VM。
+- 使用者在 approval prompt 輸入 `yes` 後，Terraform 依序建立 `google_compute_firewall.allow_http`、`google_compute_firewall.allow_https` 與 `google_compute_instance.free_tier_vm`。
+- 最終 apply 成功完成，輸出顯示 `Resources: 3 added, 0 changed, 0 destroyed`，而且 `external_ip` 已在 outputs 中實際出現。
+
+#### 結果
+
+- 這份 Terraform 設定已成功在 GCP 上建立出預期的最小資源集合：1 台 VM 加 2 條 firewall。
+- 這次 apply 的實際結果與先前的 plan 一致，沒有額外長出 lesson 範圍外的資源。
+- apply 完成後，outputs 已成功回傳 `external_ip`、`instance_name`、`instance_zone`、`machine_type` 與 `project_id`；其中 `external_ip` 已從 `known after apply` 變成實際可觀察值。
+- 因此 Step 7 的核心驗證已完成：這份最小 Terraform 骨架不只可讀、可 plan，也真的可 apply。
+
+#### AI 判讀與收斂
+
+- 這一步補上的是 IaC workflow 最關鍵的最後一段證據：前面的 HCL、provider、auth 與 plan 並不是停在靜態檢查，而是真的成功建立出雲端資源。
+- 這次過程也順便驗證了一個很實用的 Terraform 行為：若必要 variable 沒有預先提供，Terraform 在互動模式下會直接要求使用者補值，對單人手動練習很方便；但若放到 CI/CD 或非互動環境，就不能依賴這種補值方式。
+- apply 完成後，最值得記住的觀察點是：`external_ip` 這類要等資源真正建立後才知道的欄位，只有在 apply 完成後才會從 `known after apply` 變成具體值。
+- 因此 Step 7 可以收斂為已完成；若要再往下走，下一步就不該再重複 apply，而是新開 step 做 post-apply 檢查或 cleanup 決策。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 8
+
+#### 這一步要驗證什麼
+
+- `terraform apply` 成功之後，GCP 上目前看到的實際資源狀態，是否真的和 Terraform outputs 與 lesson 預期一致。
+
+#### 預計採取的動作
+
+- 由使用者用 `gcloud` 直接檢查剛建立的 VM 是否存在、zone 是否正確、外部 IP 是否和 Terraform output 一致。
+- 再檢查兩條 firewall 規則是否都已建立，且 target tags 與允許的 port 符合目前設定。
+- 最後只做觀察與核對，不在這一步直接修改 Terraform 設定或銷毀資源。
+
+#### 實際執行內容
+
+- 待回填
+
+#### 結果
+
+- 待回填
+
+#### AI 判讀與收斂
+
+- 待回填
+
+#### 目前狀態
+
+- 未開始
