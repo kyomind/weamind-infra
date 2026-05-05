@@ -110,4 +110,50 @@
 
 ## Flashcards
 
-<!-- lesson 過程中再回填 -->
+- preflight gate 卡住時，問題最可能先落在哪一層？ #DevOps #card
+	- 先落在工具、認證或平台前置條件層
+	- 例如 Terraform CLI、gcloud auth、current project、billing、Compute Engine API
+	- 不是先怪 HCL 或 resource schema
+
+- 為什麼第一版 Terraform 骨架只先收斂成 provider、variables、VM、必要 firewall、outputs？ #DevOps #card
+	- 這五層剛好構成最小可驗證 workflow
+	- 已足夠完成宣告、輸入、建資源、開必要流量、觀察結果
+	- 避免過早膨脹成完整 VPC、IAM、module 設計
+
+- 怎麼用最小證據證明 VM 沒偏離 Free Tier 邊界？ #DevOps #card
+	- `machine_type = e2-micro`
+	- `zone = us-east1-b`
+	- disk 是 `pd-standard` 且 size 25GB
+	- external network tier 是 `STANDARD`
+	- apply 後真的拿到 external IP
+
+- HCL、plan、apply、state 四者各自扮演什麼角色？ #DevOps #card
+	- HCL 是目標狀態宣告
+	- plan 是差異預覽
+	- apply 是執行變更
+	- state 是真實資源狀態與資源對應關係的依據
+
+- 為什麼不用 `-out` 時，`terraform apply` 會重新計算？ #DevOps #card
+	- 因為沒有鎖定先前那份 plan
+	- apply 會依當下 HCL、輸入值、state、雲端現況重算一次
+	- 若要固定執行單，要先 `plan -out=...` 再 `apply` 該 plan 檔
+
+- 第一次讀 `terraform state`，先怎麼分欄位？ #DevOps #card
+	- 先分 HCL 宣告值、雲端回填值、Terraform 識別欄位三類
+	- 先看 `state list` 確認有哪些資源被納管
+	- 再看 `state show` 讀單一資源的真實狀態
+
+- `gcloud auth login`、ADC、service account 的差別是什麼？ #DevOps #card
+	- `gcloud auth login` 給人用 CLI 登入
+	- ADC 給本機程式與 provider 讀取預設憑證
+	- service account 給機器或自動化流程使用
+
+- 必要 variable 沒先提供時，Terraform 在手動模式下會怎麼做？ #DevOps #card
+	- 互動模式下會直接提示輸入
+	- 適合單人手動練習
+	- 不適合作為 CI/CD 或非互動環境的依賴方式
+
+- `output "project_id"` 的風險邊界是什麼？ #DevOps #card
+	- 不會自動變成公開 artifact
+	- 但會出現在 plan、apply、state、output 紀錄裡
+	- 風險重點常在終端輸出、截圖與公開筆記，不只是 Git commit
