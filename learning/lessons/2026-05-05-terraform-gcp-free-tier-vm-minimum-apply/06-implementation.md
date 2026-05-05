@@ -181,16 +181,28 @@
 #### 實際執行內容
 
 - 本次由 AI 與使用者協作實作
-- 待回填
+- AI 先回到 `main.tf`，把 `boot_disk` 與 `network_interface` 這兩段再讀細一層。
+- 在 `boot_disk` 這段，收斂出 `image`、`size`、`type` 三個主要欄位，並確認 `size` 與 `type` 會分別吃 `var.boot_disk_size_gb`、`var.boot_disk_type`。
+- 在 `network_interface` 這段，收斂出 `network`、`access_config` 與 `network_tier` 的角色，並確認 `access_config` 的存在本身就代表這台 VM 會有 external IP。
+- 接著回到兩條 firewall rule，補清 `target_tags` 與 VM tags 的對應關係：rule 不是直接綁某台 VM，而是綁有特定 tag 的 VM。
+- 之後再讀 `outputs.tf`，把它收斂成 apply 後用來觀察結果的出口，並區分兩類來源：一類是直接吐 variable，例如 `project_id`；另一類是從真正建立出的資源欄位取值，例如 `instance_name`、`instance_zone`、`machine_type`、`external_ip`。
+- 最後補清 `terraform.tfvars.example` 的角色：它是給人看的輸入樣板，不會自動被 Terraform 套用；真正的 `project_id` 真值通常是在 `plan` / `apply` 前，由實際輸入來源決定。
 
 #### 結果
 
-- 待回填
+- 目前已能把 `main.tf` 的細部值流分成三塊理解：
+- `boot_disk` 主要承接 OS image、disk size 與 disk type。
+- `network_interface` 主要承接 network、external IP 與 network tier。
+- firewall rule 主要承接對外流量允許範圍，以及它是如何透過 tag 套到 VM 身上的。
+- `outputs.tf` 的角色也已經清楚：它不是建立資源，而是把 apply 後最值得觀察的結果吐出來。
+- 另外也已釐清：`.tfvars.example` 是樣板，不是自動生效的設定；`project_id` 的真值通常是在執行前才由實際輸入來源決定。
 
 #### AI 判讀與收斂
 
-- 待回填
+- Step 4 的短結論是：目前真正重要的不是先跑 `plan`，而是先把值流與觀察出口看懂。
+- 到這一步為止，已經能把整份設定講成一條路徑：輸入值先經過 variables，provider 決定操作範圍，main 定義資源，outputs 則在最後把重要結果吐出來。
+- 這代表後續若要進下一個 step，才適合開始做真正的 `plan` 驗證，因為現在已經不是盲看 Terraform 輸出了。
 
 #### 目前狀態
 
-- 未開始
+- 已完成

@@ -58,6 +58,17 @@
 - 更精準地說，目前這份 Terraform 沒有建立 network，本例只是使用既有的 `default` network，並在這個 network 上建立 firewall rule，同時建立一台帶 tag 的 VM。
 - 若之後再多建幾台 VM，且它們也掛相同 tag，就可以一起吃到同一條 rule。
 
+### `.tfvars.example` 的角色是什麼
+
+- `terraform.tfvars.example` 目前只是範例檔，主要角色是給人看，說明這份 Terraform 預期有哪些輸入值，以及合理範例長什麼樣。
+- 它不會自動被 Terraform 套用；真正會被 Terraform 拿來餵給 `variables.tf` 的，通常是實際的 `terraform.tfvars`、`-var`、`-var-file`、`TF_VAR_xxx`，或 variable 自己的 `default`。
+- 因此更精準的說法是：`variables.tf` 先宣告有哪些輸入，`.tfvars.example` 只是示範這些輸入可以怎麼填。
+
+### `project_id` 的真值是什麼時候決定的
+
+- `project_id` 在目前這份設定裡沒有 `default`，所以它的真值通常是在你執行 `plan` 或 `apply` 前，透過實際輸入來源才被決定。
+- 可以先把這件事壓成一句話：**`project_id` 的真值通常不是寫死在程式裡，而是在執行前，由實際輸入來源決定。**
+
 ## Flashcards
 
 <!-- lesson 過程中再回填 -->
