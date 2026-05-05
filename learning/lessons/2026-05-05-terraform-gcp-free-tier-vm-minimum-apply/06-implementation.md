@@ -13,8 +13,9 @@
 
 1. 先確認 Terraform CLI、GCP auth、project、billing 與必要 API 的 preflight gate。
 2. 在 `terraform/gcp-free-tier-vm/` 收斂第一版 `.tf` 骨架與參數邊界。
-3. 先回頭逐檔閱讀 Step 2 產出的 Terraform 檔案，確認每個檔案各自在做什麼，以及值怎麼流進 provider / resource。
-4. 等檔案角色與主要欄位都讀懂後，再決定是否新增下一個實作 step 去做 `terraform plan`。
+3. 先回頭逐檔閱讀 Step 2 產出的 Terraform 檔案，確認每個檔案各自在做什麼。
+4. 再把 `main.tf`、`outputs.tf` 與 value flow 讀懂。
+5. 最後才由使用者親手執行第一次 `terraform plan`。
 
 ## 使用提醒
 
@@ -32,7 +33,7 @@
 ### 驗收訊號
 
 - `terraform/gcp-free-tier-vm/` 內出現一版清楚、可讀、可執行的最小 `.tf` 骨架。
-- 至少留下一次可信的 `terraform plan`；若平台前置條件完整，再進一步留下一次最小 `terraform apply`。
+- 至少留下由使用者親手跑出的第一次可信 `terraform plan`。
 - 能用 Free Tier checklist 說明 VM 是否符合 `e2-micro`、允許 region、標準 HDD 與 `STANDARD` network tier 等邊界。
 
 ### 回退點
@@ -121,7 +122,7 @@
 
 - Step 2 的短結論是：第一版 `.tf` 骨架不需要很多資源，但必須讓人一眼看出這台 VM 的 Free Tier 意圖與主要規格。
 - 目前的收斂方式是正確的，因為它先把「最小可讀、最小可驗證」放在第一位，而不是過早追求 production-grade Terraform 結構。
-- 這一步完成後，後續 Step 3 就不再是在猜 Terraform 檔該怎麼長，而是直接驗證這份骨架能否穩定跑出 `plan`，以及 provider / auth 會卡在哪一層。
+- 這一步完成後，後續 Step 3 就不再是在猜 Terraform 檔該怎麼長，而是直接進入檔案閱讀與值流理解。
 
 #### 目前狀態
 
@@ -206,3 +207,32 @@
 #### 目前狀態
 
 - 已完成
+
+### Step 5
+
+#### 這一步要驗證什麼
+
+- 在已經看懂檔案分工、值流與 outputs 角色後，使用者是否能親手跑出第一份可讀的 `terraform plan`。
+
+#### 預計採取的動作
+
+- 由使用者在 `terraform/gcp-free-tier-vm/` 親手執行第一次 `terraform plan`。
+- 執行前先確認 `project_id` 的輸入來源，避免把 `.tfvars.example` 誤當成自動生效設定。
+- 執行後只先觀察三件事：Terraform 打算建立哪些資源、主要 spec 值是否落對、哪些 outputs 會在 plan 階段直接顯示。
+- 若 `plan` 失敗，再分辨是 provider / auth、輸入值，還是 resource schema / API 限制問題。
+
+#### 實際執行內容
+
+- 待回填
+
+#### 結果
+
+- 待回填
+
+#### AI 判讀與收斂
+
+- 待回填
+
+#### 目前狀態
+
+- 未開始
