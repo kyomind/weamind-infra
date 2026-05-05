@@ -342,16 +342,102 @@
 
 #### 實際執行內容
 
-- 待回填
+- 本次由使用者實作
+- 使用者在 apply 完成後，接著用 `gcloud` 做 post-apply 檢查，並回報整體檢查結果為 `ok`。
+- 這一輪明確貼出的輸出，來自兩條 firewall 規則的 `gcloud compute firewall-rules describe` 結果。
+- `free-tier-vm-allow-http` 的檢查結果顯示：`direction = INGRESS`、`priority = 1000`、`sourceRanges = 0.0.0.0/0`、`targetTags = allow-http`，而且允許的 port 為 TCP `80`。
+- `free-tier-vm-allow-https` 的檢查結果顯示：`direction = INGRESS`、`priority = 1000`、`sourceRanges = 0.0.0.0/0`、`targetTags = allow-https`，而且允許的 port 為 TCP `443`。
+- 兩條規則的 `network` 都指向該 project 的 `default` network，與目前 Terraform 設定一致。
 
 #### 結果
 
-- 待回填
+- 這一輪 post-apply 檢查已確認 firewall 實際狀態與 Terraform 設定一致。
+- HTTP 與 HTTPS 兩條規則都已存在，而且 target tag、source range、priority 與允許的 port 都正確落下。
+- 使用者也同步回報整體檢查結果為 `ok`，因此目前沒有看到 apply 後明顯偏離 lesson 預期的資源狀態。
 
 #### AI 判讀與收斂
 
-- 待回填
+- Step 8 的價值在於把 Terraform output 再往前推一步，改用雲端控制面的實際查詢來驗證資源，而不是只相信 apply 當下的終端機輸出。
+- 這次至少已明確驗到兩條 firewall 規則確實存在於 GCP，且細節與 Terraform 宣告一致，代表 apply 不是只更新 state，而是真的把規則建立到雲端上。
+- 由於使用者已回報整體檢查 `ok`，這一步可以先收斂為完成；若後續還要延伸，下一步才適合新開 cleanup 或 destroy 決策 step。
 
 #### 目前狀態
 
-- 未開始
+- 已完成
+
+### Step 9
+
+#### 這一步要驗證什麼
+
+- `terraform apply` 完成之後，是否已經看懂 state 裡哪些欄位最值得讀，以及它們和 HCL、plan、雲端實際狀態之間的對應關係。
+
+#### 預計採取的動作
+
+- 由使用者用 `terraform state list` 與 `terraform state show` 觀察目前 state 中已被 Terraform 納管的資源。
+- 先聚焦在最有教學價值的欄位，例如 instance 的 `id`、`name`、`zone`、`machine_type`、`tags`、`network_interface`、`nat_ip`，以及 firewall 的 `name`、`target_tags`、`source_ranges`、`allow`。
+- 一邊讀欄位，一邊分辨哪些值是 HCL 原本就寫死的、哪些值是 apply 後才由雲端回填進 state 的。
+
+#### 實際執行內容
+
+- 本次由使用者實作
+- 使用者先執行 `terraform state list`，確認目前 state 中已被 Terraform 納管的資源共有 3 個：`google_compute_firewall.allow_http`、`google_compute_firewall.allow_https`、`google_compute_instance.free_tier_vm`。
+- 接著使用者執行 `terraform state show google_compute_instance.free_tier_vm`，把閱讀焦點先集中在 VM 這個最有代表性的資源。
+- 在 instance state 裡，先對照幾組最重要的欄位：`id` / `self_link` 代表這個資源在 GCP 中的唯一定位；`name`、`project`、`zone`、`machine_type` 對應這台 VM 的基本識別；`tags` 對應前面 firewall rule 要套用到哪台 VM。
+- 再往下讀 `boot_disk` 與 `network_interface`：前者可以看到 disk 的實際 image、size 與 type；後者則能直接看到 `network_ip` 與 `access_config.nat_ip`，也就是內網 IP 與外網 IP。
+- 最後再把 instance state 裡幾個 apply 後才會出現的值收出來，例如 `current_status = RUNNING`、`cpu_platform = Intel Broadwell`、`creation_timestamp`、`instance_id`、`network_ip = 10.142.0.2`、`nat_ip = 35.211.162.104`。
+
+#### 結果
+
+- 目前已完成第一輪 state 閱讀，至少已能看懂 Terraform state 裡最核心的兩層資訊：哪些資源正在被 Terraform 管，以及某一個資源目前在雲端上的實際狀態。
+- `terraform state list` 證明目前 state 裡確實有 2 條 firewall 與 1 台 VM，與今天 apply 建立的資源集合一致。
+- `terraform state show` 則補上了 plan 與 output 看不到的細節，例如 VM 已經進入 `RUNNING`、實際 CPU platform、內網 IP、外網 IP，以及 GCP 資源的完整 `id` / `self_link`。
+- 因此 Step 9 的核心學習目標已達成：state 不是單純備份 HCL，而是 Terraform 對「目前真實資源狀態」的結構化記錄。
+
+#### AI 判讀與收斂
+
+- 讀 state 時，最重要的不是逐欄背誦，而是先分成三類來看：一類是你在 HCL 裡主動宣告的值，例如 `machine_type`、`zone`、`tags`；一類是 apply 後由雲端回填的值，例如 `instance_id`、`creation_timestamp`、`cpu_platform`、`network_ip`、`nat_ip`；第三類則是 Terraform / provider 為了追蹤資源關聯而保留的識別欄位，例如 `id`、`self_link`、各種 fingerprint。
+- 這也是為什麼 state 值得讀：它讓你看到「Terraform 想建立什麼」和「雲端最後真的長成什麼」之間的接合面。
+- 這一步先用 instance 當主體已經足夠，因為 VM 幾乎把 state 最常見的欄位型態都示範過一次；後續若要延伸，再去讀 firewall 的 state 就會更容易。
+- 因此 Step 9 可以收斂為已完成；下一步才適合進 Step 10，做 destroy 前確認與執行。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 10
+
+#### 這一步要驗證什麼
+
+- 在已經完成 state 閱讀後，是否要把今天建立的最小資源完整銷毀，並確認 Terraform 能把它們乾淨移除。
+
+#### 預計採取的動作
+
+- 先確認 destroy 的目的、風險與預期影響範圍，只鎖定今天建立的 1 台 VM 與 2 條 firewall。
+- 再由使用者親手執行 `terraform destroy`。
+- destroy 完成後，確認 state 與雲端控制面都不再保留這批資源。
+
+#### 實際執行內容
+
+- 本次由使用者實作
+- 使用者在 `terraform/gcp-free-tier-vm/` 執行 `terraform destroy`，這次同樣沒有先用 `-var` 帶入 `project_id`，因此 Terraform 先進入互動式提問，由使用者手動輸入 `gemini-420216`。
+- Terraform 先 refresh 現有 state，確認目前仍受管理的資源就是 2 條 firewall 與 1 台 VM。
+- destroy plan 清楚顯示這次要移除的資源共有 3 個：`google_compute_firewall.allow_http`、`google_compute_firewall.allow_https`、`google_compute_instance.free_tier_vm`，同時 outputs 也都會從具體值回到 `null`。
+- 使用者在 destroy confirmation prompt 輸入 `yes` 後，Terraform 依序銷毀兩條 firewall 與 VM，最後回報 `Destroy complete! Resources: 3 destroyed.`
+
+#### 結果
+
+- 今天由 Terraform 建立的最小資源集合已全部成功銷毀。
+- destroy 的實際範圍與 lesson 預期一致，沒有超出今天這包 Terraform 所建立的 1 台 VM 與 2 條 firewall。
+- outputs 中原本的 `external_ip`、`instance_name`、`instance_zone`、`machine_type`、`project_id` 也都隨著 destroy 回到 `null`，符合 Terraform 對已刪除資源的預期表現。
+- 因此這次最小 IaC workflow 已完成閉環：從 HCL、plan、apply、post-apply 檢查，到最後 destroy 都已實際走完一次。
+
+#### AI 判讀與收斂
+
+- Step 10 的關鍵價值，不只是把資源刪掉，而是驗證 Terraform 不只會建立資源，也能根據同一份 state 與設定，正確地把它們完整回收。
+- destroy plan 也再次示範了一個重要閱讀方式：畫面中大量 `-> null` 的變化，代表這些欄位所屬的資源即將從 state 與雲端控制面一起消失。
+- 這次流程也再次驗證互動式 variable 補值在手動操作時確實可行，但若搬到自動化流程，仍應事先把變數供應好，而不是依賴 prompt。
+- 因此 Step 10 可以收斂為已完成；就今天這個 lesson 而言，最小 Terraform IaC 練習已完整收尾。
+
+#### 目前狀態
+
+- 已完成

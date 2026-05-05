@@ -89,6 +89,25 @@
 - 但這種方便只成立在互動式終端機；如果是 CI/CD、腳本自動化或其他非互動環境，就不能期待 Terraform 停下來等人輸入。
 - 可以先把它記成一句話：**必要 variable 若沒先提供，Terraform 在互動模式下會要求你當場補值；在非互動環境則通常必須事先把值供應好。**
 
+### 第一次讀 Terraform state，先看哪些欄位
+
+- `terraform state list` 先回答的問題不是「內容細節是什麼」，而是「目前有哪些資源正在被 Terraform 納管」。
+- `terraform state show <resource>` 才是在看某一個資源目前被記錄成什麼樣子。
+- 第一次讀 state，不要從上到下逐欄硬看；比較穩的方式是把欄位分成三類。
+- 第一類是 HCL 原本就有宣告的值，例如 instance 的 `name`、`project`、`zone`、`machine_type`、`tags`、disk size/type、`network_tier`。
+- 第二類是 apply 後由雲端回填的值，例如 `current_status`、`creation_timestamp`、`instance_id`、`cpu_platform`、`network_ip`、`nat_ip`。
+- 第三類是 Terraform / provider 用來追蹤資源的識別或同步欄位，例如 `id`、`self_link`、`label_fingerprint`、`tags_fingerprint`、`metadata_fingerprint`。
+- 以這次 VM 為例，最值得先讀的欄位是：`id`、`name`、`zone`、`machine_type`、`tags`、`boot_disk.initialize_params`、`network_interface.network_ip`、`network_interface.access_config.nat_ip`、`current_status`。
+- 可以先把 state 的角色壓成一句話：**HCL 是你想要的樣子，plan 是 Terraform 打算怎麼做，state 則是 Terraform 目前認為世界已經長成什麼樣子。**
+
+### HCL 目前在這個 repo 用在哪裡
+
+- 目前這個 repo 裡，HCL 的實際使用範圍只有 Terraform，而且集中在 `terraform/gcp-free-tier-vm/` 這個練習目錄。
+- 具體來說，`versions.tf`、`provider.tf`、`variables.tf`、`main.tf`、`outputs.tf` 都是 Terraform 設定本體，分別用來描述版本契約、provider、輸入變數、資源本身與輸出。
+- `terraform.tfvars.example` 雖然是範例檔，不是目前自動生效的輸入檔，但它也屬於 Terraform 會認得的 HCL 風格變數格式。
+- 目前 repo 裡沒有其他獨立的 `.hcl` 檔，所以 HCL 還沒有被拿去做 Terragrunt、Packer、Nomad 或其他 HashiCorp 工具設定。
+- 也就是說，這個 repo 現在的 HCL 可以先收斂成一句話：**HCL 在這裡主要就是 Terraform 的語言；其餘基礎設施檔案，例如 Kubernetes manifests，仍然是 YAML。**
+
 ## Flashcards
 
 <!-- lesson 過程中再回填 -->
