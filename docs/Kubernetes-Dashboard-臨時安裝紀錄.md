@@ -19,7 +19,7 @@
 當前連線前提是：
 
 ```bash
-ssh -N -L 6443:127.0.0.1:6443 weamind-001
+ssh -N -L 6443:127.0.0.1:6443 <control-plane-node>
 ```
 
 這條 SSH tunnel 的作用是：
