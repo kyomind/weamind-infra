@@ -419,7 +419,7 @@
 #### 實際執行內容
 
 - 本次由使用者實作
-- 使用者在 `terraform/gcp-free-tier-vm/` 執行 `terraform destroy`，這次同樣沒有先用 `-var` 帶入 `project_id`，因此 Terraform 先進入互動式提問，由使用者手動輸入 `gemini-420216`。
+- 使用者在 `terraform/gcp-free-tier-vm/` 執行 `terraform destroy`，這次同樣沒有先用 `-var` 帶入 `project_id`，因此 Terraform 先進入互動式提問，由使用者手動輸入當天實際使用的 project ID。
 - Terraform 先 refresh 現有 state，確認目前仍受管理的資源就是 2 條 firewall 與 1 台 VM。
 - destroy plan 清楚顯示這次要移除的資源共有 3 個：`google_compute_firewall.allow_http`、`google_compute_firewall.allow_https`、`google_compute_instance.free_tier_vm`，同時 outputs 也都會從具體值回到 `null`。
 - 使用者在 destroy confirmation prompt 輸入 `yes` 後，Terraform 依序銷毀兩條 firewall 與 VM，最後回報 `Destroy complete! Resources: 3 destroyed.`

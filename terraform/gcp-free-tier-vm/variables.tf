@@ -61,3 +61,13 @@ variable "ssh_source_ranges" {
   description = "CIDR ranges allowed to SSH into the VM."
   type        = list(string)
 }
+
+variable "ssh_username" {
+  description = "Linux username used for SSH login via instance metadata."
+  type        = string
+}
+
+variable "ssh_public_key_path" {
+  description = "Absolute path to the SSH public key file used for VM login."
+  type        = string
+}

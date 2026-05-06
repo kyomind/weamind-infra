@@ -9,3 +9,5 @@ image_project     = "debian-cloud"
 image_family      = "debian-12"
 network_name      = "default"
 ssh_source_ranges = ["0.0.0.0/0"]
+ssh_username      = "your-linux-username"
+ssh_public_key_path = "/absolute/path/to/your/public-key.pub"

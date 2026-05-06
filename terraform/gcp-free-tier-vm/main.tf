@@ -9,6 +9,10 @@ resource "google_compute_instance" "free_tier_vm" {
   zone         = var.zone
   tags         = local.instance_tags
 
+  metadata = {
+    ssh-keys = "${var.ssh_username}:${trimspace(file(var.ssh_public_key_path))}"
+  }
+
   boot_disk {
     initialize_params {
       # Keep the boot disk on standard HDD.
