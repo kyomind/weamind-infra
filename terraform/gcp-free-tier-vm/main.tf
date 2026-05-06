@@ -1,5 +1,5 @@
 locals {
-  instance_tags = ["free-tier-vm", "allow-http", "allow-https"]
+  instance_tags = ["free-tier-vm", "allow-http", "allow-https", "allow-ssh"]
 }
 
 # Main cost-sensitive fields: machine type, disk type/size, and network tier.
@@ -53,4 +53,17 @@ resource "google_compute_firewall" "allow_https" {
 
   source_ranges = ["0.0.0.0/0"]
   target_tags   = ["allow-https"]
+}
+
+resource "google_compute_firewall" "allow_ssh" {
+  name    = "${var.instance_name}-allow-ssh"
+  network = var.network_name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  source_ranges = var.ssh_source_ranges
+  target_tags   = ["allow-ssh"]
 }

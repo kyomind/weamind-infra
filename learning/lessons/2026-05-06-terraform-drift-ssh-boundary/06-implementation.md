@@ -52,19 +52,26 @@
 #### 實際執行內容
 
 - 本次由 AI 實作
-- 待回填
+- 在 `terraform/gcp-free-tier-vm/main.tf` 的 `instance_tags` 加入 `allow-ssh`，讓 SSH firewall rule 能精準套到這台 VM。
+- 在 `terraform/gcp-free-tier-vm/main.tf` 新增 `google_compute_firewall.allow_ssh`，只開放 TCP `22`，並把 `source_ranges` 綁到變數，讓 lesson 仍保留可調整空間。
+- 在 `terraform/gcp-free-tier-vm/variables.tf` 新增 `ssh_source_ranges`，型別為 `list(string)`。
+- 依使用者目前沒有固定 IP、且 VM 不一定長期運行的前提，把 `terraform/gcp-free-tier-vm/terraform.tfvars.example` 的示例設成 `ssh_source_ranges = ["0.0.0.0/0"]`，優先保住可操作性。
 
 #### 結果
 
-- 待回填
+- `terraform validate` 通過，代表這次最小 SSH access path 變更在 Terraform 配置層是有效的。
+- 目前已把 SSH 入口正式寫進 IaC，但還沒有處理登入身分方案與 runtime SSH 驗證。
 
 #### AI 判讀與收斂
 
-- 待回填
+- Step 1 已完成：這次修正解的是 access path 的 network layer，不是完整登入方案。
+- 這樣的收斂符合今天的第一優先，因為它先把「22 port 是否由 Terraform 明確管理」這件事固定下來，避免後面把 project 預設與 IaC 保證混在一起。
+- 在 source range 決策上，今天採用的是「短期可操作性優先」版本，而不是 issue 文件原先預設的固定 IP / 受控 CIDR 前提。
+- 下一步應進 Step 2，切清楚 metadata SSH key、OS Login 與 project 預設幫忙三種路徑，決定今天要用哪種方式做最小登入驗證。
 
 #### 目前狀態
 
-- 未開始
+- 已完成
 
 ### Step 2 確認登入驗證路徑
 

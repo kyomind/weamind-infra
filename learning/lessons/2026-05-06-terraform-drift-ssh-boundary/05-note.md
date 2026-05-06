@@ -23,9 +23,30 @@
 
 ## Notes
 
-### 暫存區
+### `terraform validate` 是什麼
 
-<!-- lesson 進行中再回填 -->
+- `terraform validate` 用來檢查目前目錄下的 Terraform 設定是否在語法、區塊結構、參數型別與 provider schema 層面成立。
+- 它回答的問題是：這份 Terraform configuration 合不合法、能不能被 Terraform 正常理解；它不回答雲端資源最後能不能真的建成功。
+- 以今天這一步來說，`terraform validate` 通過，代表我們新增的 `allow_ssh` firewall、`ssh_source_ranges` 變數與相關引用在配置層是有效的。
+
+### `terraform validate` 怎麼用
+
+- 最常見用法是在 Terraform 專案目錄直接執行 `terraform validate`。
+- 常見搭配順序是：先 `terraform fmt`，再 `terraform validate`，之後才進 `terraform plan`。
+- 一個實用的口頭模型是：`validate` 檢查「配置是否合法」，`plan` 檢查「這份合法配置實際會改什麼」，`apply` 才是「真的把變更打到雲端」。
+
+### `terraform validate` 的邊界
+
+- 它不會替你完成 runtime 驗證，所以就算 `validate` 通過，也不代表 SSH 一定能登入、GCP auth 一定正常、或 provider 呼叫雲端 API 一定成功。
+- 它也不等於安全檢查；例如把 `ssh_source_ranges = ["0.0.0.0/0"]` 寫進變數檔，對 Terraform 來說仍可能是合法配置。
+- 所以今天的 lesson 裡，`validate` 是 Step 1 的配置層驗證，不是整個 VM access path 的最終驗收。
+
+### 這次的 `ssh_source_ranges` 決策
+
+- issue 文件原本偏向固定 IP 或受控 CIDR，因為那是較穩妥的長期運行前提。
+- 但以你目前這台機器的用途來看，沒有固定 IP，而且不一定長期運行，所以這次可以接受先把 `ssh_source_ranges` 寫成 `0.0.0.0/0`，優先換取可操作性。
+- 這代表今天的 lesson 決策不是「最安全的預設」，而是「在短期、個人、非長期運行前提下，先讓 access path 成立」。
+- 後面若這台機器轉成長期使用，再回頭把 SSH source range 收斂回固定 IP、VPN exit IP、IAP 或其他較受控方案。
 
 ## Flashcards
 

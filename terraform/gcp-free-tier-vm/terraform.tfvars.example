@@ -8,3 +8,4 @@ boot_disk_type    = "pd-standard"
 image_project     = "debian-cloud"
 image_family      = "debian-12"
 network_name      = "default"
+ssh_source_ranges = ["0.0.0.0/0"]

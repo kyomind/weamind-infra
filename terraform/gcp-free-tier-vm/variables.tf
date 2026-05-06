@@ -56,3 +56,8 @@ variable "network_name" {
   type        = string
   default     = "default"
 }
+
+variable "ssh_source_ranges" {
+  description = "CIDR ranges allowed to SSH into the VM."
+  type        = list(string)
+}
