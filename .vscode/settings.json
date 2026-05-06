@@ -66,12 +66,15 @@
         "**/.*/**": true,
         "**/.venv/**": true,
         "**/__pycache__/**": true,
-        "**/node_modules/**": true
+        "**/node_modules/**": true,
+        "**/.github/**": false
     },
     "search.exclude": {
         "**/.*": true,
         "**/.venv": true,
         "**/__pycache__": true,
-        "**/node_modules": true
+        "**/node_modules": true,
+        "**/.github": false,
+        ".github": false
     },
 }
