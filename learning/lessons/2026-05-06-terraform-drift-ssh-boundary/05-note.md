@@ -63,6 +63,26 @@
 - 所以這三者不是同一層：`instance metadata` 與 `project metadata` 是「設定放在哪裡」，`gcloud compute ssh` 是「你用什麼方式發起登入」。
 - 若用最白話的口頭模型來記：instance metadata 是單機規則，project metadata 是整個 project 的共用規則，`gcloud compute ssh` 則是幫你走登入流程的 CLI 工具。
 
+### project metadata 的 SSH key 到底是在 VM 外處理，還是 VM 內處理
+
+- 比較精準的答案是：這條路分成控制面與客體 OS 兩段，不是完全只在 VM 外，也不是 project 自己在「外部」把 SSH 驗證做完。
+- 在 metadata-based SSH 模型下，project metadata 或 instance metadata 裡存的是公開金鑰條目，不是完整的 key pair；private key 仍留在發起連線的 client 端，例如你的本機 `~/.ssh/gcp`。
+- `gcloud compute ssh`、Console 或 API 這一層，做的是控制面操作：建立或上傳 public key、更新 project metadata / instance metadata，並找到要連哪台 VM。
+- 真正把 metadata 變成 Linux 可登入狀態的，是 VM 內的 guest agent / guest environment。Google 的官方文件明確說明：未啟用 OS Login 的 VM 會把 SSH key 存在 project / instance metadata，而 guest agent 會處理 metadata-based SSH；官方也提醒直接手改 VM 內的 `authorized_keys` 可能被 guest agent 覆寫。
+- 這表示 metadata key 不是停留在 project 這個抽象層就完成驗證，而是 VM 內的 guest agent 會透過 metadata server 讀到這些 key，然後更新本機帳號或授權狀態，最後真正的 SSH 握手與 public key 驗證仍發生在 VM 的 sshd / OS 層。
+- 如果改走 OS Login，模型又不同：官方文件說啟用 OS Login 後，instance 的 guest agent 會忽略 metadata 裡的 SSH key，改由 VM 從 OS Login 服務取得與 Google 身分綁定的 SSH key 與 POSIX 帳號資訊。
+- 所以今天比較準確的口頭模型是：project metadata 不是「在 VM 外直接完成登入」，而是「在控制面保存 project-level public key 規則，然後由 VM 內的 guest agent 落成 OS 層可登入狀態」。
+
+### 從 VM 內的 `authorized_keys` 截圖可以怎麼理解
+
+- 這次進 VM 後查看 `~/.ssh/authorized_keys`，看到檔案裡有兩段 `# Added by Google`，下面各自對應一把 SSH public key，這是很強的 runtime 驗證訊號。
+- 第一個重點是：SSH key 沒有只停留在 project metadata 或 instance metadata 這種控制面設定裡，而是真的已經被同步到 VM 內使用者層級的 `authorized_keys`。
+- 第二個重點是：`# Added by Google` 這個標記很符合官方對 guest agent / metadata-based SSH 的描述。比較合理的解釋不是你手動編輯了這個檔案，而是 guest agent 根據 metadata 規則，把 key 落成到 VM 內的授權檔。
+- 第三個重點是：如果這兩把 key 和你先前在 project metadata 裡看到的兩條 `kyo` key 對得上，那就能更有力地支持目前的登入路徑確實受 project metadata 影響，而且最後會在 VM 內變成真實可用的 `authorized_keys` 條目。
+- 這也幫我們把「驗證是在 VM 外還是 VM 內完成」講清楚：控制面可以在 VM 外更新 metadata，但最後真正接受 SSH public key 驗證的地方，仍然是 VM 內的 sshd / OS 層；`authorized_keys` 就是最後落地點的直接證據。
+- 不過這張圖也有一個邊界要記住：它能很強地證明 metadata-based SSH 已進入 VM 內的 OS 授權層，但單看 `authorized_keys` 本身，通常還不能百分之百區分某條 key 最初是來自 project metadata 還是 instance metadata，因為 guest agent 可能會把多個 metadata 來源整合後一起寫進來。
+- 所以這張圖最精準的收斂不是「它單獨證明一定是 project metadata」，而是「它證明 metadata-based SSH 沒有停在控制面，而是真的被 guest agent 落成 VM 內的授權狀態」；再結合前面查到的 project metadata 內容，才形成對 project-level path 的更強歸因。
+
 ### 為什麼本機有 `gcp` SSH key pair，不代表所有 GCP VM 天生都能用
 
 - 你本機有 `~/.ssh/gcp` / `~/.ssh/gcp.pub`，只代表你手上有一組可用的 SSH key pair；它不自動代表所有現在或未來的 GCP VM 都會接受這把 key。
