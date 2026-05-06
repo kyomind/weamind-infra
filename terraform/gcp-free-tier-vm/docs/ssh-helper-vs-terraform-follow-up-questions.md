@@ -195,3 +195,117 @@ block-project-ssh-keys = true
 3. 再用 raw ssh 驗證一次
 
 這會讓你對 instance metadata 與 project metadata 的差別真正建立非常穩的手感。
+
+## Q5：如果 Terraform 寫了 instance metadata `ssh-keys = kyo:...`，這會不會造成 `kyo` 使用者被建立？到底是在哪一層建立？
+
+短答案：**會，前提是這台 Linux VM 走的是 metadata-based SSH、且 guest agent 正常；但「建立使用者」這件事不是 Terraform 本身做的，而是 VM 內的 guest agent 根據 metadata 去建立本機帳號。**
+
+這題最關鍵的切法是把幾個層次分開：
+
+1. **Terraform 層**
+	Terraform 只是在 GCP 控制面把 `ssh-keys` 寫進 instance metadata。
+	它做的是「宣告這台 VM 接受哪個 username + public key」，不是直接登入 VM 去執行 `useradd kyo`。
+2. **GCP metadata 層**
+	`ssh-keys = kyo:ssh-ed25519 AAAA...` 這種值，描述的是一條 metadata-managed SSH identity。
+	這裡已經明示 username 是 `kyo`。
+3. **VM 內 guest agent 層**
+	官方文件對 Linux 的說法很直接：**如果沒有啟用 OS Login，guest agent 會使用 metadata 設定建立並管理本機使用者帳戶和 SSH keys；當你新增或移除 instance / project metadata 裡的 SSH keys 時，guest agent 會建立或刪除本機使用者帳戶。**
+
+所以更精準地說：
+
+> 不是 Terraform 建立 `kyo`，而是 Terraform 把 `kyo` 這個 metadata identity 寫進去後，VM 裡的 guest agent 讀到這條 metadata，於是在作業系統層建立並管理 `kyo` 這個本機帳號，並維護它的 `authorized_keys`。
+
+### 你這次 case 的實際意義
+
+如果這台 VM：
+
+1. 沒有啟用 OS Login
+2. guest agent 正常
+3. instance metadata 有 `ssh-keys = kyo:...`
+
+那麼 `kyo` 這個 Linux user 會在 **VM 作業系統內** 被 guest agent 佈建出來。
+
+而且官方文件還提到，guest agent 會：
+
+1. 幫這個帳號維護 `authorized_keys`
+2. 把它加到 `google-sudoers` 群組
+
+所以在 metadata-based SSH 模型下，`kyo` 不只是「登入字串」，它通常真的會成為 VM 裡的一個本機帳號。
+
+### 這題最容易講錯的地方
+
+最容易講錯成：
+
+> Terraform 會建立 Linux 使用者。
+
+這句不夠準。
+
+更準的說法是：
+
+> Terraform 會把 `kyo` 這個 username 寫進 Compute Engine metadata；真正把它落地成本機 Linux 帳號的是 VM 內的 guest agent。
+
+### 補一個邊界：如果啟用的是 OS Login
+
+那就不是這一套了。
+
+官方文件也明講：**啟用 OS Login 時，guest agent 會忽略 metadata 裡的 SSH keys。**
+
+也就是說，在 OS Login 模型下，你不能再把 `instance metadata ssh-keys` 當成建立 `kyo` 的來源。那時候 Linux 使用者資訊改由 OS Login 的 POSIX account 模型處理。
+
+## Q6：如果 Terraform 沒寫 `ssh-keys`，只執行 `gcloud compute ssh kyo@vm`，會不會同時建立 `kyo`？
+
+短答案：**很多情況下會，但前提不是「gcloud 直接在 VM 裡建 user」，而是 `gcloud` 先把 `kyo` 對應的 key path 建到可被 VM 接受的身分來源，之後 guest agent 或 OS Login 再把它落地成可登入的使用者。**
+
+這題要分兩種主路徑看。
+
+### 情況 A：VM 走 metadata-based SSH，沒有啟用 OS Login
+
+這是你這次問題最貼近的情況。
+
+若 Terraform 沒先寫 instance metadata，`gcloud compute ssh kyo@vm` 仍可能成功，常見路徑是：
+
+1. `gcloud` 檢查本機 SSH key，必要時自動生成一把
+2. `gcloud` 把公鑰寫進 **project metadata**，有時也可能走其他相容路徑
+3. VM 內 guest agent 讀到 metadata 裡多了一條 `kyo:PUBLIC_KEY`
+4. guest agent 在 VM 內建立或管理本機 `kyo` 帳號，並更新 `authorized_keys`
+5. SSH 登入成功
+
+所以在這條模型下，答案是：
+
+> **有可能會同時出現 `kyo` 這個本機使用者，但直接建立它的仍然不是 `gcloud` CLI，而是 guest agent 根據 metadata 內容去建立。**
+
+換句話說，`gcloud compute ssh kyo@vm` 做的是「補齊 metadata 身分來源」；guest agent 做的是「把這個身分來源同步成 VM 裡的本機帳號」。
+
+### 情況 B：VM 啟用 OS Login
+
+這時就不是 metadata-based SSH user provisioning，而是 OS Login。
+
+官方文件說明兩個關鍵點：
+
+1. 啟用 OS Login 後，guest agent 會忽略 metadata 裡的 SSH keys
+2. OS Login 會用 Google 帳戶的 POSIX 資訊來設定使用者帳戶，包含 username、UID、GID 與 home directory
+
+所以如果這台 VM 啟用了 OS Login，`gcloud compute ssh kyo@vm` 這種寫法本身其實不是核心。真正決定使用者帳號的是：
+
+1. 你的 Google 身分
+2. 對應的 OS Login POSIX account
+3. 你是否具備對這台 VM 的 OS Login IAM 權限
+
+在這條模型下，Linux user 不是來自 `instance metadata ssh-keys` 的 `kyo` 字串，而是來自 OS Login 幫 Google 帳戶建立的 POSIX username。官方文件甚至明講，預設 username 可能長成 `username_domain_suffix` 這種格式，而不是你手打的簡短 `kyo`。
+
+### 所以你這題最短的結論是
+
+如果我們把 OS Login 先排除，只討論一般 metadata-based SSH：
+
+1. **Terraform 有 `ssh-keys = kyo:...` 時，`kyo` 很可能會在 VM 內被建立；但建立者是 guest agent，不是 Terraform。**
+2. **Terraform 沒有 `ssh-keys` 時，只要 `gcloud compute ssh kyo@vm` 幫你把 `kyo` 的公鑰成功寫進 project / instance metadata，guest agent 一樣可能在 VM 內建立 `kyo`。**
+
+所以兩種情況共通的核心其實是：
+
+> **建立 Linux 本機使用者的直接執行者，是 VM 裡的 guest agent；差別只在於 `kyo` 這個 username 與 key，是先由 Terraform 寫進 metadata，還是後來由 `gcloud` helper 補進 metadata。**
+
+### 如果要把這題收成面試級回答
+
+可以用這一句：
+
+> 在 Compute Engine 的 metadata-based SSH 模型裡，`ssh-keys` 裡的 username 不是只是裝飾字串；它會被 guest agent 視為要在 VM 內佈建的本機帳號名稱。Terraform 或 `gcloud` 只是把這條 identity 寫進 metadata，真正建立 Linux user 的是 VM 內的 guest agent。若啟用的是 OS Login，這套邏輯就改成由 Google identity 對應的 POSIX account 來主導。
