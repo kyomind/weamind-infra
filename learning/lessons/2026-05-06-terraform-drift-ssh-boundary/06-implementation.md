@@ -24,7 +24,7 @@
 
 ## Session 開場提醒
 
-- 目前從 `Step 1 補 SSH access 規格` 開始，先收斂唯一主問題：現有 Terraform 缺了哪些 access prerequisite，最小要補到哪裡才算不是碰運氣 SSH。
+- 目前 `Step 1` 到 `Step 3` 都已完成；若要繼續，下一步應改接 access / bootstrap 邊界收斂或隔離驗證，而不是重跑前面的 apply / SSH 指令。
 
 ## 驗收訊號與回退點
 
@@ -87,16 +87,71 @@
 #### 實際執行內容
 
 - 本次由 AI 與使用者協作實作
-- 待回填
+- 先確認本機已有可用的 SSH public key，且目前 shell 使用者名稱可直接拿來當這次 VM 的 Linux login name。
+- 再確認目前沒有既存的 `terraform.tfvars`，因此新建一份本地 `terraform.tfvars` 作為這次 lesson 的實際輸入來源。
+- 這份本地 `terraform.tfvars` 只放最小必要值：working project、`ssh_source_ranges = ["0.0.0.0/0"]`、本次 SSH username，以及本機 `gcp.pub` 的絕對路徑。
+- 登入身分方案最後收斂成 instance metadata SSH key，而不是 `OS Login`；理由是這條路最短，也最符合今天「把 access path 明寫進 IaC」的 lesson 目標。
+- 本地 `terraform.tfvars` 建好後，直接執行一次 `terraform plan`，驗證 SSH firewall、instance metadata 與本地輸入值是否已接成同一條路徑。
 
 #### 結果
 
-- 待回填
+- `terraform plan` 成功展開，代表本地 `terraform.tfvars`、SSH firewall 與 instance metadata SSH key 設定已能一起被 Terraform 正常讀取。
+- plan 目前預計建立 4 個資源：3 條 firewall（HTTP、HTTPS、SSH）與 1 台 VM。
+- plan 也已清楚顯示：VM 會帶有 `allow-ssh` tag，並在 metadata 中寫入這次指定的 `ssh-keys` 值，代表「這台 VM 接受哪把 public key」已經被明示在 IaC 裡。
+- 這一步仍屬於配置與 plan 層驗證；真正的 SSH runtime 驗證，要等 apply 完成後再用 `gcloud compute ssh` 檢查。
 
 #### AI 判讀與收斂
 
-- 待回填
+- Step 2 已完成：今天的登入路徑已明確收斂成 `instance metadata SSH key + gcloud compute ssh`，而不是依賴 project 預設或擴張到 `OS Login` / IAM。
+- 本地 `terraform.tfvars` 是合理的這一步，因為它讓這次 lesson 的實際輸入值可重跑、可 review，而且又不會進版控。
+- 最重要的判讀點不是「本機有一把叫做 gcp 的 key」，而是 plan 已經明示這台 VM 會接受這把 public key。
+- 下一步若要往下走，就應進 apply；因為現在配置層與 plan 層的 access path 都已經接起來了。
 
 #### 目前狀態
 
-- 未開始
+- 已完成
+
+### Step 3 Apply 與第一次 SSH 驗證
+
+#### 這一步要驗證什麼
+
+- 目前已在 plan 中成立的 access path，是否能在 apply 後真的落成可用的 VM，並讓使用者以至少一條可工作的 SSH path 成功登入；若 helper 行為混入，也要把驗到的是哪條路徑切清楚。
+
+#### 預計採取的動作
+
+- 先由使用者執行一次 `terraform apply`，讓 VM、3 條 firewall 與 metadata SSH key 真正建立到 GCP。
+- apply 完成後，先觀察 outputs，特別是 `instance_name`、`instance_zone` 與 `external_ip` 是否已出現。
+- 接著用 `gcloud compute ssh` 做第一次 runtime 驗證，確認指定的 SSH username 與本機 private key 是否真的能登入這台 VM。
+- 若第一次驗證混入 `gcloud` helper 行為，再補做更受控的第二輪驗證，把 project metadata 路徑和 Terraform key path 分開。
+- 這一步我建議由你來執行 apply 和 SSH 驗證，因為學習價值主要在親手觀察 Terraform 與 GCP 的實際回應；我負責一起判讀結果與收斂下一步。
+
+#### 實際執行內容
+
+- 本次由使用者實作
+- 使用者先執行 `terraform apply`，並在 approval prompt 輸入 `yes`。
+- Terraform 依序建立 3 條 firewall：`allow-http`、`allow-https`、`allow-ssh`。
+- 接著 Terraform 建立 `google_compute_instance.free_tier_vm`，整體 apply 成功完成。
+- apply 結束後，outputs 已成功回傳 `external_ip`、`instance_name`、`instance_zone`、`machine_type` 與 `project_id`。
+- 使用者接著執行 `gcloud compute ssh kyo@free-tier-vm`。
+- `gcloud` 發現預設的 `~/.ssh/google_compute_engine` / `.pub` 不存在，因此自動生成一組新的本機 SSH key pair。
+- 之後 `gcloud` 顯示 `Updating project ssh metadata...done.`，並在 key propagation 後成功登入 VM。
+- 後續又補做兩次更受控的驗證：一次是 `gcloud compute ssh ... --ssh-key-file=/Users/kyo/.ssh/gcp`，一次是直接 `ssh -i /Users/kyo/.ssh/gcp kyo@<external-ip>`；兩次都成功。
+
+#### 結果
+
+- `terraform apply` 成功建立 4 個資源：3 條 firewall 與 1 台 VM。
+- 這次 apply 的結果與前一步 plan 一致，代表 access path 的 IaC 宣告已真正落到 GCP 控制面。
+- outputs 中已看到具體 `external_ip`，代表這台 VM 已有可供後續 SSH 驗證使用的對外位址。
+- 第一次 runtime SSH 驗證成功，證明 VM 可達、22 port 可用，而且至少有一條可工作的 SSH identity path。
+- 補做的兩次受控驗證也成功，代表指定的 `~/.ssh/gcp` key path 同樣可用；其中 raw `ssh -i /Users/kyo/.ssh/gcp ...` 是目前最乾淨的證據。
+
+#### AI 判讀與收斂
+
+- 這一步現在可以正式收斂成完成：network layer、VM tag、instance metadata SSH key 與 VM 本體都已經真正建立成功，不再只是 plan 上的預期。
+- 但第一次 `gcloud compute ssh` 成功的路徑，比原本想像的更複雜：它混入了 `google_compute_engine` 預設 key 與 project metadata 更新行為。
+- 補做受控驗證後，現在可以更準確地說：SSH reachability 與可操作性已成立，而且 Terraform 管理的 `~/.ssh/gcp` 這條 key path 也有足夠強的成功證據。
+- 若要再往下走，下一步應改做 access / bootstrap 邊界收斂，或進一步設計隔離實驗，而不是再重複 apply / SSH 本身。
+
+#### 目前狀態
+
+- 已完成
