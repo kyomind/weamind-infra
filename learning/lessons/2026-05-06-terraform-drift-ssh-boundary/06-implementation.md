@@ -24,7 +24,7 @@
 
 ## Session 開場提醒
 
-- 目前 `Step 1` 到 `Step 3` 都已完成；若要繼續，下一步應改接 access / bootstrap 邊界收斂或隔離驗證，而不是重跑前面的 apply / SSH 指令。
+- 目前 `Step 1` 到 `Step 3` 都已完成；下一步改接 `Step 4` 的隔離驗證：暫時移除 Terraform 管理的 instance metadata SSH key，重新建立 VM，再觀察 `gcloud compute ssh` 是否仍能成功。
 
 ## 驗收訊號與回退點
 
@@ -151,6 +151,52 @@
 - 但第一次 `gcloud compute ssh` 成功的路徑，比原本想像的更複雜：它混入了 `google_compute_engine` 預設 key 與 project metadata 更新行為。
 - 補做受控驗證後，現在可以更準確地說：SSH reachability 與可操作性已成立，而且 Terraform 管理的 `~/.ssh/gcp` 這條 key path 也有足夠強的成功證據。
 - 若要再往下走，下一步應改做 access / bootstrap 邊界收斂，或進一步設計隔離實驗，而不是再重複 apply / SSH 本身。
+
+#### 目前狀態
+
+- 已完成
+
+### Step 4 移除 instance metadata SSH key 後，再驗一次 `gcloud compute ssh`
+
+#### 這一步要驗證什麼
+
+- 如果先把 Terraform 裡的 instance metadata `ssh-keys` 拿掉，再 destroy / apply 出一台新的同名 VM，只保留目前的 network path，`gcloud compute ssh kyo@free-tier-vm` 是否仍然能成功登入。
+- 這一步的重點不是再證明 SSH 可達，而是把依賴關係切得更清楚：目前這條 `gcloud compute ssh` 成功，到底有多依賴 Terraform 明寫的 instance metadata key，又有多少是 `gcloud` helper / project metadata 自己補出來的。
+
+#### 預計採取的動作
+
+- 先在 Terraform 配置中暫時移除 VM metadata 裡的 `ssh-keys` 設定，但不動 SSH firewall 與 VM 名稱。
+- 先跑一次 `terraform validate` 或 `terraform plan`，確認這次變更只是在拔掉 instance metadata key path，而不是把其他 access prerequisite 一起破壞。
+- 接著由使用者執行 `terraform destroy` 與 `terraform apply`，建立一台新的同名 VM。
+- 新 VM 起來後，直接用 `gcloud compute ssh kyo@free-tier-vm` 做 runtime 驗證，觀察是否仍能成功，以及終端輸出是否再次顯示 helper 行為。
+
+#### 實際執行內容
+
+- 本次目前先由 AI 實作配置變更。
+- 在 `terraform/gcp-free-tier-vm/main.tf` 中，暫時移除了 `google_compute_instance.free_tier_vm` 的 `metadata.ssh-keys` 設定。
+- 這次刻意不動 SSH firewall、VM 名稱、tag、machine type 與其他變數，目的是把實驗控制成「只拿掉 instance metadata key path，其餘 access prerequisite 盡量保持不變」。
+- 移除後已先執行一次 `terraform validate`，確認目前 Terraform 配置仍合法。
+- 後續由使用者實作 runtime 驗證：先 destroy / apply 重建新的 `free-tier-vm`，再直接執行 `gcloud compute ssh kyo@free-tier-vm`。
+- 這次 `gcloud compute ssh` 仍然成功登入，而且輸出中沒有再次出現 `Updating project ssh metadata...done.`。
+- 再往下補做 `known_hosts` 清理後的 raw `ssh -i /Users/kyo/.ssh/gcp ...`，也仍然成功。
+- 最後直接檢查 project metadata，確認目前確實已有兩條屬於 `kyo` 的 `ssh-keys` 條目。
+- 實驗完成後，已將 Terraform 的 instance metadata `ssh-keys` 設定加回，避免後續配置只剩 project metadata 這條共用路徑。
+
+#### 結果
+
+- `terraform validate` 通過，代表這次變更在配置層成立。
+- destroy / apply 後的新 VM 仍可直接用 `gcloud compute ssh kyo@free-tier-vm` 成功登入。
+- 在排除 `known_hosts` 舊記錄後，raw `ssh -i /Users/kyo/.ssh/gcp ...` 也仍可成功。
+- project metadata 已確認存在 `kyo` 的 SSH key，因此目前環境中確實有一條 project-level 的可用登入來源。
+- 這代表 Terraform 明寫的 instance metadata `ssh-keys` 不是目前這條 `gcloud compute ssh` 或 raw `ssh` 成功的必要條件。
+- 但因為 instance metadata `ssh-keys` 仍是唯一可由 Terraform 明示的單機登入路徑，所以實驗後已恢復這項設定。
+
+#### AI 判讀與收斂
+
+- Step 4 現在已經給出很強的方向性結論：**拿掉 Terraform 管理的 instance metadata key 之後，`gcloud compute ssh` 仍然能成功，而且 raw `ssh` 在排除 host key 阻礙後也仍可成功。**
+- 這使我們可以更有把握地說：先前觀察到的可用性，並不依賴 Terraform 在 VM metadata 中明寫 `ssh-keys` 才能成立。
+- 配合 project metadata 的查詢結果，現在最準確的收斂是：**對這個環境而言，SSH 成功主要可由既有的 project metadata / helper 路徑解釋，而不是 instance metadata 單獨支撐。**
+- 若還要再往下做最嚴格隔離，下一個實驗就不該再動 instance metadata，而應改成清 project metadata 或直接阻斷 project metadata key；但這已超出本 step 的最小目標。
 
 #### 目前狀態
 
