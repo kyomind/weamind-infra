@@ -1,27 +1,30 @@
 ---
-description: "Rotate review/notes.md into the next numbered notes-XX.md archive, add a rotation date, reset notes.md to the review template, and verify the result."
+description: "Rotate review/notes.md into the next numbered notes-XX.md archive, back up to raw/, add a rotation date, reset notes.md to the review template, and verify the result."
 ---
 
 # Rotate Review Notes
 
 ## 任務目標
 
-把目前的 `review/notes.md` 封存成下一個序號的 `review/notes-XX.md`，在封存檔加入本次整理日期，然後把 `review/notes.md` 重設成 `review/rules.md` 定義的初始化模板。
+把目前的 `review/notes.md` 封存成下一個序號的 `review/notes-XX.md`，同時備份一份到 `review/raw/`，在封存檔加入本次整理日期，然後把 `review/notes.md` 重設成 `review/rules.md` 定義的初始化模板。
+
+`review/raw/` 保留原始版本，`review/notes-XX.md` 可以之後精簡。
 
 這個 prompt 只處理 review notes rotate，不負責回答複習問題，也不負責整理內容。
 
 ## 核心規則
 
 1. 使用 zh-TW。
-2. 只處理 `review/notes.md` 與 `review/notes-XX.md`。
+2. 處理範圍：`review/notes.md`、`review/notes-XX.md`、`review/raw/notes-XX.md`。
 3. 新檔案序號一律用兩位數：
    - 若目前沒有 `notes-XX.md`，從 `01` 開始
    - 若已有舊檔，使用目前最大序號加 `1`
 4. 先複製，再修改封存檔；不要先清空 `notes.md`。
-5. 封存檔的第三行必須加入：
+5. 複製到 `review/raw/` 時保留原樣，不加日期行。
+6. 封存檔的第三行必須加入：
    - `整理日期：YYYY-MM-DD`
-6. `review/notes.md` 重設後，內容必須回到 `review/rules.md` 定義的初始化模板。
-7. 完成前一定要做檢查；若檢查失敗，直接停止並說明失敗點。
+7. `review/notes.md` 重設後，內容必須回到 `review/rules.md` 定義的初始化模板。
+8. 完成前一定要做檢查；若檢查失敗，直接停止並說明失敗點。
 
 ## 輸入與前提
 
@@ -29,9 +32,10 @@ description: "Rotate review/notes.md into the next numbered notes-XX.md archive,
 
 1. `review/notes.md` 存在
 2. `review/` 目錄存在
-3. `review/notes.md` 第一行是 H1
+3. `review/raw/` 目錄存在；若不存在，建立它
+4. `review/notes.md` 第一行是 H1
 
-若任一項不成立，停止並回報原因，不要繼續。
+若 1、2、4 不成立，停止並回報原因，不要繼續。
 
 ## 停止條件
 
@@ -67,14 +71,17 @@ description: "Rotate review/notes.md into the next numbered notes-XX.md archive,
 3. 下一個檔名使用最大值加 `1`
 4. 若完全沒有舊檔，使用 `review/notes-01.md`
 
-### 步驟 3：先複製 `notes.md`
+### 步驟 3：複製 `notes.md` 到封存檔與備份
 
-把 `review/notes.md` 原樣複製成新的 `review/notes-XX.md`。
+把 `review/notes.md` 原樣複製成：
+
+1. `review/notes-XX.md`（主封存檔，之後會加日期）
+2. `review/raw/notes-XX.md`（原始備份，不加日期）
 
 複製後立刻檢查：
 
-1. 新檔存在
-2. 在加入日期前，新檔內容和原始 `review/notes.md` 完全一致
+1. 兩個新檔都存在
+2. 在加入日期前，兩個新檔內容都和原始 `review/notes.md` 完全一致
 3. 新檔第一行 H1 與原檔相同
 
 若不一致，停止。
@@ -117,7 +124,8 @@ description: "Rotate review/notes.md into the next numbered notes-XX.md archive,
 2. `review/notes-XX.md` 第一行仍是原本 H1
 3. `review/notes-XX.md` 第三行是 `整理日期：YYYY-MM-DD`
 4. `review/notes-XX.md` 其餘內容仍保留原始筆記
-5. `review/notes.md` 已回到初始化模板
+5. `review/raw/notes-XX.md` 已建立，內容為原始版本（無日期行）
+6. `review/notes.md` 已回到初始化模板
 
 若任一項不成立，停止並回報。
 
@@ -128,6 +136,7 @@ description: "Rotate review/notes.md into the next numbered notes-XX.md archive,
 ```text
 已完成：rotate review notes
 封存檔：review/notes-XX.md
+原始備份：review/raw/notes-XX.md
 重設檔案：review/notes.md
 整理日期：YYYY-MM-DD
 ```
@@ -135,5 +144,5 @@ description: "Rotate review/notes.md into the next numbered notes-XX.md archive,
 若有額外補充，只能補：
 
 ```text
-檢查：封存檔已建立，notes.md 已重設為初始化模板
+檢查：封存檔與原始備份已建立，notes.md 已重設為初始化模板
 ```
