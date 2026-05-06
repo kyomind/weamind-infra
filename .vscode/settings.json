@@ -62,19 +62,24 @@
     "python.testing.unittestEnabled": false,
     "python.analysis.diagnosticMode": "openFilesOnly",
     "python.analysis.indexing": false,
+    // === 關鍵修正：改成「白名單」方式，避免過度排除 ===
     "files.watcherExclude": {
-        "**/.*/**": true,
         "**/.venv/**": true,
         "**/__pycache__/**": true,
         "**/node_modules/**": true,
+        "**/.git/**": true,
         "**/.github/**": false
     },
     "search.exclude": {
-        "**/.*": true,
         "**/.venv": true,
         "**/__pycache__": true,
         "**/node_modules": true,
+        "**/.git": true,
         "**/.github": false,
         ".github": false
     },
+    // 額外保險：強制包含 .github
+    "files.exclude": {
+        "**/.github": false
+    }
 }
