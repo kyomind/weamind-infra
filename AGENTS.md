@@ -65,6 +65,10 @@ After creating prework or lesson files, run a document self-check before the act
 - compare it against the second-level `AGENTS.md` actually in use
 - if a new lesson skeleton was created, compare it against `learning/lessons/lesson-template.md`
 
+Before creating any new prework or lesson skeleton, resolve three things from the controlling files: today's topic, today's mode, and which file is authoritative for each.
+
+If the active plan already answers them, do not re-decide them from repo-local evidence.
+
 Fix structural problems before continuing.
 
 When a lesson is already in progress and the user says only "continue" or "繼續", treat that as continuing the current interactive lesson turn. Use the current lesson files and `learning/lessons/AGENTS.md` to identify whether the lesson is in `QA`, `command`, `implementation`, or `report`; continue one appropriate interaction step and wait when the lesson is still interactive.
@@ -96,11 +100,29 @@ Instead:
 
 Use the following source hierarchy.
 
+### Authority Order
+
+For learning workflow decisions, use this authority order:
+
+1. active plan
+2. the relevant `AGENTS.md` at the current workflow layer
+3. lesson or prework templates
+4. repo-local evidence such as issue notes, existing lesson files, manifests, and references
+5. AI inference
+
+Treat the active plan as binding when it explicitly specifies the day topic, `Lesson mode`, execution order, scope boundary, or acceptance criteria.
+
+Lower-level evidence may explain or implement the plan, but must not override it.
+
+`01-outline.md` mirrors the plan; it does not decide mode or flow.
+
 ### Formal Progress Anchor
 
 `.privatedocs/12週計畫.md` is the cross-phase source for overall sequencing.
 
 Within an active phase, trust the detailed phase plan's "Current Execution Tracking" section for day-to-day progress and next-step sequencing.
+
+When the active phase plan provides a daily block for the current lesson, treat it as the controlling source for that lesson's mode, order, and acceptance shape.
 
 ### Supporting Files
 
