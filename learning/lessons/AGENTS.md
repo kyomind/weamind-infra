@@ -125,4 +125,5 @@ normal lesson 預設流程：
 - 檔案結構符合本檔與對應 template
 - active file 的細部規則已讀取對應 `rules/`
 - `04-report.md` 保留給 lesson 收尾，不在互動開始前預寫成標準答案
+- `02-qa.md` 保留給 AI 發問、使用者作答；不要因為 note、implementation 或 report 已經有收斂結論，就預先代填使用者答案
 - `05-note.md` 的 `Notes` 依實際互動內容回填；`Flashcards` 保留到 lesson 收尾時用 `.github/prompts/generate-flashcards.prompt.md` 統一處理
