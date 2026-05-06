@@ -112,6 +112,36 @@
 - 所以這次成功登入，證明的是 VM 可達、22 port 可用、SSH 模型可工作，而且 project metadata 路徑也可用；但它沒有單獨證明「只有 Terraform 管理的 instance metadata key 生效」。
 - 若要驗 Terraform 管理的那條 key path，本次 lesson 之後應再用 `gcloud compute ssh --ssh-key-file=/Users/kyo/.ssh/gcp` 或直接 `ssh -i /Users/kyo/.ssh/gcp ...` 做一次更乾淨的驗證。
 
+### destroy 後重建 VM，仍可直接用同一條 `gcloud compute ssh kyo@free-tier-vm`
+
+- 這次先 destroy、再 apply 出一台新的 `free-tier-vm`，external IP 已經換成新的位址，但仍然可以直接用同一條 `gcloud compute ssh kyo@free-tier-vm` 成功登入。
+- 這件事首先證明：對 `gcloud compute ssh` 來說，**平常操作時更關鍵的是 GCP 控制面能不能用 instance name 找到這台 VM**，而不是你手上是否還記得舊的 external IP。
+- 換句話說，當 VM 重建後仍然沿用同一個 instance name、project、zone，而且 SSH access path 仍然成立時，`gcloud compute ssh` 會先重新查這台 VM 的目前連線資訊，再幫你完成 SSH 流程。
+
+### 這次成功重連，實際代表什麼
+
+- 它證明了「destroy / apply 導致 IP 改變」這件事，本身**不會破壞**你用 `gcloud compute ssh kyo@free-tier-vm` 這種 name-based 操作方式。
+- 它也證明了：至少在目前這個環境裡，重建後的新 VM 仍然保有一條可工作的 SSH identity path，否則就算 `gcloud` 找得到 VM，也無法真的登入。
+- 這很符合前面的模型：`gcloud compute ssh` 幫你處理的是「找哪台 VM、怎麼發起登入」；但真正能不能登入，仍取決於 VM 端是否接受對應的 SSH 身分。
+
+### 這次輸出裡兩個最值得注意的訊號
+
+- `No zone specified. Using zone [us-east1-b] for instance: [free-tier-vm].`
+	這代表 `gcloud` 確實是先透過 control plane 找到這台 VM，再決定如何連線；它不是單純拿某個舊 IP 重試。
+- `Warning: Permanently added 'compute....' (ED25519) to the list of known hosts.`
+	這代表你這次連到的是一台**新的主機實體**，至少 SSH host key 對本機來說是新的；這正符合 destroy 後重建 VM 的預期。
+
+### 這次沒有看到 `Updating project ssh metadata...done.`，可以怎麼判讀
+
+- 比較合理的判讀是：這次 `gcloud` 不需要像第一次那樣再生成新的預設 key，也不需要明顯地再補一次 project metadata，因為可用的登入條件大概率已經存在。
+- 但這裡仍不應講得太滿，因為單憑這次輸出，最多只能說 `gcloud` 這次**沒有顯示**明顯的 metadata 更新訊息；不能只靠這一段終端輸出就斷言它絕對完全沒碰任何 helper 邏輯。
+
+### 這次最準確的收斂
+
+- 若你是短期個人用途、常常 destroy / apply 同一台名字固定的 VM，`gcloud compute ssh kyo@free-tier-vm` 確實是一條很實用的操作路徑，因為它比每次手動找新 IP 再 raw SSH 方便很多。
+- 但它更適合被理解成「穩定的操作入口」，不是「乾淨的 Terraform path 驗證工具」。
+- 若你要證明的是 Terraform 宣告的 instance metadata key path 是否獨立成立，仍然要回到 raw `ssh` 或其他更可歸因的驗證方法。
+
 ## Flashcards
 
 <!-- lesson 收尾後再統一生成 -->
