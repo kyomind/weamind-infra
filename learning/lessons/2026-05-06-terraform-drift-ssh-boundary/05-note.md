@@ -104,6 +104,28 @@
 - 神奇感的來源不在 Terraform，而在 GCE 對 `ssh-keys` metadata 的既有語意。Terraform 只是把這條規格送出去；GCE 的 guest environment 看到這個 metadata 後，會把它當成「哪個 Linux 使用者要接受哪把 public key」的登入規則。
 - 所以你後續能用指定的 `ssh_username` 登入，不是因為 Terraform 自己懂 SSH，而是因為它把 GCE 認得懂的登入規則寫進了 VM metadata。
 
+### 除了 `ssh-keys` 之外，instance metadata 常見還會放什麼
+
+- `ssh-keys` 只是最常見的一種，不是 `metadata` 的全部。Terraform provider 也明確把它描述成「metadata key/value pairs」，只是其中某些預先定義 key 會被 GCE 或 guest agent 賦予特殊功能。
+- 最常見的第一類是啟動與關機腳本，例如 `startup-script`、`shutdown-script`。這些 key 的值通常是 script 內容，許多 Linux 映像會在開機或關機時讀這些 metadata 並執行。
+- 第二類是 SSH / 存取模型切換，例如 `enable-oslogin`、`block-project-ssh-keys`、`ssh-keys`。這些 key 直接影響 VM 接受哪種 SSH identity source，以及要不要繼承 project-level key。
+- 第三類是 metadata server 與 guest environment 相關設定，例如 `disable-legacy-endpoints`、`disable-https-mds-setup`、`enable-https-mds-native-cert-store`。這些比較偏平台與安全層，控制的是 VM 怎麼安全地讀 metadata server。
+- 第四類是 guest / inventory 類功能，例如 `enable-guest-attributes`、`enable-os-inventory`。這些不是登入設定，而是讓 VM 或平台可以發布少量狀態、OS inventory 等資訊。
+- 第五類是使用者自訂 metadata。官方文件明確說明你可以建立自己的 key/value，讓 VM 啟動後從 metadata server 讀取，例如 `app-env=prod`、`config-version=v3` 這類不敏感、小型、低頻更新的設定。
+- 比較實務的口頭模型是：instance metadata 很常被拿來放「VM 啟動時需要知道、而且 GCE / guest agent / startup script 會直接讀的設定」，不只 SSH key。
+- 但有個安全邊界一定要記住：官方文件明講，只要程序能查 metadata URL，就能讀到 metadata server 裡的值；所以 metadata 不適合放真正的敏感祕密。
+
+### ⭐️Terraform 的 `metadata` 映射到 GCP provider / API，到底代表 VM 的什麼
+
+- 在 Terraform 的 `google_compute_instance` 裡，`metadata = { ... }` 不是一個任意本地 map；它會被 provider 轉成 Compute Engine instance resource 的 metadata key/value，送到 GCP API，成為這台 VM 的執行個體中繼資料。
+- 官方文件對 VM metadata 的定義很清楚：每台 VM 都有 metadata server，Compute Engine 會把專案、可用區、執行個體等不同範圍的 metadata 以 key/value 形式維護在那裡，而 VM 內可以直接查詢這些值。
+- 所以從 API / 平台角度看，instance metadata 代表的不是「這台 VM 的硬體規格」那一類核心屬性，而是「這台 VM 與其 guest OS / guest agent / startup scripts 可讀取的附加控制資料」。
+- 這些資料**有些只是描述性或自訂設定，有些則是行為開關**。像 `ssh-keys` 會影響 guest agent 如何佈建 SSH 存取，`enable-oslogin` 會切換登入模型，`startup-script` 則會在 OS 啟動流程中被執行。
+- 如果用更白話的方式講，`machine_type`、`boot_disk`、`network_interface` 這些欄位是在描述「GCP 要建立什麼 VM」；而 `metadata` 更像是在描述「**⭐️這台 VM 起來後，平台和 guest environment 還要帶給它哪些設定、提示或控制訊號**」。
+- 這也解釋了為什麼 metadata 既能用來放 `ssh-keys`，也能用來放 `startup-script` 或自訂 key：它本質上是 VM 的 control/config channel，不是只屬於 SSH 的專用欄位。
+- 另外還要記住 scope：你現在在 `main.tf` 寫的這個 `metadata` 是 instance-level，所以它代表的是這台 VM 專屬的 metadata；它和 project metadata 是同一套 metadata 機制，但 scope 不同。
+- 這題最短的口頭收斂可以講成：Terraform 的 `metadata` 就是把一組 VM 專屬的 key/value 設定送進 Compute Engine 的 instance metadata，讓 GCP 控制面、metadata server、guest agent 和 VM 內腳本在執行時可以讀到並據此採取動作。
+
 ### GCP 會不會同時建立 SSH 用的 Linux 使用者
 
 - 比較精準的說法不是「GCP API 直接建立一個帳號」，而是：VM 內的 guest agent / guest environment 會根據 metadata 登入規則，準備對應使用者可接受的 SSH key 狀態。
