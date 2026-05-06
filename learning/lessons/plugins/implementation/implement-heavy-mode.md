@@ -47,7 +47,8 @@
 建立骨架時：
 
 1. `01-outline.md`、`06-implementation.md` 應優先參考 `learning/lessons/plugins/implementation/implement-heavy-lesson-template.md`。
-2. `02-qa.md`、`04-report.md`、`05-note.md` 仍沿用 `learning/lessons/lesson-template.md` 的常態模板。
+2. `04-report.md`、`05-note.md` 仍沿用 `learning/lessons/lesson-template.md` 的常態模板。
+3. `02-qa.md` 仍要先建立檔案，但 implement-heavy mode 下不再沿用常態 QA 的預建題目做法；初始化時只保留最小骨架，等實作主體完成後再依實際結果建立題目。
 
 ---
 
@@ -80,7 +81,13 @@ implement-heavy mode 的重點不是把 QA 或 command 刪掉，而是把 lesson
 
 若今天明確屬於 implement-heavy mode，`02-qa.md` 仍應保留，但改成 post-implementation QA，也就是實作完成後才進入的短版收斂題。
 
-建議調整為 2 到 3 題，角色是先對齊：
+初始化原則：
+
+1. 可以先建立 `02-qa.md` 檔案，但不要在 lesson 一開始就預寫 2 到 3 題。
+2. 初始化時只保留最小骨架即可，例如檔名、用途提醒與「待實作完成後回填」之類的佔位說明。
+3. 等 `06-implementation.md` 的主體走完、今天真正學到的邊界與風險已浮現後，再回頭建立實際 QA 題目。
+
+建議調整為 2 到 4 題，角色是先對齊：
 
 1. 這次實作到底要改哪個邊界。
 2. 這次成功與失敗要看什麼訊號。

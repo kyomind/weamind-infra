@@ -19,7 +19,23 @@ implement-heavy mode 預設直接建立五份檔案：
 其中：
 
 1. `01-outline.md`、`06-implementation.md` 優先使用本檔模板。
-2. `02-qa.md`、`04-report.md`、`05-note.md` 仍沿用 `learning/lessons/lesson-template.md` 的常態模板。
+2. `04-report.md`、`05-note.md` 仍沿用 `learning/lessons/lesson-template.md` 的常態模板。
+3. `02-qa.md` 在 implement-heavy mode 下改用本檔的最小佔位模板，不預建題目；等實作完成後再依當天實際結果生成 QA。
+
+---
+
+## `02-qa.md` 模板
+
+<template example 02-qa.md>
+# YYYY-MM-DD Lesson Title QA
+
+> 原則：這份 QA 是 post-implementation 收斂；implement-heavy mode 下先建檔，不在 lesson 開始時預寫題目。
+
+## 使用提醒
+
+- 等 `06-implementation.md` 的主要 step 完成後，再根據今天實際做過的事、真正收斂出的邊界與風險，回填 2 到 3 題短版 QA。
+- 在這之前，這份檔案保留為空白作答面，不預建泛化題目。
+</template example 02-qa.md>
 
 ---
 
