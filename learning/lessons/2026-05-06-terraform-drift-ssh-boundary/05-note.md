@@ -161,4 +161,39 @@
 
 ## Flashcards
 
-<!-- lesson 收尾後再統一生成 -->
+- `terraform validate`、`plan`、`apply`、runtime 驗證各自回答什麼問題？ #DevOps #card
+	- `validate` 檢查配置是否合法
+	- `plan` 檢查合法配置會改什麼
+	- `apply` 真的把變更打到雲端
+	- runtime 驗證才回答 SSH 是否真的可用
+
+- 為什麼 `gcloud compute ssh` 成功，不能直接證明 Terraform 的 `instance metadata ssh-keys` 生效？ #DevOps #card
+	- `gcloud compute ssh` 是 client entry method，不是 identity source
+	- 它可能自動建 key、更新 project metadata、混入 helper 行為
+	- 成功最多先證明目前存在至少一條可工作的 SSH path
+
+- instance metadata 和 project metadata 的核心差別是什麼？ #DevOps #card
+	- instance metadata 是單機規則
+	- project metadata 是 project-level 共用規則
+	- 一旦 project path 已成立，就會污染對單機 path 的歸因
+
+- 從 VM 內看到 `authorized_keys` 和 `# Added by Google`，最能證明什麼？ #DevOps #card
+	- metadata-based SSH 已被 guest agent 落成 VM 內的 OS 授權狀態
+	- 最後的 SSH public key 驗證仍發生在 VM 內 sshd / OS 層
+	- 但單靠這個證據還不能完全區分 key 來自 project 或 instance metadata
+
+- Terraform 的 `google_compute_instance.metadata` 最短應該怎麼理解？ #DevOps #card
+	- 它是 VM 專屬的 instance metadata key/value
+	- 會被送進 Compute Engine metadata server
+	- 給 guest agent、startup script、VM 內程式在執行時讀取並據此動作
+
+- 除了 `ssh-keys`，instance metadata 常見還會放什麼？ #DevOps #card
+	- `startup-script`、`shutdown-script`
+	- `enable-oslogin`、`block-project-ssh-keys`
+	- metadata server 安全設定與自訂 key/value
+	- 不適合放真正的敏感祕密
+
+- 今天這份 SSH lesson 最值得記住的兩個風險邊界是什麼？ #DevOps #card
+	- project metadata 會蓋過對 instance metadata 的單獨觀察
+	- access path、identity source、guest agent 落地要分層看
+	- 不然 debug 會把不同層的成功混成同一件事
