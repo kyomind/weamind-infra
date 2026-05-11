@@ -92,6 +92,8 @@ kubectl describe ingress -n weamind
 
 新問題一律追加在 `review/notes.md` 檔案末尾。
 
+補充或追問時，預設另開新的 H2，不要回頭修改原本的筆記。除非使用者明確要求更新舊筆記。
+
 寫入前，先確認 `review/notes.md` 是否存在。若不存在，AI 應依照「Notes 檔案生命週期」建立新的目前筆記檔，再追加本次問答。
 
 如果使用者追問同一個問題，可以選擇：
