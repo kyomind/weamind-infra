@@ -51,3 +51,29 @@ Blue-Green 和 Canary 是更上層的部署模式，需要額外工具或手動�
 - Service Mesh 做流量分流
 
 一句話記法：Deployment 原生只有兩種策略；Blue-Green / Canary 是更高層的模式，Kubernetes 不直接提供。
+
+---
+
+## 有 L7 Load Balancer 嗎？什麼時候用？
+
+有，而且很常見，不是反模式。
+
+L7 LB 的例子：AWS ALB、GCP HTTP(S) Load Balancer、Cloudflare、Nginx、HAProxy。
+
+什麼時候用 L7 LB：
+
+- 想在 LB 層就做 host-based 或 path-based routing
+- 想在 LB 層終止 TLS（SSL offloading）
+- 想在 LB 層做 WAF、rate limiting、認證
+- 用雲端託管服務，不想自己管 Ingress Controller
+
+兩種架構的取捨：
+
+| 架構 | 優點 | 缺點 |
+|------|------|------|
+| L7 LB 一層做完 | 簡單、少一層元件 | 彈性較低、綁定協定 |
+| L4 LB + Ingress Controller | 彈性高、職責清楚 | 複雜度較高 |
+
+WeaMind 用的是 L4 + Ingress（Hetzner LB + Traefik）。這是一種選擇，不是唯一正解。
+
+一句話記法：L7 LB 存在且常見，選哪種看你要簡單還是要彈性。
