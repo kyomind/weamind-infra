@@ -277,3 +277,31 @@ kubectl exec -it my-pod -- ls -la
 ```
 
 簡單說：命令沒帶參數時通常沒事，命令帶 `-` 參數時就會出問題。養成習慣加 `--` 就不用記這些邊界條件。
+
+## Pod Conditions 各欄位的意思
+
+- `PodScheduled`：Pod 已被 scheduler 指派到某個 node
+- `Initialized`：init containers 都已完成（沒有的話直接 True）
+- `PodReadyToStartContainers`：Pod sandbox 就緒，可以開始啟動 containers（較新版 K8s 才有）
+- `ContainersReady`：Pod 裡所有 containers 都 ready
+- `Ready`：Pod 可接收流量，Service 會把它當作可用後端
+
+實務上最常看 `Ready`，因為它直接決定 Service 會不會把流量導過來。其他幾個主要在 debug 啟動卡住時才會細看。
+
+## Pod Conditions 能判斷和不能判斷的邊界
+
+能判斷的（邊界內）：
+- Pod 有沒有排到 node
+- init containers 有沒有完成
+- containers 有沒有啟動成功
+- Pod 是否 ready 可接收流量
+
+判斷不了的（邊界外）：
+- Service selector 有沒有選對 Pod
+- Ingress 規則有沒有命中
+- App 內部 routing 錯誤（404）
+- App 業務邏輯錯誤（500）
+- DNS 解析、TLS 憑證
+- 外部 LB 或防火牆
+
+一句話記法：Conditions 全 True 只代表「Pod 本身活著且 ready」，不代表「流量能正確進來且 App 行為正確」。
