@@ -1,5 +1,5 @@
 # 2026-03-24 K8s Debug Tools Command
-
+複習：2026-05-12
 ## 今日指令練習目標
 
 1. 練習在不同情境下，先選較合適的第一個工具，而不是固定只開同一種指令。
@@ -119,7 +119,7 @@ kubectl logs <pod-name> -n weamind --previous
 
 ### AI 判讀與修正
 
-- 這個選擇是對的，而且你已經抓到 `--previous` 最重要的價值：它不是單純「舊一點的 log」，而是上一個已經結束的 container 的最後輸出。
+- 這個選擇是對的，而且你已經抓到 `--previous` 最重要的價值：它不是單純「舊一點的 log」，而是**上一個已經結束的 container 的最後輸出**。
 - 你說「每重啟一次，這次的 log 會重新開始，所以要回頭看上一輪」這個理解是對的。更精準地說，當 container 因 CrashLoopBackOff 反覆被重啟時，`kubectl logs` 預設拿到的是目前這一輪 container 的輸出；如果你真正想找的是上一輪剛死掉前吐的 exception 或退出訊息，就要改看 `--previous`。
 - 這也正是為什麼這一輪題目不是選 `describe`。`describe` 會告訴你 Kubernetes 看見它在反覆重啟，但如果你要追「上一輪 app 到底吐了什麼錯」，`logs --previous` 才更貼近 app 視角的證據。
 - 如果之後真的遇到反覆重啟中的 Pod，一個很實用的組合是：先用 `describe` 確認它確實在 Back-off restarting，接著立刻用 `logs --previous` 看上一輪死前最後訊息。這樣就把 Kubernetes 視角與 app 視角接起來了。

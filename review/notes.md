@@ -169,3 +169,111 @@ WeaMind 用的是 L4 + Ingress（Hetzner LB + Traefik）。這是一種選擇，
 | Terminating | Pod 卡在終止 | 查 finalizer、graceful shutdown |
 
 一句話記法：`get pods` 先掃 STATUS 和 READY，有異常再用 `describe` 或 `logs` 深挖。
+
+## Webhook path 填錯的 404 是誰給的？
+
+通常是 App 給的。
+
+如果 Ingress 規則是寬鬆的 prefix match（例如 `/`），webhook path 填錯時流量還是會進 Pod，404 是 FastAPI 找不到 route 給的。
+
+兩種 404 的差異：
+
+| 來源 | 發生原因 | 判斷方式 |
+|------|----------|----------|
+| App 層 404 | Ingress 命中，流量進 Pod，但 app routing 找不到 endpoint | `kubectl logs` 有該請求的 access log |
+| Ingress 層 404 | Host 或 path 沒命中任何 Ingress 規則 | `kubectl logs` 沒有該請求紀錄 |
+
+WeaMind 的 Ingress 用 prefix `/`，所以 webhook path 填錯通常是 App 層 404。
+
+## 怎麼判斷 404 是 Ingress 給的還是 App 給的？
+
+看 response body 格式。
+
+Traefik（WeaMind 用的 Ingress Controller）給的 404 是純文字：
+
+```bash
+404 page not found
+```
+
+FastAPI 給的 404 是 JSON：
+
+```json
+{"detail":"Not Found"}
+```
+
+一眼就能分辨是哪一層擋掉的。
+
+## kubectl exec 實務上常用嗎？什麼情境會用？
+
+蠻常用，但頻率看環境。開發/staging 經常用，production 能不進就不進，但卡住時還是會用。
+
+最常見的實際情境：
+
+| 情境 | 做什麼 |
+|------|--------|
+| 網路連通性 | 從 Pod 內 curl 其他 service 或外部 API，確認 DNS、防火牆、TLS |
+| 環境變數/config 驗證 | `env \| grep XXX` 或 `cat /app/config.yaml`，確認 ConfigMap/Secret 注入對不對 |
+| 緊急狀況 | 清 cache、殺卡住的 process、看暫存檔 |
+
+實務上很多公司 production 還是會 exec 進去，尤其問題難重現時。但理想上能用 logs/metrics 解決就不要 exec，因為 exec 不留痕跡、不好 audit。
+
+## kubectl exec 是進 Pod 還是進 container？
+
+進 container，不是進 Pod。
+
+Pod 是邏輯包裝，裡面可以有一個或多個 container。exec 進去時，實際上是進某一個 container 的 shell。
+
+大部分 Pod 只有一個 container，所以感覺像「進 Pod」。但如果 Pod 有多個 container（例如 sidecar），要用 `-c` 指定：
+
+```bash
+kubectl exec -it my-pod -c main-container -- /bin/sh
+```
+
+不指定的話，Kubernetes 會選第一個 container，可能不是你要的。
+
+## 健康 Pod 和 CrashLoopBackOff Pod 在 describe 輸出的差異
+
+| 欄位 | 健康 Pod | CrashLoopBackOff |
+|------|----------|------------------|
+| State | Running | Waiting (Reason: CrashLoopBackOff) |
+| Ready | True | False |
+| Restart Count | 0 或低且穩定 | 持續增加 |
+| Last State | 通常沒有或正常 Terminated | Terminated + Error 或 OOMKilled |
+| Conditions | 幾乎全 True | ContainersReady=False |
+| Events | `<none>` 或只有正常 Scheduled/Pulled/Started | Back-off restarting failed container |
+
+一句話記法：健康 Pod 安靜（沒 Events、沒 Last State 異常），CrashLoopBackOff 很吵（Restart 一直加、Events 一直噴）。
+
+## kubectl exec 為什麼要用 -- 分隔？和 docker exec 差在哪？
+
+`--` 是告訴 kubectl：後面的都是要傳給 container 的命令，不是 kubectl 自己的參數。
+
+kubectl 參數很多（`-n`、`-c`、`-it`），如果命令本身也有 `-` 開頭的參數，kubectl 會搞混。`--` 是明確切開的分隔符。
+
+```bash
+# Docker：container name 後面的都自動當命令
+docker exec -it my-container /bin/sh
+
+# kubectl：需要 -- 明確分隔
+kubectl exec -it my-pod -- /bin/sh
+```
+
+kubectl 的命令結構比較複雜（有 namespace、pod、container 多層），所以用 `--` 是最保險的寫法。
+
+## 什麼時候 kubectl exec 不加 -- 也能跑？
+
+當命令本身沒有 `-` 開頭的參數時，kubectl 分得清楚：
+
+```bash
+# 不加 -- 通常能跑
+kubectl exec -it my-pod /bin/sh
+kubectl exec -it my-pod ls
+
+# 會出問題，-la 可能被 kubectl 誤解
+kubectl exec -it my-pod ls -la
+
+# 正確寫法
+kubectl exec -it my-pod -- ls -la
+```
+
+簡單說：命令沒帶參數時通常沒事，命令帶 `-` 參數時就會出問題。養成習慣加 `--` 就不用記這些邊界條件。
