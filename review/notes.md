@@ -305,3 +305,35 @@ kubectl exec -it my-pod -- ls -la
 - 外部 LB 或防火牆
 
 一句話記法：Conditions 全 True 只代表「Pod 本身活著且 ready」，不代表「流量能正確進來且 App 行為正確」。
+
+## /health 200 但 webhook 404，老手怎麼判斷？
+
+第一反應：「/health 通了，webhook 404，同一個 App 兩個 path，八成是 path 對不上。」
+
+下一步：直接對照 LINE Developers 上填的 webhook URL 和 FastAPI 實際註冊的 route，看是不是打錯字或路徑不一致。
+
+不會先查 Ingress、Service、Pod，因為 /health 能通已經證明外層路徑沒問題。
+
+## 為什麼 /health 通了就能排除外層問題？
+
+因為 WeaMind 的 Ingress 用 `path: /` Prefix，所有路徑都會轉給 Service。
+
+/health 能通，就能確定：
+- Ingress 規則有命中
+- Service 有導到 Pod
+- Pod 有在跑
+
+webhook 的 404 只剩一個可能：App 內部 routing 找不到那個 path。不需要再往外查了。
+
+## CrashLoopBackOff 排查的兩輪分工
+
+第一輪：`describe pod`（Kubernetes 視角）
+- 回答「它怎麼壞的」
+- 看 State、Last State、Restart Count、Events
+- 確認是不是真的在反覆失敗
+
+第二輪：`logs --previous`（App 視角）
+- 回答「它為什麼壞」
+- CrashLoopBackOff 時直接考慮 `--previous`，因為當前 container 可能剛起來還沒吐完整錯誤，真正有價值的訊息在上一輪死前
+
+一句話記法：第一輪問「怎麼壞」，第二輪問「為什麼壞」。
