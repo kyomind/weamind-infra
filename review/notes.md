@@ -352,3 +352,95 @@ logs 是非侵入式、有歷史紀錄；exec 是進去戳，能查更細但成�
 3. exec — 前兩步都沒線索，才進去查 env 或跑連線測試
 
 順序是：先 path，再 logs，最後才 exec。
+
+## Pod logs 完全沒收到請求時怎麼查 routing
+
+流量根本沒進到 Pod，要由外而內查。WeaMind 流量路徑：
+
+```bash
+LINE → Hetzner LB → Traefik (Ingress Controller) → Service → Pod
+```
+
+排查順序：
+
+1. 外部 URL — LINE 後台填的 webhook URL 對不對（Host、path）
+2. LB — Hetzner LB health check 有沒有 pass、target 對不對
+3. Ingress — `kubectl describe ingress` 看 Host/path/backend 規則是否命中
+4. Service → Pod — `kubectl get endpoints` 看 Service 背後有沒有活的 Pod
+
+快速判斷：如果 `/health` 能通但 webhook 沒進 logs，問題通常在第 1 步（URL 填錯）或 App routing（path 不存在）。連 `/health` 都不通，才往 2-4 查。
+
+## kubectl describe ingress 的用途
+
+確認 cluster 端宣告的 routing 規則。
+
+常用情境：
+
+1. 懷疑 Host/path 規則寫錯 — 看 `Rules` 區塊，確認 Host 和 path 是否對應到預期的 backend Service
+2. 確認 Ingress 有沒有被處理 — 看 `Ingress Class`，確認是交給哪個 controller（例如 traefik）
+3. 看 backend 有沒有活的 Pod — 輸出會順帶顯示 Service 背後的 Pod endpoints
+
+邊界：只能回答「Kubernetes 預期怎麼路由」，不能證明外部請求真的帶著正確的 Host/path 打進來。
+
+## Debug 時的正交思考
+
+每一層驗證只能回答它那一層的問題，不能跨層推論：
+
+1. 設定注入 ⊥ 連線成功 — `printenv` 顯示 `POSTGRES_HOST=10.0.0.2` 正確，不代表 `10.0.0.2:5433` 真的可連
+2. 外層宣告 ⊥ 內部視角 — `kubectl describe service` 看 K8s 資源定義，`kubectl exec` 看 container 進程實際收到什麼，兩者不能互相替代
+3. Kubernetes 狀態 ⊥ App 狀態 — Pod `Running/Ready` 只代表 container 活著，不代表 App 能正確連 DB
+
+設定對了還是可能連不上，Pod 活著還是可能業務邏輯錯。
+
+## 單機版與 K8s 版排錯的對比
+
+共通點：一旦確認請求進到 App，排錯邏輯和單機版幾乎一樣 — 先查 path/routing，再看 logs，最後查設定與依賴。
+
+K8s 多出來的：在確認「請求有沒有進到 App」之前，要先過 DNS → LB → Ingress → Service → Pod 這幾層。
+
+實務判斷：如果 `/health=200` 且 Pod `Running/Ready`，代表外層已通，後面就用單機版思路查 App 層。
+
+一句話：K8s 不是改寫 App 排錯邏輯，而是多了「先確認外層哪裡斷」這一段。
+
+## ⭐️為什麼 K8s 會多這麼多層
+
+單機版：App 跑在一台機器，IP 固定、port 固定，沒什麼好路由的。
+
+K8s 要處理的現實不一樣：Pod 會死會生（IP 不固定）、有多副本（要負載均衡）、多服務共用入口（要分流）、外部流量要進 cluster、服務之間要互相找。
+
+⭐️每一層解決一個特定問題：
+
+| 層 | 解決什麼 |
+|---|---|
+| DNS | 用名字找 Service，不用記 IP |
+| LB | 外部流量進 cluster |
+| Ingress | 多服務共用 443，靠 Host/path 分流 |
+| Service | Pod IP 不固定，提供穩定入口 + 負載均衡 |
+| Pod | 實際跑 App |
+
+一句話：不是為了複雜而複雜，是因為 Pod 會動、有多個、要共用入口，所以需要這些層來抽象化。
+
+## Load Balancer 是 K8s 的標配嗎？
+
+要看環境。
+
+雲端環境（AWS、GCP、Azure）：幾乎是標配。用 LoadBalancer Service 或 Ingress Controller，雲端會自動 provision LB。
+
+自建環境（bare metal、Hetzner）：不一定。可以用自建 LB、MetalLB、NodePort、或 hostPort。
+
+更精確的說法：「外部流量進 cluster 的入口機制」是標配，LB 是最常見的實現方式，但不是唯一。
+
+WeaMind 的組合是 Hetzner LB + Traefik hostPort，這是自建環境的典型做法。
+
+## Production 環境 LB 是標配嗎？
+
+是，幾乎是標配。
+
+Production 需要：
+- 穩定入口 — 外部 DNS 指向一個不會變的 IP/endpoint
+- 高可用 — 某個 node 掛了，流量自動導去其他 node
+- 健康檢查 — 自動剔除不健康的後端
+
+沒有 LB 的替代方案（NodePort、hostPort）都做不好這三件事。即使自建環境跑 production，也會架某種 LB（Hetzner LB、HAProxy、MetalLB、Nginx 等），不會用裸 NodePort 對外。
+
+一句話：production 要高可用和穩定入口，LB 是最直接的解法。
