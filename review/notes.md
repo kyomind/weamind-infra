@@ -515,3 +515,90 @@ WeaMind 用 `envFrom` 整包引入。
 - 分工：人寫 stringData，機器存 data — 手寫 manifest 用 `stringData` 比較方便，但最終儲存和輸出都是 `data`。
 
 一句話：`stringData` 是輸入便利，`data` 是實際儲存格式，base64 是為了格式相容不是為了安全。
+
+## ConfigMap 和 Secret 在 container 裡是什麼形態？
+
+看注入方式。
+
+- 用 envFrom 或 valueFrom 注入 → 在 container 裡是 ENV，`printenv` 看得到
+- 用 volume mount 注入 → 在 container 裡是檔案，不是 ENV
+
+WeaMind 用 `envFrom`，所以 ConfigMap 和 Secret 的值都變成環境變數。在 container 裡你分不出哪些來自 ConfigMap、哪些來自 Secret。
+
+一句話：注入方式決定最終形態。envFrom/valueFrom → ENV，volume mount → 檔案。
+
+## Volume mount 注入用在什麼情境？
+
+蠻常見的，特別是這些情境：
+
+| 情境 | 為什麼用 volume mount |
+|------|----------------------|
+| 設定檔 | nginx.conf、redis.conf — 應用本來就是讀檔案 |
+| TLS 憑證 | cert + key 要當檔案讓 app 讀 |
+| SSH 金鑰 | 掛成 ~/.ssh/id_rsa |
+| 大段內容 | 環境變數有長度限制，複雜 JSON/YAML 用檔案更穩 |
+
+判斷原則：應用讀環境變數 → envFrom，應用讀設定檔 → volume mount，兩者可混用。
+
+## 更新 Secret/ConfigMap 後 Pod 為什麼不會自動拿到新值？
+
+更新設定資源和讓 Pod 吃到新值，是兩件不同的事。
+
+1. 環境變數是 Pod 建立時注入的 — 用 `envFrom` 注入時，值在 container 啟動當下就固定了，不是和 Secret/ConfigMap 保持即時同步
+2. K8s 不會自動重建 Pod — 設定資源改了，K8s 不會主動把用到它的 Pod 換掉，這是設計不是 bug
+3. 要吃到新值，需要新 Pod — 常見做法是 `kubectl rollout restart deployment`
+
+面試可講版：WeaMind 用 `envFrom` 把 Secret/ConfigMap 在 Pod 建立時注入成環境變數。更新 Secret 只代表設定資源本身變了，既有 Pod 的環境變數不會即時更新。要讓 app 吃到新值，需要讓 Deployment 產生新 Pod。
+
+## 更新環境變數的完整指令流程
+
+```bash
+# 1. 修改 Secret 或 ConfigMap YAML 後 apply
+kubectl apply -f manifests/secret.yaml -n weamind
+kubectl apply -f manifests/configmap.yaml -n weamind
+
+# 2. 確認資源已更新
+kubectl get secret weamind-secret -n weamind -o yaml
+kubectl get configmap weamind-config -n weamind -o yaml
+
+# 3. 觸發 Pod 重建，讓新值生效
+kubectl rollout restart deployment weamind -n weamind
+
+# 4. 確認 rollout 完成
+kubectl rollout status deployment weamind -n weamind
+
+# 5. (可選) 驗證新值已注入
+kubectl exec -it <pod-name> -n weamind -- printenv | grep <KEY>
+```
+
+重點：步驟 1-2 只是更新設定資源，步驟 3 才是讓 Pod 吃到新值的關鍵。
+
+## WeaMind 踩坑：CreateContainerError (invalid UTF-8)
+
+症狀：Pod 起不來，`kubectl describe pod` 看到 CreateContainerError，錯誤訊息是 invalid UTF-8。
+
+根因：Secret 用了 `data` 欄位，但放進去的內容不是正確的 base64 格式（包含非 base64 字元和不該有的引號）。
+
+因果鏈：
+```
+錯誤格式塞進 data → 解碼後得到非法 bytes → runtime 無法當字串處理 → container 建立失敗
+```
+
+修法：改用 `stringData` 直接寫明文，讓 K8s 幫忙轉換。
+
+收斂規則：
+- 人工維護 Secret 一律用 `stringData`
+- 只有機器穩定產生的 base64 才用 `data`
+
+教訓：這種錯誤不會出現在 app log，因為 container 根本還沒建起來。要往 Pod events 和 Secret 寫法查。
+
+## kubectl get -o yaml 和 describe 差在哪？
+
+| | `get -o yaml` | `describe` |
+|---|---|---|
+| 格式 | 完整資源定義，機器可讀 | 人類可讀摘要 |
+| 值 | 顯示實際值（Secret 是 base64） | Secret 只列 key，不顯示值 |
+| Events | 不包含 | 包含 |
+| 用途 | 確認值、備份、比對 | 快速瀏覽狀態、看 Events |
+
+確認「值有沒有改」→ `get -o yaml`。確認「資源狀態、有沒有問題」→ `describe`。

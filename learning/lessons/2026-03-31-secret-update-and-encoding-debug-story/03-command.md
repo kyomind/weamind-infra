@@ -1,5 +1,5 @@
 # 2026-03-31 Secret Update And Encoding Debug Story Command
-
+複習：2026-05-14
 ## 今日指令練習目標
 
 1. 把「Secret 資源已更新」和「Pod 已吃到新值」拆成可觀察的兩件事。
