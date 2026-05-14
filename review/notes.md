@@ -1,4 +1,4 @@
-# Lesson 複習筆記
+# Lesson
 
 ## Debug 時該由外而內還是由內而外？
 
@@ -444,3 +444,74 @@ Production 需要：
 沒有 LB 的替代方案（NodePort、hostPort）都做不好這三件事。即使自建環境跑 production，也會架某種 LB（Hetzner LB、HAProxy、MetalLB、Nginx 等），不會用裸 NodePort 對外。
 
 一句話：production 要高可用和穩定入口，LB 是最直接的解法。
+
+## 環境變數放 ConfigMap 還是 Secret？
+
+簡單判斷法：這個值被別人看到，會不會有安全問題？
+
+- 會 → Secret（密碼、token、私鑰、API key）
+- 不會 → ConfigMap（host、port、功能開關、環境標識）
+
+WeaMind 的例子：
+
+| ConfigMap | Secret |
+|-----------|--------|
+| POSTGRES_HOST | POSTGRES_PASSWORD |
+| POSTGRES_PORT | LINE_CHANNEL_SECRET |
+| POSTGRES_DB | LINE_CHANNEL_ACCESS_TOKEN |
+| REDIS_URL（不含密碼） | |
+
+灰色地帶：不確定就先放 Secret。從 Secret 改成 ConfigMap 容易，反過來比較麻煩。
+
+## Deployment 裡環境變數怎麼寫？
+
+實務上很少直接在 Deployment 裡硬寫 `env.value`，而是用 `envFrom` 或 `valueFrom` 從 ConfigMap/Secret 拉。
+
+```yaml
+# 硬寫值（不推薦）
+env:
+  - name: FOO
+    value: "bar"
+
+# 從 ConfigMap/Secret 取單一值
+env:
+  - name: POSTGRES_HOST
+    valueFrom:
+      configMapKeyRef:
+        name: weamind-config
+        key: POSTGRES_HOST
+
+# 整包引入（最常用）
+envFrom:
+  - configMapRef:
+      name: weamind-config
+  - secretRef:
+      name: weamind-secret
+```
+
+為什麼不硬寫：設定散落在 Deployment、不好管理、多 Deployment 要複製貼上、Secret 值會暴露在 manifest。
+
+WeaMind 用 `envFrom` 整包引入。
+
+## 新增環境變數時的判斷流程
+
+第一步：判斷敏感性
+- 洩漏會有安全問題嗎？會 → Secret，不會 → ConfigMap
+
+第二步：判斷是否適合加進現有的 envFrom
+- 這是這個 app 的「常態設定」嗎？是 → 加進現有的 ConfigMap/Secret
+
+不該直接加進 envFrom 的情況：
+- 值來自 downward API（Pod name、namespace）→ 用 `valueFrom.fieldRef`
+- 只有這個 Deployment 用，不想污染共用 ConfigMap → 另開或用單獨 `env`
+- 臨時測試，還沒確定要正式化 → 先不動 ConfigMap
+
+一句話：先問敏感性決定 ConfigMap 或 Secret，再問「這是不是常態設定」決定要不要加進共用的 envFrom。
+
+## Secret 的 stringData 和 data 差在哪？
+
+- 最終都是 data — `stringData` 只是輸入時的便利寫法，送進 API server 後會被轉成 `data`。`kubectl get secret -o yaml` 只會看到 `data`。
+- base64 不是加密 — 它只是編碼格式，讓二進位內容能放進 YAML/JSON。任何人都能 decode。
+- 分工：人寫 stringData，機器存 data — 手寫 manifest 用 `stringData` 比較方便，但最終儲存和輸出都是 `data`。
+
+一句話：`stringData` 是輸入便利，`data` 是實際儲存格式，base64 是為了格式相容不是為了安全。
