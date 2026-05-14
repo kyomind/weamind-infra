@@ -337,3 +337,18 @@ webhook 的 404 只剩一個可能：App 內部 routing 找不到那個 path。�
 - CrashLoopBackOff 時直接考慮 `--previous`，因為當前 container 可能剛起來還沒吐完整錯誤，真正有價值的訊息在上一輪死前
 
 一句話記法：第一輪問「怎麼壞」，第二輪問「為什麼壞」。
+
+## 懷疑 Pod 到 VM 依賴問題時的兩部曲
+
+1. 先 `kubectl logs` — 看 App 有沒有噴資料庫或快取連線錯誤
+2. 看不出來才 `kubectl exec` — 進 container 查 env、跑連線測試
+
+logs 是非侵入式、有歷史紀錄；exec 是進去戳，能查更細但成本較高。先輕後重。
+
+## Webhook debug 三步曲
+
+1. path — LINE 後台 webhook URL 和 app route 有沒有對上
+2. logs — 請求有沒有進 app、處理時有沒有錯
+3. exec — 前兩步都沒線索，才進去查 env 或跑連線測試
+
+順序是：先 path，再 logs，最後才 exec。
