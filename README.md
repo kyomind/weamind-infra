@@ -3,6 +3,7 @@
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-444?style=flat&logo=kubernetes&logoColor=white)](https://kubernetes.io/)
 [![K3s](https://img.shields.io/badge/K3s-444?style=flat&logo=k3s&logoColor=white)](https://k3s.io/)
 [![Terraform](https://img.shields.io/badge/Terraform-444?style=flat&logo=terraform&logoColor=white)](https://www.terraform.io/)
+[![Helm](https://img.shields.io/badge/Helm-444?style=flat&logo=helm&logoColor=white)](https://helm.sh/)
 [![Prometheus](https://img.shields.io/badge/Prometheus-444?style=flat&logo=prometheus&logoColor=white)](https://prometheus.io/)
 [![Grafana](https://img.shields.io/badge/Grafana-444?style=flat&logo=grafana&logoColor=white)](https://grafana.com/)
 [![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-444?style=flat&logo=githubactions&logoColor=white)](https://github.com/features/actions)
