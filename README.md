@@ -1,5 +1,12 @@
 # WeaMind Infrastructure
 
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-444?style=flat&logo=kubernetes&logoColor=white)](https://kubernetes.io/)
+[![K3s](https://img.shields.io/badge/K3s-444?style=flat&logo=k3s&logoColor=white)](https://k3s.io/)
+[![Terraform](https://img.shields.io/badge/Terraform-444?style=flat&logo=terraform&logoColor=white)](https://www.terraform.io/)
+[![Prometheus](https://img.shields.io/badge/Prometheus-444?style=flat&logo=prometheus&logoColor=white)](https://prometheus.io/)
+[![Grafana](https://img.shields.io/badge/Grafana-444?style=flat&logo=grafana&logoColor=white)](https://grafana.com/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-444?style=flat&logo=githubactions&logoColor=white)](https://github.com/features/actions)
+
 > 📖 [English Version](README.en.md)
 
 WeaMind 的 Kubernetes 基礎設施 — 展示從單機 Docker 到 K8s 叢集的遷移實踐。
@@ -44,28 +51,30 @@ flowchart TD
     Pod2 --> Redis
 ```
 
-**架構特點**：
-- **混合架構**：應用層在 K8s，資料層保留在堡壘機；K3s 節點與堡壘機透過 Hetzner Private Network 互通（穩定性優先，避免 StatefulSet 複雜度）。
-- **雙環境並行**：K8s (`k8s.kyomind.tw`) 與單機 (`api.kyomind.tw`) 獨立運行，透過 LINE webhook URL 切換（秒級生效，無 DNS 傳播延遲）。
+**架構摘要**：
+- **混合式執行環境**：應用層部署於 K8s，資料層保留在堡壘機，兩者透過 Hetzner Private Network 互通。
+- **入口與切換模型**：Hetzner Load Balancer 負責外部入口，Traefik 在叢集內終止 TLS，K8s 與單機環境則透過 LINE webhook URL 切換流量。
 
 ## Tech Stack
+
+本 repo 目前涵蓋執行中基礎設施、可觀測性，以及以 Terraform 為主的 IaC 實作。
 
 - **K3s** 叢集（1 控制平面 + 2 工作節點）於 Hetzner Cloud
 - **Traefik** Ingress Controller（K3s 內建）
 - **Hetzner Load Balancer** 負載平衡器
 - **cert-manager** + Let's Encrypt（Cloudflare DNS-01 驗證）
 - **PostgreSQL** 與 **Redis** 於堡壘機（不在 K8s 內）
+- **Helm** + **kube-prometheus-stack**（Prometheus / Grafana observability）
+- **Terraform** 於 GCP Free Tier 的 IaC 實作
 
 ## Deployment Overview
 
-1. **K3s 叢集建立**：control-plane 安裝 K3s server，workers 使用 node-token 加入。
-2. **網路配置**：強制綁定私有網路介面 (`--node-ip` + `--flannel-iface`)，避免誤抓公網 IP。
-3. **Traefik 設定**：確保內建 Ingress Controller 正確綁定私有網路。
-4. **cert-manager 安裝**：部署 cert-manager + ClusterIssuer (Cloudflare DNS-01)。
-5. **應用部署**：依序套用 `manifests/` 中的 YAML（Namespace → ConfigMap → Secret → Deployment → Service → Ingress）。
-6. **負載平衡器配置**：Hetzner Load Balancer 設定 TCP 443 轉發 + 健康檢查。
-7. **DNS 指向**：Cloudflare A record `k8s.kyomind.tw` 指向 LB 公網 IP。
-8. **流量切換**：修改 LINE Developers webhook URL 從 `api.kyomind.tw` 切換到 `k8s.kyomind.tw`。
+1. **K3s 叢集建立**：control-plane 安裝 K3s server，workers 使用 node-token 加入，並在建置時綁定私有網路介面。
+2. **Traefik 設定**：確保內建 Ingress Controller 正確綁定私有網路。
+3. **cert-manager 安裝**：部署 cert-manager + ClusterIssuer（Cloudflare DNS-01）。
+4. **應用部署**：依序套用 `manifests/` 中的 YAML（Namespace → ConfigMap → Secret → Deployment → Service → Ingress）。
+5. **公開入口配置**：設定 Hetzner Load Balancer 的 TCP 443 轉發與健康檢查，並讓 Cloudflare DNS 指向 LB 公網 IP。
+6. **流量切換**：修改 LINE Developers webhook URL，將流量從 `api.kyomind.tw` 切換到 `k8s.kyomind.tw`。
 
 詳細實作進度與踩坑記錄請見 [PROGRESS.md](PROGRESS.md)。
 

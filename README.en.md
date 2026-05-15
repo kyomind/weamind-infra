@@ -1,5 +1,12 @@
 # WeaMind Infrastructure
 
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-444?style=flat&logo=kubernetes&logoColor=white)](https://kubernetes.io/)
+[![K3s](https://img.shields.io/badge/K3s-444?style=flat&logo=k3s&logoColor=white)](https://k3s.io/)
+[![Terraform](https://img.shields.io/badge/Terraform-444?style=flat&logo=terraform&logoColor=white)](https://www.terraform.io/)
+[![Prometheus](https://img.shields.io/badge/Prometheus-444?style=flat&logo=prometheus&logoColor=white)](https://prometheus.io/)
+[![Grafana](https://img.shields.io/badge/Grafana-444?style=flat&logo=grafana&logoColor=white)](https://grafana.com/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-444?style=flat&logo=githubactions&logoColor=white)](https://github.com/features/actions)
+
 > 📖 [中文版](README.md)
 
 Kubernetes infrastructure for [WeaMind](https://github.com/kyomind/weamind) — demonstrating a migration from a single-server Docker Compose setup to a K8s cluster.
@@ -44,28 +51,30 @@ flowchart TD
     Pod2 --> Redis
 ```
 
-**Architecture highlights**:
-- **Hybrid approach**: Application layer on K8s, data layer on the bastion VM; K3s nodes and the bastion VM communicate over Hetzner Private Network (stability first, avoiding StatefulSet complexity)
-- **Dual-environment**: K8s (`k8s.kyomind.tw`) and single-server (`api.kyomind.tw`) run in parallel; traffic is switched by updating the LINE webhook URL (takes effect in seconds, no DNS propagation delay)
+**Architecture summary**:
+- **Hybrid runtime**: The application layer runs on K8s while the data layer stays on the bastion VM, connected through Hetzner Private Network.
+- **Ingress and cutover model**: Hetzner Load Balancer handles the public entry, Traefik terminates TLS inside the cluster, and traffic is switched between K8s and the single-server environment through the LINE webhook URL.
 
 ## Tech Stack
+
+This repository currently covers the runtime infrastructure stack, observability tooling, and Terraform-based IaC work.
 
 - **K3s** cluster (1 control plane + 2 worker nodes) on Hetzner Cloud
 - **Traefik** Ingress Controller (bundled with K3s)
 - **Hetzner Load Balancer**
 - **cert-manager** + Let's Encrypt (Cloudflare DNS-01 challenge)
 - **PostgreSQL** and **Redis** on the bastion VM (outside K8s)
+- **Helm** + **kube-prometheus-stack** (Prometheus / Grafana observability)
+- **Terraform** on GCP Free Tier for IaC experiments
 
 ## Deployment Overview
 
-1. **K3s cluster setup**: Install K3s server on the control plane; workers join via node-token
-2. **Network configuration**: Bind to the private network interface (`--node-ip` + `--flannel-iface`) to avoid using the public IP
-3. **Traefik configuration**: Ensure the built-in Ingress Controller binds to the private network
-4. **cert-manager installation**: Deploy cert-manager + ClusterIssuer (Cloudflare DNS-01)
-5. **Application deployment**: Apply YAMLs in `manifests/` in order — Namespace → ConfigMap → Secret → Deployment → Service → Ingress
-6. **Load balancer configuration**: Hetzner Load Balancer — TCP 443 forwarding + health check
-7. **DNS setup**: Cloudflare A record `k8s.kyomind.tw` pointing to the LB public IP
-8. **Traffic switch**: Update LINE Developers webhook URL from `api.kyomind.tw` to `k8s.kyomind.tw`
+1. **K3s cluster setup**: Install K3s server on the control plane, join worker nodes via node-token, and bind the cluster to the private network interface during setup.
+2. **Traefik configuration**: Ensure the built-in Ingress Controller binds to the private network.
+3. **cert-manager installation**: Deploy cert-manager + ClusterIssuer (Cloudflare DNS-01).
+4. **Application deployment**: Apply the YAMLs in `manifests/` in order — Namespace → ConfigMap → Secret → Deployment → Service → Ingress.
+5. **Public entry setup**: Configure the Hetzner Load Balancer for TCP 443 forwarding and health checks, then point Cloudflare DNS to the LB public IP.
+6. **Traffic switch**: Update the LINE Developers webhook URL to cut traffic over from `api.kyomind.tw` to `k8s.kyomind.tw`.
 
 For detailed implementation progress and lessons learned, see [PROGRESS.md](PROGRESS.md).
 
@@ -91,3 +100,4 @@ Takes effect in seconds with no DNS propagation delay. K8s and single-server env
 
 - **Main application**: [WeaMind](https://github.com/kyomind/weamind) — LINE Bot FastAPI application
 - **DeepWiki docs**: [deepwiki.com/kyomind/weamind-infra](https://deepwiki.com/kyomind/weamind-infra)
+- **Project article**: [WeaMind project walkthrough (Chinese)](https://blog.kyomind.tw/weamind/)
