@@ -1,5 +1,5 @@
 # 2026-04-01 LB Health Check Skeleton Command
-
+複習：2026-05-15
 ## 今日指令練習目標
 
 1. 把「Health Check 失敗」拆成 Host header 問題，而不是直接說 app 壞掉。

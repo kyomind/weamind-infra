@@ -1,5 +1,5 @@
 # 2026-03-31 Secret Update And Encoding Debug Story Note
-
+複習：2026-05-15
 ## 學習注意事項
 
 ### 今日 lesson 邊界

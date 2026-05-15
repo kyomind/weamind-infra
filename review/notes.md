@@ -114,10 +114,10 @@ L7 LB 的例子：AWS ALB、GCP HTTP(S) Load Balancer、Cloudflare、Nginx、HAP
 
 兩種架構的取捨：
 
-| 架構 | 優點 | 缺點 |
-|------|------|------|
-| L7 LB 一層做完 | 簡單、少一層元件 | 彈性較低、綁定協定 |
-| L4 LB + Ingress Controller | 彈性高、職責清楚 | 複雜度較高 |
+| 架構                       | 優點             | 缺點               |
+| -------------------------- | ---------------- | ------------------ |
+| L7 LB 一層做完             | 簡單、少一層元件 | 彈性較低、綁定協定 |
+| L4 LB + Ingress Controller | 彈性高、職責清楚 | 複雜度較高         |
 
 WeaMind 用的是 L4 + Ingress（Hetzner LB + Traefik）。這是一種選擇，不是唯一正解。
 
@@ -129,14 +129,14 @@ WeaMind 用的是 L4 + Ingress（Hetzner LB + Traefik）。這是一種選擇，
 
 最常看的區塊：
 
-| 區塊 | 看什麼 |
-|------|--------|
-| Events（最底部） | 最近發生什麼事：Scheduled、Pulled、Started、Failed、Unhealthy |
-| Status / Conditions | Pod 整體狀態：Ready、PodScheduled、ContainersReady |
-| Containers → State | 目前狀態：Running / Waiting / Terminated |
-| Containers → Restart Count | 重啟幾次，判斷是否反覆 crash |
-| Containers → Last State | 上一次為什麼掛掉（如果有重啟過） |
-| Node | 排到哪台 node |
+| 區塊                       | 看什麼                                                        |
+| -------------------------- | ------------------------------------------------------------- |
+| Events（最底部）           | 最近發生什麼事：Scheduled、Pulled、Started、Failed、Unhealthy |
+| Status / Conditions        | Pod 整體狀態：Ready、PodScheduled、ContainersReady            |
+| Containers → State         | 目前狀態：Running / Waiting / Terminated                      |
+| Containers → Restart Count | 重啟幾次，判斷是否反覆 crash                                  |
+| Containers → Last State    | 上一次為什麼掛掉（如果有重啟過）                              |
+| Node                       | 排到哪台 node                                                 |
 
 常見應用場景：
 
@@ -150,23 +150,23 @@ WeaMind 用的是 L4 + Ingress（Hetzner LB + Traefik）。這是一種選擇，
 
 欄位解讀：
 
-| 欄位 | 看什麼 |
-|------|--------|
-| READY | `1/1` 正常，`0/1` 代表還沒 ready |
-| STATUS | Pod 目前狀態，異常狀態是第一個警報 |
-| RESTARTS | 數字高代表反覆重啟 |
-| AGE | 剛建立還是跑很久了 |
+| 欄位     | 看什麼                             |
+| -------- | ---------------------------------- |
+| READY    | `1/1` 正常，`0/1` 代表還沒 ready   |
+| STATUS   | Pod 目前狀態，異常狀態是第一個警報 |
+| RESTARTS | 數字高代表反覆重啟                 |
+| AGE      | 剛建立還是跑很久了                 |
 
 常見異常 STATUS：
 
-| 狀態 | 代表什麼 | 下一步 |
-|------|----------|--------|
-| Pending | Pod 還沒排到 node | 查資源、nodeSelector、taint |
-| CrashLoopBackOff | container 反覆 crash | 查 logs、Last State |
-| ImagePullBackOff | image 拉不下來 | 查 image 名稱、registry 權限 |
-| CreateContainerError | container 建立失敗 | 查 ConfigMap/Secret 引用 |
-| Init:0/1 | init container 還沒完成 | 查 init container logs |
-| Terminating | Pod 卡在終止 | 查 finalizer、graceful shutdown |
+| 狀態                 | 代表什麼                | 下一步                          |
+| -------------------- | ----------------------- | ------------------------------- |
+| Pending              | Pod 還沒排到 node       | 查資源、nodeSelector、taint     |
+| CrashLoopBackOff     | container 反覆 crash    | 查 logs、Last State             |
+| ImagePullBackOff     | image 拉不下來          | 查 image 名稱、registry 權限    |
+| CreateContainerError | container 建立失敗      | 查 ConfigMap/Secret 引用        |
+| Init:0/1             | init container 還沒完成 | 查 init container logs          |
+| Terminating          | Pod 卡在終止            | 查 finalizer、graceful shutdown |
 
 一句話記法：`get pods` 先掃 STATUS 和 READY，有異常再用 `describe` 或 `logs` 深挖。
 
@@ -178,10 +178,10 @@ WeaMind 用的是 L4 + Ingress（Hetzner LB + Traefik）。這是一種選擇，
 
 兩種 404 的差異：
 
-| 來源 | 發生原因 | 判斷方式 |
-|------|----------|----------|
-| App 層 404 | Ingress 命中，流量進 Pod，但 app routing 找不到 endpoint | `kubectl logs` 有該請求的 access log |
-| Ingress 層 404 | Host 或 path 沒命中任何 Ingress 規則 | `kubectl logs` 沒有該請求紀錄 |
+| 來源           | 發生原因                                                 | 判斷方式                             |
+| -------------- | -------------------------------------------------------- | ------------------------------------ |
+| App 層 404     | Ingress 命中，流量進 Pod，但 app routing 找不到 endpoint | `kubectl logs` 有該請求的 access log |
+| Ingress 層 404 | Host 或 path 沒命中任何 Ingress 規則                     | `kubectl logs` 沒有該請求紀錄        |
 
 WeaMind 的 Ingress 用 prefix `/`，所以 webhook path 填錯通常是 App 層 404。
 
@@ -209,11 +209,11 @@ FastAPI 給的 404 是 JSON：
 
 最常見的實際情境：
 
-| 情境 | 做什麼 |
-|------|--------|
-| 網路連通性 | 從 Pod 內 curl 其他 service 或外部 API，確認 DNS、防火牆、TLS |
+| 情境                 | 做什麼                                                                        |
+| -------------------- | ----------------------------------------------------------------------------- |
+| 網路連通性           | 從 Pod 內 curl 其他 service 或外部 API，確認 DNS、防火牆、TLS                 |
 | 環境變數/config 驗證 | `env \| grep XXX` 或 `cat /app/config.yaml`，確認 ConfigMap/Secret 注入對不對 |
-| 緊急狀況 | 清 cache、殺卡住的 process、看暫存檔 |
+| 緊急狀況             | 清 cache、殺卡住的 process、看暫存檔                                          |
 
 實務上很多公司 production 還是會 exec 進去，尤其問題難重現時。但理想上能用 logs/metrics 解決就不要 exec，因為 exec 不留痕跡、不好 audit。
 
@@ -233,14 +233,14 @@ kubectl exec -it my-pod -c main-container -- /bin/sh
 
 ## 健康 Pod 和 CrashLoopBackOff Pod 在 describe 輸出的差異
 
-| 欄位 | 健康 Pod | CrashLoopBackOff |
-|------|----------|------------------|
-| State | Running | Waiting (Reason: CrashLoopBackOff) |
-| Ready | True | False |
-| Restart Count | 0 或低且穩定 | 持續增加 |
-| Last State | 通常沒有或正常 Terminated | Terminated + Error 或 OOMKilled |
-| Conditions | 幾乎全 True | ContainersReady=False |
-| Events | `<none>` 或只有正常 Scheduled/Pulled/Started | Back-off restarting failed container |
+| 欄位          | 健康 Pod                                     | CrashLoopBackOff                     |
+| ------------- | -------------------------------------------- | ------------------------------------ |
+| State         | Running                                      | Waiting (Reason: CrashLoopBackOff)   |
+| Ready         | True                                         | False                                |
+| Restart Count | 0 或低且穩定                                 | 持續增加                             |
+| Last State    | 通常沒有或正常 Terminated                    | Terminated + Error 或 OOMKilled      |
+| Conditions    | 幾乎全 True                                  | ContainersReady=False                |
+| Events        | `<none>` 或只有正常 Scheduled/Pulled/Started | Back-off restarting failed container |
 
 一句話記法：健康 Pod 安靜（沒 Events、沒 Last State 異常），CrashLoopBackOff 很吵（Restart 一直加、Events 一直噴）。
 
@@ -410,13 +410,13 @@ K8s 要處理的現實不一樣：Pod 會死會生（IP 不固定）、有多副
 
 ⭐️每一層解決一個特定問題：
 
-| 層 | 解決什麼 |
-|---|---|
-| DNS | 用名字找 Service，不用記 IP |
-| LB | 外部流量進 cluster |
-| Ingress | 多服務共用 443，靠 Host/path 分流 |
+| 層      | 解決什麼                               |
+| ------- | -------------------------------------- |
+| DNS     | 用名字找 Service，不用記 IP            |
+| LB      | 外部流量進 cluster                     |
+| Ingress | 多服務共用 443，靠 Host/path 分流      |
 | Service | Pod IP 不固定，提供穩定入口 + 負載均衡 |
-| Pod | 實際跑 App |
+| Pod     | 實際跑 App                             |
 
 一句話：不是為了複雜而複雜，是因為 Pod 會動、有多個、要共用入口，所以需要這些層來抽象化。
 
@@ -454,12 +454,12 @@ Production 需要：
 
 WeaMind 的例子：
 
-| ConfigMap | Secret |
-|-----------|--------|
-| POSTGRES_HOST | POSTGRES_PASSWORD |
-| POSTGRES_PORT | LINE_CHANNEL_SECRET |
-| POSTGRES_DB | LINE_CHANNEL_ACCESS_TOKEN |
-| REDIS_URL（不含密碼） | |
+| ConfigMap             | Secret                    |
+| --------------------- | ------------------------- |
+| POSTGRES_HOST         | POSTGRES_PASSWORD         |
+| POSTGRES_PORT         | LINE_CHANNEL_SECRET       |
+| POSTGRES_DB           | LINE_CHANNEL_ACCESS_TOKEN |
+| REDIS_URL（不含密碼） |                           |
 
 灰色地帶：不確定就先放 Secret。從 Secret 改成 ConfigMap 容易，反過來比較麻煩。
 
@@ -531,11 +531,11 @@ WeaMind 用 `envFrom`，所以 ConfigMap 和 Secret 的值都變成環境變數�
 
 蠻常見的，特別是這些情境：
 
-| 情境 | 為什麼用 volume mount |
-|------|----------------------|
-| 設定檔 | nginx.conf、redis.conf — 應用本來就是讀檔案 |
-| TLS 憑證 | cert + key 要當檔案讓 app 讀 |
-| SSH 金鑰 | 掛成 ~/.ssh/id_rsa |
+| 情境     | 為什麼用 volume mount                         |
+| -------- | --------------------------------------------- |
+| 設定檔   | nginx.conf、redis.conf — 應用本來就是讀檔案   |
+| TLS 憑證 | cert + key 要當檔案讓 app 讀                  |
+| SSH 金鑰 | 掛成 ~/.ssh/id_rsa                            |
 | 大段內容 | 環境變數有長度限制，複雜 JSON/YAML 用檔案更穩 |
 
 判斷原則：應用讀環境變數 → envFrom，應用讀設定檔 → volume mount，兩者可混用。
@@ -550,7 +550,7 @@ WeaMind 用 `envFrom`，所以 ConfigMap 和 Secret 的值都變成環境變數�
 
 面試可講版：WeaMind 用 `envFrom` 把 Secret/ConfigMap 在 Pod 建立時注入成環境變數。更新 Secret 只代表設定資源本身變了，既有 Pod 的環境變數不會即時更新。要讓 app 吃到新值，需要讓 Deployment 產生新 Pod。
 
-## 更新環境變數的完整指令流程
+## ⭐️更新環境變數的完整指令流程
 
 ```bash
 # 1. 修改 Secret 或 ConfigMap YAML 後 apply
@@ -594,11 +594,179 @@ kubectl exec -it <pod-name> -n weamind -- printenv | grep <KEY>
 
 ## kubectl get -o yaml 和 describe 差在哪？
 
-| | `get -o yaml` | `describe` |
-|---|---|---|
-| 格式 | 完整資源定義，機器可讀 | 人類可讀摘要 |
-| 值 | 顯示實際值（Secret 是 base64） | Secret 只列 key，不顯示值 |
-| Events | 不包含 | 包含 |
-| 用途 | 確認值、備份、比對 | 快速瀏覽狀態、看 Events |
+|        | `get -o yaml`                  | `describe`                |
+| ------ | ------------------------------ | ------------------------- |
+| 格式   | 完整資源定義，機器可讀         | 人類可讀摘要              |
+| 值     | 顯示實際值（Secret 是 base64） | Secret 只列 key，不顯示值 |
+| Events | 不包含                         | 包含                      |
+| 用途   | 確認值、備份、比對             | 快速瀏覽狀態、看 Events   |
 
 確認「值有沒有改」→ `get -o yaml`。確認「資源狀態、有沒有問題」→ `describe`。
+
+## 怎麼看 Deployment 的 rollout 歷史？
+
+```bash
+kubectl rollout history deployment/weamind -n weamind
+```
+
+這會列出 revision 號碼和變更原因，是看 rollout 歷史的標準指令。
+
+`kubectl get rs` 看到的是目前 ReplicaSet 的狀態快照（哪個 active、哪些縮成 0），比較像「版本切換的痕跡」，不是歷史紀錄。
+
+一句話記法：要看歷史用 `rollout history`，要看目前 RS 狀態用 `get rs`。
+
+## 確認 Secret 更新成功，用 describe 還是 get -o yaml？
+
+看你要確認什麼。
+
+- 確認 key 結構對不對（有沒有多、少、改名）→ `describe` 就夠
+- 確認**值**內容對不對 → 只能用 `get -o yaml`，因為 `describe` 不顯示值
+
+實務判斷：如果你是改「某個 key 的值」，describe 看到的 byte 數可能根本沒變或變化不明顯，無法確認內容是否正確。這時 `get -o yaml` 配合 base64 decode 才能驗證。
+
+一句話記法：describe 驗結構，get -o yaml 驗內容。
+
+## 控制 Pod 排到哪些 node 的主流手段
+
+| 手段                       | 彈性 | 適用情境                                                             |
+| -------------------------- | ---- | -------------------------------------------------------------------- |
+| nodeSelector               | 低   | 簡單 label 匹配，只能 AND，夠用就用這個                              |
+| Node Affinity              | 中高 | 支援 In/NotIn/Exists 等運算符，可做軟性偏好（preferred）             |
+| Taints + Tolerations       | 中高 | 反向思維：node 標記「不歡迎」，Pod 要有 toleration 才能排上去        |
+| Pod Affinity/Anti-Affinity | 高   | 基於其他 Pod 位置決定，例如「和某 Pod 同 node」或「分散到不同 node」 |
+
+WeaMind 用 nodeSelector 是因為需求單純：worker node 有 `node-role: worker` label，Deployment 寫 `nodeSelector` 指定就搞定。
+
+什麼時候換成其他手段：
+- 想要「盡量」但不強制 → Node Affinity 的 preferred
+- 想讓某些 node 專門跑特定工作（例如 GPU node）→ Taints + Tolerations
+- 想讓多副本分散到不同 node → Pod Anti-Affinity
+
+## Workload Placement 實務情境對照
+
+| 情境                                  | 手段                      | 做法                                                              |
+| ------------------------------------- | ------------------------- | ----------------------------------------------------------------- |
+| GPU node 專用，不讓普通 workload 佔用 | Taints + Tolerations      | GPU node 加 `gpu=true:NoSchedule`，ML workload 加對應 toleration  |
+| 多副本分散到不同 node，避免單點故障   | Pod Anti-Affinity         | 指定「不要和同 `app` label 的 Pod 在同一 node」                   |
+| 優先排 SSD node，滿了才排 HDD         | Node Affinity (preferred) | `preferredDuringSchedulingIgnoredDuringExecution` 偏好 `disk=ssd` |
+| App 和 Redis 同 node，減少網路延遲    | Pod Affinity              | 指定要和 `app=redis` 的 Pod 在同一 node                           |
+| Control plane 不跑一般 workload       | Taints + Tolerations      | master node 預設有 taint，只有 system Pod 有 toleration           |
+
+選擇邏輯：
+- 基於 node 特性選 node → nodeSelector 或 Node Affinity
+- 排斥特定 workload → Taints + Tolerations
+- 基於其他 Pod 位置 → Pod Affinity/Anti-Affinity
+- 硬性要求 → required，軟性偏好 → preferred
+
+## Ingress 用 Host header 分流是標準做法嗎？
+
+是，這不是 Kubernetes 特有的。
+
+**Host-based routing（又叫 virtual hosting）是 HTTP/1.1 以來的標準機制**：一個 IP + port 可以服務多個 domain，靠 Host header 區分。
+
+Nginx、Apache、HAProxy、Traefik、雲端 ALB 全都這樣做。Kubernetes Ingress 只是把這個概念標準化成一個資源定義。
+
+## TCP passthrough 是什麼意思？
+
+LB 不解密、不看內容，只把 TCP 封包原封不動轉給後端。
+
+| 做法                  | LB 做什麼                               | 誰解密 TLS      |
+| --------------------- | --------------------------------------- | --------------- |
+| TLS termination at LB | LB 解密 TLS，看到明文 HTTP，再轉發      | LB              |
+| TCP passthrough       | LB 只看 IP + port，加密封包直接轉給後端 | 後端（Traefik） |
+
+WeaMind 的架構：
+
+```bash
+Client --[HTTPS 加密]--> Hetzner LB --[仍是加密]--> Traefik --[解密後的 HTTP]--> Service
+```
+
+Hetzner LB 做 TCP passthrough：它只知道「**有流量要去 443 port**」，不知道裡面是什麼 Host、什麼 path。Traefik 才是真正解開 TLS、看到 Host header、做 routing 的那一層。
+
+⭐️更精準地拆層可以這樣說：**Hetzner LB 落在 L4 / TCP 層，負責把 `443` 連線原樣轉送進 K3s；Traefik 落在叢集內入口層，負責 TLS termination 與後續的 HTTP routing。**
+
+為什麼這樣設計：
+- 簡化 LB 設定（不用管憑證）
+- 憑證集中在 Traefik 管理（cert-manager + Let's Encrypt）
+- LB 保持 L4 的簡單與通用
+
+## LB target unhealthy 的排查順序
+
+核心觀念：target unhealthy ≠ app 壞掉，只代表 LB 的 health check 這一跳沒拿到預期結果。
+
+排查順序（由外而內）：
+
+| 順序 | 檢查什麼 | 為什麼 |
+|------|----------|--------|
+| 1 | Health check 條件本身 | LB 打的 path、期望的 status code 對不對 |
+| 2 | Ingress host/path 命中 | Health check request 有沒有帶正確 Host header、path 有沒有匹配 |
+| 3 | Worker / backend 落點 | 入口 worker 能不能接流量、Pod 有沒有跑在正確位置 |
+| 4 | TLS / termination | WeaMind 的 health check 是 HTTP，TLS 問題通常不是第一嫌疑 |
+
+面試短答：看到 LB target unhealthy，不會先說 app 壞了，而是先懷疑 health check request 有沒有命中 Ingress 規則；再確認 worker 與 Pod 落點；最後才看 TLS。
+
+## 為什麼 LB health check 改走 443 + TLS 也能通？
+
+Traefik 的 TLS termination 不會區分「這是外部用戶流量」還是「這是 LB health check 流量」。只要是打到 443 port 的 HTTPS 請求，Traefik 就統一解密、統一做 HTTP routing。
+
+```bash
+LB health check --[HTTPS 443]--> Traefik --[解密]--> 命中 Ingress 規則 --> Pod /health --> 200
+```
+
+所以不用額外設定，只要 health check 帶正確的 Host header + path，對 Traefik 來說就是一個普通的 HTTPS 請求。
+
+## WeaMind 踩坑：LB target 先綠後紅
+
+症狀：LB health check 設定好後，target 一開始 healthy，過一陣子變 unhealthy。
+
+原因：Hetzner LB 預設 health check 不帶 Host header，但 Traefik 用 host-based routing，沒有 Host header 就找不到規則 → 回 404 → unhealthy。
+
+驗證方式（在 worker node 上測試）：
+```bash
+curl http://127.0.0.1/health                              # 404（沒帶 Host）
+curl -H 'Host: k8s.kyomind.tw' http://127.0.0.1/health    # 200
+```
+
+修正：在 Hetzner LB health check 設定裡補上 `Domain: k8s.kyomind.tw`，讓 health check 帶 Host header。
+
+## 為什麼 LB target 會「先綠後紅」而不是直接紅？
+
+兩個因素：
+
+1. 剛加入 target 時，LB 先假設它是 healthy（還沒做第一輪 check）
+2. Health check 有 retry 機制，例如 `Interval 15s, Retries 3` 要連續 3 次失敗才會標記 unhealthy
+
+所以大約 45 秒後才會從綠變紅。這也是為什麼這種問題容易漏掉：設定完當下看起來沒事，過一會兒才爆。
+
+## 驗證 LB health check 是 Host header 問題的流程
+
+在 ⭐️**worker node** 上執行（不是本機、**不是 Pod 內**）：
+
+```bash
+# 1. 對照組：帶 Host header（確認 app 本身是通的）
+curl -H 'Host: k8s.kyomind.tw' http://127.0.0.1/health
+# 預期：200 {"status":"ok"}
+
+# 2. 實驗組：不帶 Host header
+curl http://127.0.0.1/health
+# 如果回 404 page not found → 問題在 Ingress host-based routing
+
+# 3. 確認 Ingress 規則
+kubectl get ingress weamind -n weamind -o yaml
+# 看 spec.rules[].host 是否為 k8s.kyomind.tw
+```
+
+結論：同一台 node、同一個 path，只差 Host header，結果從 200 變 404，問題就是 Ingress 沒命中，不是 app 壞掉。
+
+## 為什麼測 Ingress 入口要在 node 上，不能在 Pod 內？
+
+在 Pod 內打 `127.0.0.1` 只會打到那個 Pod 自己，測不到 Ingress 層。
+
+- Pod 有自己的 network namespace，`127.0.0.1:80` 指向的是 Pod 自己
+- WeaMind app Pod 監聽的是 `8000`，不是 `80`，所以根本連不到任何東西
+
+在 node 上：
+- `127.0.0.1:80` 會打到 Traefik（因為 `svclb-traefik` 用 hostPort 綁了 80）
+- 這才是測「外部流量進來後 Ingress 會怎麼 routing」的正確位置
+
+一句話記法：Pod 內的 localhost 是 Pod 自己，node 上的 localhost 才能測到 Traefik 入口。
