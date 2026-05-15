@@ -154,28 +154,32 @@ badges 最初加在 H1 上方，後來改到 H1 下方。
 
 這是目前最省篇幅、又能講清楚邊界的做法。
 
-## 仍在思考中的事項
+## 已決定事項
 
 ### GitHub Repository Description
 
-README 改完後，使用者開始重新思考 GitHub repo 的 Description 是否太短。
+最終決定：**維持現狀，不改。**
 
-原本畫面上的 Description 為：
+原本的 Description：
 
 - `Infrastructure for WeaMind – K3s Kubernetes on Hetzner Cloud`
 
-討論結論：
+決策理由：
 
-- 目前這句不算錯，但稍微太薄，只講了「跑在哪裡」，沒有反映 observability / Terraform / migration story。
-- 使用者尚未決定是否要修改 Description，目前只是進入思考階段。
+- 這句雖然「薄」，但簡潔有力，節奏是宣言式的。
+- Description 的任務是「第一眼定位」，不是完整列舉。Observability 是 infra 的組成部分，不是獨立定位。
+- README 的 badges 和 Tech Stack 已經把 Prometheus / Grafana / Helm / Terraform 都點出來了，進來的人會看到完整資訊。
+- 每一層展示各司其職：Description 負責定位，README 負責完整展示，PROGRESS.md 負責細節記錄。
 
-曾提出的方向包括：
+### 架構圖
 
-- `Infrastructure for WeaMind — migration from single-server Docker to K3s on Hetzner Cloud`
-- `Infrastructure for WeaMind — K3s on Hetzner Cloud, with observability and Terraform`
-- `Infrastructure for WeaMind — K3s, observability, and Terraform for the WeaMind project`
+最終決定：**維持現狀，不加 observability 元件。**
 
-這一題尚未定案，也尚未實作。
+決策理由：
+
+- 架構圖展示的是請求流（request flow），是系統運作的核心邏輯。
+- Prometheus / Grafana 是「觀察這個架構」的工具，不是架構本身的一部分。
+- 硬加進去會讓兩種不同層次的資訊混在一起，圖會亂，讀者反而更難抓到重點。
 
 ## 目前檔案狀態
 
