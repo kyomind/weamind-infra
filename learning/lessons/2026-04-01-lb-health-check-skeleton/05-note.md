@@ -50,12 +50,12 @@
 
 - 目前這次 runtime 觀察顯示：真正被 `endpoints traefik` 指到的 backend Pod 是 `traefik-6f5f87584-g5knx`，而且它落在 `weamind-001`。若 `weamind-001` 是 control-plane，代表 **當下真正處理 Traefik 請求的 backend Pod 的確在 control-plane 上**。
 - 這裡要先拆開兩件事：**外部入口從哪個 node 進來**，以及 **Traefik backend 最後在哪個 node 上處理請求**。WeaMind 的 Hetzner LB target 仍然只選兩台 worker，所以 **對外入口** 還是只從 worker 進來；但進來後，流量依然可能被 Service 轉送到 control-plane 上的 Traefik backend Pod。
-- 對小型 K3s 叢集來說，這種情況 **技術上合理、也常見**，因為預設內建元件通常先求簡單可用，不一定會主動把 Ingress controller 嚴格限制在 worker。你目前查到的 `svclb-traefik` 也有 `control-plane` toleration，表示這套入口機制本來就允許 control-plane 參與。
+- 這裡比較穩的說法不要只停在「小型 K3s 常見」這種經驗判斷。較硬的證據是：K3s 官方文件說 Traefik 是 packaged component，透過內建 Helm chart 部署；而上游 Traefik chart 預設 `deployment.replicas: 1`，K3s 自己的 packaged manifest 也沒有另外覆寫 replicas。再加上你目前查到的 `svclb-traefik` 帶有 `control-plane` toleration，因此更準確的說法是：**K3s 內建 Traefik 的預設配置本來就偏單副本，而且入口層元件也允許 control-plane 參與**。
 - 但如果從 **角色隔離** 與 **維運風險控制** 來看，這不是最理想的最終狀態。因為 control-plane 的主要職責應該是叢集管理；若 Traefik backend 長期落在 control-plane，就表示 **控制面其實仍參與了部分資料面流量處理**。
 - 若其中一台 worker 壞掉，只要另一台 worker 仍在 Hetzner LB target 裡，外部流量通常還是可以從剩下那台 worker 進來；而後續是否還能被轉到 Traefik backend，則要看 **control-plane 與剩餘 worker 之間的叢集內流量路徑** 是否正常。換句話說，worker 壞一台不代表入口必然全斷。
 - 更貼近真實世界的常見做法通常有兩種：**把 Ingress controller 明確固定在 worker nodes**，或 **使用專門的 ingress nodes**；較少把它長期放在 control-plane 當主要資料面處理點，除非叢集很小、追求簡化，或只是暫時過渡配置。
 - 另外也要校正一個容易混掉的點：**不是 DaemonSet 通常只有一個 Pod，而是 DaemonSet 通常在每個符合條件的 node 各跑一個 Pod**。這次你看到只有一個真正的 Traefik backend Pod，並不是因為 DaemonSet 天生只會有一個，而是因為 **真正的 backend 看起來不是 `svclb-traefik` 這個 DaemonSet，而是後面的 `traefik` workload 本身目前只有單一 backend endpoint**。
-- 所以這一題目前最穩的短結論是：**WeaMind 現在的外部入口仍只從 worker 進來，但 Traefik backend runtime 觀察上仍落在 control-plane；對小型 K3s 這可以運作，但若追求更清楚的 control-plane / data-plane 分離，之後值得研究如何把 Traefik backend 也固定到 worker 或專用 ingress nodes。**
+- 所以這一題目前最穩的短結論是：**WeaMind 現在的外部入口仍只從 worker 進來，但 Traefik backend runtime 觀察上落在 control-plane；這既和 K3s 內建 Traefik 預設偏單副本的配置相容，也代表目前 control-plane 仍參與了一部分資料面流量處理。若追求更清楚的 control-plane / data-plane 分離，之後值得研究如何把 Traefik backend 也固定到 worker 或專用 ingress nodes。**
 
 ### Hetzner LB 的 `Domain` 為什麼最後會對應到 `Host` header
 

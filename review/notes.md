@@ -859,3 +859,102 @@ kubectl get ingress weamind -n weamind -o yaml
 你可以把它想成同一棟大樓有同一個地址，但裡面有兩個不同櫃檯窗口。地址沒變，所以還是同一棟；只是窗口編號不同，所以服務入口有兩個。
 
 一句話記法：同一個 Pod 只有一個 IP，但可以同時開很多個 port；IP 相同、port 不同，不代表是不同 Pod。
+
+## 專門處理 Ingress 的 Pod，正常是一個還是多個？
+
+簡答：正式環境通常會希望是多個，不是長期只靠一個。
+
+- 一個也能運作，特別是在小型叢集、測試環境，或剛起步時很常見
+- 但如果只有一個 Ingress controller backend Pod，它就是明顯的單點。那個 Pod 掛掉、所在 node 出事，或滾動更新期間，就可能直接影響入口層可用性
+- 所以比較常見的正式做法，是讓 Ingress controller 至少有兩個以上 replicas，並盡量分散在不同 node 上
+- 你現在看到 WeaMind runtime 只有一個 Traefik backend，代表目前入口層後段仍偏單點；前面雖然有 `svclb-traefik` 幫你在三個 node 鋪入口，但真正處理規則的 backend 還是只有一個
+
+所以這題要拆開講：入口可以很多，但真正處理流量的 backend 如果只有一個，風險還是存在。也就是說，三個 node 都能接流量，不等於入口層已經高可用。
+
+一句話記法：Ingress controller 一個能跑，但正式環境通常不該長期只剩一個；不然 backend 還是單點。
+
+## 這裡只有一個 Traefik backend，是不是因為 K3s 的簡化設計？
+
+簡答：現在可以講得比剛剛更強一點。這不只是在 WeaMind runtime 剛好看到一個而已；查 K3s 官方文件與 Traefik chart 後，的確有充分理由說「K3s 內建 Traefik 的預設配置就是單副本」。
+
+- repo 內能先確定兩件事：K3s 啟用了內建 Traefik；而 lesson 的 command 輸出也明確顯示 `traefik` Service 當時只有一個 backend endpoint
+- 同一份輸出也顯示 `svclb-traefik` DaemonSet 在三個 node 都有 Pod，所以要分清楚：三個 node 都能接入口流量，不等於三個 node 各有一個 Traefik backend
+- K3s 官方文件說，Traefik 是 packaged component，會透過 `/var/lib/rancher/k3s/server/manifests/traefik.yaml` 這個 HelmChart 來部署；若要客製，應該另外加 `HelmChartConfig`
+- K3s 這份 `traefik.yaml` 只覆寫 image、tolerations、publishedService 等值，沒有看到 replicas 覆寫；而 Traefik Helm chart 的預設 values 則明確寫 `deployment.replicas: 1`
+- 所以把這幾層證據接起來，比較合理的結論就是：K3s 內建 Traefik 這條安裝路徑，預設確實是單副本；WeaMind 當下看到只有一個 backend，不只是巧合，也和這個預設對得起來
+- 但這仍然不是不能改的鐵律。K3s 官方同時也明講可以用 `HelmChartConfig` 客製 Traefik，因此比較精準的說法是「預設是單副本」，不是「K3s 本質上永遠只能一個」
+
+所以這題最穩的回答是：WeaMind 目前只有一個 Traefik backend，既符合當時 runtime 觀察，也符合 K3s 內建 Traefik 的預設 chart 行為；但如果要更正式的高可用入口，仍然可以透過 Traefik chart 設定去調整。
+
+一句話記法：K3s 內建 Traefik 預設就是單副本，但那是預設值，不是永遠不能改的限制。
+
+## Traefik 做完 TLS termination 後，為什麼叫 L7 routing？
+
+白話講：Traefik 把 HTTPS 解開之後，就看得懂裡面的 HTTP 內容了。
+
+- 這時它不只是看到「有一條連線進來」，而是能看到 `Host`、`Path` 這些 HTTP 資訊
+- 能根據 `Host`、`Path` 決定要把請求送去哪個 Service，這就是 L7 routing
+- 相對地，Hetzner LB 比較像只看「這個流量是打到哪個 port」，例如 `443 -> 443`，這比較接近 L4
+- 所以 WeaMind 這條路徑可以記成：**Hetzner LB 先做看 port 的轉送；Traefik 解開 HTTPS 後，再做看 Host/path 的轉送**
+
+如果要更白話地背：**LB 像警衛，只看你走哪個門；Traefik 像櫃檯，會看你要辦什麼事，再帶你去對的地方。**
+
+一句話記法：L4 主要看 IP/port，L7 主要看 HTTP 內容；WeaMind 是 Hetzner LB 先做 L4 轉送，Traefik 再做 L7 路由。
+
+## 為什麼 redirect 和 TLS termination 有關？用正交角度怎麼理解？
+
+簡答：這兩件事在概念上不是同一件事，但在 Hetzner LB 這個產品裡，它們又被綁在一起，所以對 WeaMind 才會變成強關聯。
+
+- 先把兩個問題拆開：**redirect** 在問的是「哪一層能看懂 HTTP，並主動回 301/302」；**TLS termination** 在問的是「哪一層負責解開 HTTPS、持有憑證」
+- 所以在概念層上，這兩件事其實是兩條不同軸，不該混成一句「會 redirect 就一定等於管憑證」
+- 但 Hetzner LB 目前走的是 **TCP passthrough**，代表它刻意停在外層，只負責轉送 `443` 連線，不去看 HTTP 內容
+- 一旦你想讓 Hetzner LB 做 redirect，就表示它不能再只做 L4 轉送，而要升級成能理解 HTTP 的那一層
+- 問題在於：在 **Hetzner LB 這個產品設計** 裡，redirect 功能是和 HTTP/HTTPS service mode 綁在一起的，所以你一旦想用它做 redirect，通常就要一起接受 **TLS termination 也搬到 LB**
+- 但 WeaMind 的 TLS 生命週期是放在 K8s 內，由 **cert-manager + DNS-01 + Traefik** 這條鏈處理；這樣做的背景又和 **Hetzner Managed Certificate 不適合配 Cloudflare DNS** 有關
+- 所以對 WeaMind 來說，最一致的責任切法就是：**Hetzner LB 繼續單純 passthrough；Traefik 同時負責 TLS termination 和 redirect**
+
+所以這題最精準的說法是：**redirect 和 TLS termination 在概念上是不同問題；但在 Hetzner LB 這個產品裡，它們沒有完全正交，而是被包成同一組能力。這就是為什麼 WeaMind 不能只把 redirect 單獨搬上 LB。**
+
+一句話記法：概念上，redirect 和 TLS termination 是兩條軸；產品上，Hetzner LB 把它們綁在一起；架構上，WeaMind 才把兩者都留在 Traefik。
+
+## Hetzner LB 的 health check 在檢查什麼？和 Pod health 有什麼差別？
+
+簡答：**LB health check 不是在看 Pod 本身健不健康，而是在看「外面這條入口路徑有沒有真的打通」。**
+
+- 它送出的不是 Kubernetes 內部 probe，而是一個**真的 HTTP request**
+- 以 WeaMind 這次來說，就是 LB 去打 worker node 的 `80`，走 `/health`，帶 `Host: k8s.kyomind.tw`，期待拿到 `200`
+- 所以它測到的是整條入口鏈路：**LB -> node:80 -> Traefik -> Ingress 規則 -> Service -> Pod -> /health**
+- 只要這條路中間任何一段沒通，就算 app 還活著，LB 也可能把 target 判成 unhealthy
+- 這也是為什麼之前沒帶對 `Host` 時，app 的 `/health` 明明沒壞，LB 還是會看到 `404`：因為壞的是 Ingress 命中，不是 Pod 本身
+
+所以要分清楚：**Pod probe** 在回答「這個 Pod 自己活不活、能不能收流量」；**LB health check** 在回答「外部使用者走入口打進來，這條路到底通不通」。
+
+一句話記法：Pod health 看的是單一 Pod；LB health check 看的是整條入口路徑。
+
+## 這次 YAML 到底改了什麼？
+
+簡答：**這次其實只做了兩件事。第一，新增一個「把 HTTP 轉去 HTTPS」的 Traefik Middleware。第二，在既有 Ingress 上掛一句設定，叫 Traefik 先套用這個 Middleware。**
+
+- `middleware-https-redirect.yaml` 做的事很單純：定義一個 redirect 規則，意思就是「如果是 HTTP 進來，就把它轉去 HTTPS」
+- `redirectScheme.scheme: https` 可以直接理解成「目標要跳去 HTTPS」
+- `permanent: true` 可以直接理解成「這不是暫時跳一下，而是正式永久導向」
+- `ingress.yaml` 本身沒有重寫 host、path、backend，也沒有改 TLS secret；只是多加了一句設定，告訴 Traefik：**這條入口規則命中時，先套用剛剛那個 redirect middleware**
+- 所以整體效果不是「把原本路由砍掉重做」，而是**在原本已經能跑的入口前面，多加一層 HTTP -> HTTPS redirect**
+
+所以這題可以背成：**這次 YAML 沒有大改路由，只是新增一個 redirect 零件，再把它掛到既有 Ingress 上。**
+
+一句話記法：Middleware 是新加的 redirect 零件；Ingress 只是多掛了一個開關去用它。
+
+## Annotation 為什麼不是只是註解？
+
+簡答：**Kubernetes 的 annotation 不是寫給人看的備註，而是可能被 controller 讀取的 metadata。**
+
+- YAML 裡的 `# 註解` 才是真的只給人看，送進 Kubernetes 後就沒了
+- `metadata.annotations` 會真的存進 Kubernetes 物件裡，所以 controller 看得到
+- 但 annotation 也不是「天生一定有魔法」；它會不會改變行為，要看有沒有 controller 願意讀它
+- 在 WeaMind 這題裡，真正讓它生效的關鍵是：**Traefik 會主動讀 `traefik.ingress.kubernetes.io/router.middlewares` 這個 key，並把它當成設定來執行**
+- 所以這行 annotation 的本質不是「備註」，而是**寫給 Traefik controller 看的指令入口**
+
+所以這題可以背成：**comment 是給人看的；annotation 是存進物件裡、可能給 controller 讀的。**
+
+一句話記法：註解只給人看；annotation 可以是 controller 的設定入口。
