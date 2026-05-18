@@ -33,3 +33,87 @@
 因此，WeaMind 這份 publish workflow 才會用 `github.event.workflow_run.event == 'push'` 去排除單純 PR 檢查成功的情況，只接受 merge 後真正落到 `main` 的那次 CI 成功。
 
 一句話記法：不是因為有人手動打了 `git push` 才叫 push，而是因為 merge 讓 `main` 指到新 commit，GitHub 就把這種分支更新當成 push 事件。
+
+## imagePullPolicy Always 用白話怎麼理解
+
+簡答：`imagePullPolicy: Always` 不是自動更新開關，它比較像是「只要這個 Pod 要重開，我就再去 registry 看一次 image」。
+
+- 你可以把它想成：Pod 已經在跑的時候，Kubernetes 不會因為 GHCR 出現新 image，就主動把它換掉。
+- 只有當 Pod 因為 rollout、restart、節點問題或其他原因被重新建立時，kubelet 才會再去拉這個 image。
+- 所以 `Always` 保證的是「重建時重新確認 image」，不是「平常自動追最新版本」。
+- 如果 GHCR 裡的 `latest` 已經更新，但你現有的 Pods 都沒重建，那它們還是繼續跑舊版本。
+
+一句話記法：`Always` 只保證重開時重拉，不保證有新版就自動換版。
+
+## rollout restart 會不會重建 Pod
+
+簡答：對，這題只要先記住最核心的一句就夠了。`kubectl rollout restart` 會保證 Deployment 底下的 Pods 被重建。
+
+- 它的重點就是讓舊 Pod 被換掉，建立新的 Pod。
+- 所以如果你原本誤以為 rollout restart 不會重建 Pod，這裡要修正成：它就是會觸發重建。
+
+一句話記法：`rollout restart` 的**核心作用，就是重建 Pod。**
+
+## production 更新 image 時，什麼情況才需要 rollout restart
+
+簡答：如果你已經把 manifest 裡的 image tag 改成新版本，重新 apply 之後通常就會自己 rollout，不一定還要再手動 restart。比較需要 `rollout restart` 的情況，是 tag 名字沒變，但你想強制把 Pod 重建一次。
+
+- tag 有變：像 `v1.1` 改成 `v1.2`，Deployment 會看出 Pod template 變了，通常 apply 之後就會自己換 Pod。
+- tag 沒變：像還是用 `latest`，表面上 YAML 沒變，但你想讓現有 Pods 重建，這時才更像是 `rollout restart` 的使用情境。
+- 所以不是每次更新 image 都一定要走「改 YAML、apply、restart」三步。
+
+一句話記法：tag 有改，通常 apply 就夠；tag 沒改但想重建 Pods，才比較需要 rollout restart。
+
+## image tag 改了時，為什麼不能只做 rollout restart
+
+簡答：對，如果你要把 image tag 從 `latest` 改成 `1.2.2`，光做 `rollout restart` 不夠。因為 `rollout restart` 只會重建 Pod，不會修改 Deployment spec 裡的 `image` 欄位。
+
+- Deployment 目前記住的是哪個 image，要看它自己的 spec，不是看你本機 YAML 改了沒。
+- 如果你只是在檔案裡把 tag 改掉，但還沒 `kubectl apply`，叢集裡的 Deployment 還是舊設定。
+- 這時你做 `rollout restart`，Kubernetes 只會**照「目前叢集裡那份舊 spec」重建 Pod**，所以 tag 當然不會變。
+- 要讓 tag 真正從 `latest` 變成 `1.2.2`，你必須先更新 Deployment spec。常見做法是 `kubectl apply -f ...`，或直接用 `kubectl set image`。
+- 更新完 spec 之後，Deployment controller 本來就會因為 Pod template 變了而自動 rollout，通常不需要再多做一次 `rollout restart`。
+
+一句話記法：`rollout restart` 只會重建現有設定的 Pod；要改 image tag，先改 Deployment spec。
+
+## kubectl apply 之後，怎麼看 rollout 有沒有完成
+
+簡答：`kubectl apply` 本身通常只會告訴你資源有沒有成功送進叢集，例如 `configured`、`created`、`unchanged`，不會像 `rollout status` 那樣一路幫你追到 rollout 結束。
+
+- 所以 `apply` 比較像是在說：「新設定我收到了。」
+- 但它不等於在說：「新的 Pods 已經全部換完，而且都 Ready 了。」
+- 如果你想看 rollout 有沒有真的完成，最直接就是接著跑：
+
+```bash
+kubectl rollout status deployment/weamind
+```
+
+- 如果你想邊看 Pod 變化邊觀察，也可以用：
+
+```bash
+kubectl get pods -n weamind -w
+```
+
+- 所以實務上常見節奏是：先 `apply`，再 `rollout status` 確認它真的滾完。
+
+一句話記法：`apply` 告訴你設定送進去了；`rollout status` 才告訴你新版本有沒有真的滾完。
+
+## kubectl get pods 後面的 -w 是不是筆誤
+
+簡答：不是，`-w` 是 `watch` 的縮寫。
+
+- `kubectl get pods -w` 的意思是：先列出目前的 Pods，然後持續監看變化。
+- 所以當 Pod 被刪掉、重建、進入 Running 或 Ready 狀態時，你會在同一個畫面看到更新。
+- 這很適合拿來觀察 rollout 過程。
+
+一句話記法：`-w` 不是筆誤，它是 watch，意思是持續看變化。
+
+## apply 之後要看更新變化，是不是就用 rollout status
+
+簡答：對，通常就是這樣。`apply` 之後，如果你想確認這次 Deployment 更新有沒有真的開始、而且最後有沒有完成，最常用的就是接 `kubectl rollout status`。
+
+- `apply` 負責把新設定送進叢集。
+- `rollout status` 負責告訴你這次 rollout 有沒有成功滾完。
+- 如果你還想看到 Pod 一個一個被換掉的過程，可以再搭配 `kubectl get pods -w`。
+
+一句話記法：`apply` 之後，預設就接 `rollout status` 看更新有沒有完成。

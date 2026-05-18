@@ -1,5 +1,5 @@
 # 2026-04-06 CI Image Pipeline Skeleton Note
-
+複習：2026-05-18
 ## 學習注意事項
 
 ### 今日 lesson 邊界
