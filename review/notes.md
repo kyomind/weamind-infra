@@ -807,3 +807,29 @@ kubectl get ingress weamind -n weamind -o yaml
 所以更準的說法是：kubeadm 預設比 K3s 更接近「先把 control-plane 隔離起來」；但最後哪些 Pod 能不能上去，仍然要看 taint / toleration 和你有沒有手動改動預設行為。
 
 一句話記法：kubeadm 通常預設會用 `NoSchedule` taint 把一般 Pod 擋在 control-plane 外，但你仍可以靠 toleration 或 untaint 改變這件事。
+
+## 為什麼只有一個 Traefik endpoint，但三個 node 都還能當入口？
+
+白話講：接流量的地方和真正處理流量的地方，不一定是同一層。
+
+- 三個 node 都能當入口，是因為 `svclb-traefik` 這個 DaemonSet 會在每個 node 都放一個入口 Pod，所以每台 node 都能先把 `80/443` 的流量接住
+- 但這些入口 Pod 不是真的在做 Ingress routing；它們比較像入口轉接站，先把流量送進 `traefik` Service
+- `traefik` Service 後面目前只有一個 endpoint，表示**真正負責處理 Traefik 規則的 backend Pod 只有一個**
+- 所以會變成：三台都能先接到流量，但最後可能都轉給同一個 Traefik Pod 處理
+
+比較準的講法是：node 數量對應的是入口鋪設範圍，endpoint 數量對應的是後端實際處理流量的 Pod 數量。這兩個數字本來就不一定一樣。
+
+一句話記法：三個 node 是三個入口，不代表三個 Traefik backend；入口可以很多，真正處理的 Pod 也可以只有一個。
+
+## curl 的 `-I` 和 `-L` 常用嗎？DevOps 需要知道嗎？
+
+簡答：算常用，而且值得知道。它們不是很進階的技巧，但在查入口行為、redirect、健康檢查、HTTP 狀態碼時很常出現。
+
+- `curl -I` 會送 `HEAD` request，只看 response headers，不拿 body。常用來快速看 status code、server、location、cache headers，或檢查入口層回應長什麼樣
+- `curl -L` 代表遇到 redirect 就自動跟下去。常用來確認網址最後會被導到哪裡，或檢查 HTTP -> HTTPS redirect 有沒有真的成立
+- 對 DevOps 來說，這兩個參數很實用，因為你常需要分辨問題是在入口層、redirect、TLS，還是在 app 本身
+- 但也要記邊界：`-I` 用的是 `HEAD`，不是 `GET`。如果後端不接受 `HEAD`，你看到的結果可能是在測 method 支援，不是在測 redirect 本身
+
+所以更準的說法是：DevOps 不一定要背一大堆 curl 參數，但 `-I` 和 `-L` 這種會直接幫你看入口行為的，屬於很值得熟的基本工具。
+
+一句話記法：`-I` 用來快速看 headers，`-L` 用來追 redirect；兩個都算 DevOps 常用的基本參數。
