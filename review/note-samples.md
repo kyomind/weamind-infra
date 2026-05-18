@@ -36,6 +36,8 @@
 - `maxSurge`：rolling update 時，最多能超出目標副本數多少新 Pod。用資源換更平滑的交接
 - `maxUnavailable`：更新過程中，最多可暫時少掉多少可用 Pod。用來限制服務可用性的下降幅度
 
+兩者加總決定更新速度：如果 `replicas=3`、`maxSurge=1`、`maxUnavailable=1`，更新過程中最多同時有 4 個 Pod、最少 2 個可用。數值越大更新越快，但資源壓力或可用性風險也越高。
+
 一句話記法：`maxSurge` 是先多開幾個新的，`maxUnavailable` 是允許先少掉幾個舊的。
 
 ---
