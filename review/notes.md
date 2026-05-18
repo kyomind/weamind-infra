@@ -833,3 +833,29 @@ kubectl get ingress weamind -n weamind -o yaml
 所以更準的說法是：DevOps 不一定要背一大堆 curl 參數，但 `-I` 和 `-L` 這種會直接幫你看入口行為的，屬於很值得熟的基本工具。
 
 一句話記法：`-I` 用來快速看 headers，`-L` 用來追 redirect；兩個都算 DevOps 常用的基本參數。
+
+## 為什麼三個 node 都能當入口，但真正的 Traefik backend 只有一個？
+
+白話講：`svclb-traefik` 比較像接待員，真正的 Traefik backend 比較像櫃檯人員。
+
+- `svclb-traefik` 會分散在每個 node 上，所以每台 node 都能先把 `80/443` 的流量接住
+- 但它不是實際讀 Ingress 規則、決定後端去向的那一層；它比較像先接住，再把流量轉交出去
+- 真正讀 Ingress 規則、決定流量怎麼轉的，是後面的 Traefik backend Pod
+- 所以完全可能出現「三個 node 都有門口，但最後都把流量送去同一個 Traefik backend」這種狀況
+
+所以不要把「入口數量」和「真正處理流量的 backend Pod 數量」當成同一件事。前者是在說有幾個地方能先接住流量，後者是在說最後有幾個 Pod 真正在處理。
+
+一句話記法：每個 node 都可以有門口，但門後面不一定各自都有一位櫃檯人員；也可能三個門最後都把人帶去同一個櫃檯。
+
+## 同一個 Pod IP 為什麼可以同時對應兩個 port？
+
+因為 Pod 本來就可以同時開多個 port，所以「同一個 IP + 不同 port」仍然完全可能是同一個 Pod。
+
+- IP 是在回答「是同一台網路端點嗎」
+- port 是在回答「這台端點上的哪個服務入口」
+- 所以 `10.42.0.9:8000` 和 `10.42.0.9:8443` 的意思不是兩個不同 Pod，而是同一個 Pod 上有兩個不同的 listening port
+- 以 Traefik 來說，**這通常就是同一個 Traefik Pod 同時提供 HTTP 與 HTTPS 相關入口，所以 endpoints 會看到同一個 IP 配兩個 port**
+
+你可以把它想成同一棟大樓有同一個地址，但裡面有兩個不同櫃檯窗口。地址沒變，所以還是同一棟；只是窗口編號不同，所以服務入口有兩個。
+
+一句話記法：同一個 Pod 只有一個 IP，但可以同時開很多個 port；IP 相同、port 不同，不代表是不同 Pod。
