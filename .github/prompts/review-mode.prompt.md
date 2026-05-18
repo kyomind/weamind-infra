@@ -22,7 +22,7 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 8. 寫入前先依照 `review/rules.md` 確認 `review/notes.md` 是否存在；若不存在，依規則初始化新檔。
 9. 若使用者只是口語化確認或閒聊，且沒有形成可保存的技術問題，可以不用寫入 `review/notes.md`。
 10. 預設先給短答，只有在使用者追問時才往外展開更多背景。
-11. 筆記格式、段落長度、code block、加粗標記與完成前檢查，全部以 `review/rules.md` 為準，不在本 prompt 重複細節。
+11. 預設為新的獨立 Note；是否補進舊 Note、筆記格式、段落長度、code block、加粗標記與完成前檢查，全部以 `review/rules.md` 為準，不在本 prompt 重複細節。
 
 ## 必讀文件
 
@@ -47,7 +47,7 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 
 `review/notes.md` 的每個 `##` 都代表使用者的一個問題。
 
-具體寫入格式、內容風格、長度、隱私邊界與完成前檢查，統一依照 `review/rules.md`。本 prompt 只負責要求你進入 Review 模式並把有效問答寫入目前的 `review/notes.md`。
+具體寫入格式、是否另開新 Note、何時可補進舊 Note、內容風格、長度、隱私邊界與完成前檢查，統一依照 `review/rules.md`。本 prompt 只負責要求你進入 Review 模式並把有效問答寫入目前的 `review/notes.md`。
 
 ## 回覆方式
 

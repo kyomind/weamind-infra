@@ -696,12 +696,12 @@ Hetzner LB 做 TCP passthrough：它只知道「**有流量要去 443 port**」�
 
 排查順序（由外而內）：
 
-| 順序 | 檢查什麼 | 為什麼 |
-|------|----------|--------|
-| 1 | Health check 條件本身 | LB 打的 path、期望的 status code 對不對 |
-| 2 | Ingress host/path 命中 | Health check request 有沒有帶正確 Host header、path 有沒有匹配 |
-| 3 | Worker / backend 落點 | 入口 worker 能不能接流量、Pod 有沒有跑在正確位置 |
-| 4 | TLS / termination | WeaMind 的 health check 是 HTTP，TLS 問題通常不是第一嫌疑 |
+| 順序 | 檢查什麼               | 為什麼                                                         |
+| ---- | ---------------------- | -------------------------------------------------------------- |
+| 1    | Health check 條件本身  | LB 打的 path、期望的 status code 對不對                        |
+| 2    | Ingress host/path 命中 | Health check request 有沒有帶正確 Host header、path 有沒有匹配 |
+| 3    | Worker / backend 落點  | 入口 worker 能不能接流量、Pod 有沒有跑在正確位置               |
+| 4    | TLS / termination      | WeaMind 的 health check 是 HTTP，TLS 問題通常不是第一嫌疑      |
 
 面試短答：看到 LB target unhealthy，不會先說 app 壞了，而是先懷疑 health check request 有沒有命中 Ingress 規則；再確認 worker 與 Pod 落點；最後才看 TLS。
 
@@ -770,3 +770,14 @@ kubectl get ingress weamind -n weamind -o yaml
 - 這才是測「外部流量進來後 Ingress 會怎麼 routing」的正確位置
 
 一句話記法：Pod 內的 localhost 是 Pod 自己，node 上的 localhost 才能測到 Traefik 入口。
+
+## Traefik Ingress Controller 怎麼把 node 的 80/443 接到 Ingress 規則？
+
+比較準的說法是：node 的 `80/443` 先進 Traefik 入口，Traefik 再依 Ingress 規則決定怎麼轉到後端 Service。
+
+- 入口層：K3s 的 `svclb-traefik` 是 DaemonSet，會在各 node 建立 Pod，並綁 `HostPort 80/443`。所以打進 node `80/443` 的流量，先碰到的是 Traefik，不是 app Pod
+- 規則層：`manifests/ingress.yaml` 裡的 `ingressClassName: traefik` 表示規則由 Traefik 接管；`rules.host: k8s.kyomind.tw` 加上 `path: /`、`pathType: Prefix` 表示 Traefik 會先看 Host 和 path 有沒有命中
+- 後端層：命中後，Traefik 會把流量送到 `weamind-line-bot` Service:80；這個 `80` 是 Service port，不是 app 真正監聽的 port，真正後端是 `targetPort: 8000`
+- HTTP/HTTPS 分工：`tls` 區塊只決定 HTTPS 用哪張 Secret；HTTP -> HTTPS redirect 則是另外靠 Traefik Middleware `https-redirect` 加上 Ingress annotation，不是因為有 `tls` 就自動成立
+
+一句話記法：node `80/443` 先進 Traefik，Traefik 讀 Ingress 規則後，再轉到 Service:80，最後到 Pod:8000。
