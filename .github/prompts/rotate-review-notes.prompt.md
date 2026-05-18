@@ -20,11 +20,12 @@ description: "Rotate review/notes.md into the next numbered notes-XX.md archive,
    - 若目前沒有 `notes-XX.md`，從 `01` 開始
    - 若已有舊檔，使用目前最大序號加 `1`
 4. 先複製，再修改封存檔；不要先清空 `notes.md`。
-5. 複製到 `review/raw/` 時保留原樣，不加日期行。
-6. 封存檔的第三行必須加入：
+5. 實際檔案操作優先使用 shell 層級的檔案指令，例如 `cp`、`mv`、`rm -f`；不要用重新生成全文內容的方式模擬複製。
+6. 複製到 `review/raw/` 時保留原樣，不加日期行。
+7. 封存檔的第三行必須加入：
    - `整理日期：YYYY-MM-DD`
-7. `review/notes.md` 重設後，內容必須回到 `review/rules.md` 定義的初始化模板。
-8. 完成前一定要做檢查；若檢查失敗，直接停止並說明失敗點。
+8. `review/notes.md` 重設後，內容必須回到 `review/rules.md` 定義的初始化模板。
+9. 完成前一定要做檢查；若檢查失敗，直接停止並說明失敗點。
 
 ## 輸入與前提
 
@@ -72,6 +73,8 @@ description: "Rotate review/notes.md into the next numbered notes-XX.md archive,
 4. 若完全沒有舊檔，使用 `review/notes-01.md`
 
 ### 步驟 3：複製 `notes.md` 到封存檔與備份
+
+這一步應以檔案層級複製完成，優先使用 shell 指令，例如 `cp`。不要把來源內容讀出後再用新文字重建成目標檔。
 
 把 `review/notes.md` 原樣複製成：
 
