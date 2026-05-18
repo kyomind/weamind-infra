@@ -781,3 +781,29 @@ kubectl get ingress weamind -n weamind -o yaml
 - HTTP/HTTPS 分工：`tls` 區塊只決定 HTTPS 用哪張 Secret；HTTP -> HTTPS redirect 則是另外靠 Traefik Middleware `https-redirect` 加上 Ingress annotation，不是因為有 `tls` 就自動成立
 
 一句話記法：node `80/443` 先進 Traefik，Traefik 讀 Ingress 規則後，再轉到 Service:80，最後到 Pod:8000。
+
+## 為什麼現在 control-plane 沒有被排除出 Pod 排程？
+
+比較準的說法是：不是所有 Pod 都沒有排除 control-plane，而是不同 workload 的排程規則不一樣。
+
+- app 這一層有排除：`manifests/deployment.yaml` 裡的 `nodeSelector: nodepool=worker`，已經把 WeaMind line-bot Pods 固定在 worker，所以 app Pod 不會被排到 control-plane
+- Traefik 相關 workload 沒有同樣被排除：lesson 裡的 runtime 觀察顯示，`svclb-traefik` 是 DaemonSet，而且帶有 control-plane toleration，所以 control-plane 也可以參與入口層元件的排程
+- Kubernetes 會不會排到某個 node，不是看「這台是不是 control-plane」這個名字本身，而是看有沒有 `taint / toleration`、`nodeSelector`、`affinity` 這些約束。沒有明確限制時，control-plane 就不一定會自動被排除
+- 對小型 K3s 來說，這種現象很常見。預設內建元件通常先求簡單可用，不一定會主動幫你做嚴格的 control-plane / worker 隔離
+
+所以你現在看到的現象應該拆成兩句講：WeaMind app Pods 已經明確固定在 worker；但 Traefik 或 `svclb-traefik` 這類入口層元件，目前沒有被同等程度地限制，因此 control-plane 仍可能承接這些 Pod。
+
+一句話記法：control-plane 沒有被排除，通常不是因為 K3s 完全不能排除，而是因為那個 workload 本身沒有加上足夠的排程限制。
+
+## 如果是 kubeadm 版 Kubernetes，control-plane 會自動排除嗎？
+
+簡答：通常會。kubeadm 建好的 control-plane node，預設就會帶 `NoSchedule` taint，所以一般 workload 不會自動被排上去。
+
+- kubeadm 常見的預設 taint 是 `node-role.kubernetes.io/control-plane:NoSchedule`；舊版也可能看到 `node-role.kubernetes.io/master:NoSchedule`
+- 這代表一般沒有對應 toleration 的 Pod，預設就會被擋在 control-plane 外面
+- 但這不是說 control-plane 永遠完全不能跑 Pod。像 kube-system 裡的一些系統元件，如果本身帶了 toleration，還是可以排上去
+- 如果你是單節點叢集，很多人會手動 `untaint` control-plane，讓一般 workload 也能排進去；一旦這樣做，就不再是「自動排除」
+
+所以更準的說法是：kubeadm 預設比 K3s 更接近「先把 control-plane 隔離起來」；但最後哪些 Pod 能不能上去，仍然要看 taint / toleration 和你有沒有手動改動預設行為。
+
+一句話記法：kubeadm 通常預設會用 `NoSchedule` taint 把一般 Pod 擋在 control-plane 外，但你仍可以靠 toleration 或 untaint 改變這件事。
