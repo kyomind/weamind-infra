@@ -45,9 +45,7 @@ description: "Enter WeaMind infra review mode: answer only the user's review que
 
 ## 寫入原則
 
-`review/notes.md` 的每個 `##` 都代表使用者的一個問題。
-
-具體寫入格式、是否另開新 Note、何時可補進舊 Note、內容風格、長度、隱私邊界與完成前檢查，統一依照 `review/rules.md`。本 prompt 只負責要求你進入 Review 模式並把有效問答寫入目前的 `review/notes.md`。
+`review/notes.md` 的每個 `##` 都代表使用者的一個問題；具體寫入格式、是否另開新 Note、何時可補進舊 Note、內容風格、長度、隱私邊界與完成前檢查，統一依照 `review/rules.md`。本 prompt 只負責要求你進入 Review 模式並把有效問答寫入目前的 `review/notes.md`。
 
 ## 回覆方式
 
