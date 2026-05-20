@@ -1,5 +1,5 @@
 # 2026-04-07 cert-manager DNS-01 Basics Note
-
+複習：2026-05-20
 ## 學習注意事項
 
 ### 今日 lesson 邊界
@@ -31,8 +31,8 @@
 ### 那現在做了 HTTP→HTTPS redirect，HTTP-01 就一定不 work 嗎
 
 - 不能直接講成「一定不 work」，但 **至少不能把它當成理所當然會 work**。
-- 比較精準的說法是：一旦你對所有 HTTP 流量都直接套用 redirect middleware，HTTP-01 會變得更脆弱，因為 `/.well-known/acme-challenge/` 這種驗證路徑通常需要被正確放行，或至少要有專門的 solver ingress / 例外規則。
-- 也就是說，問題不在於 HTTP-01 理論上做不到，而在於 **你為了讓它可靠續約，必須持續照顧那條公開 HTTP 驗證路徑**；這正是 WeaMind 偏向 DNS-01 的原因之一。
+- 比較精準的說法是：一旦你對所有 HTTP 流量都直接套用 redirect middleware，HTTP-01 會變得更脆弱，因為 `/.well-known/acme-challenge/` 這種驗證路徑通常需要被正確放行，或至少**要有專門的 solver ingress / 例外規則**。
+- ⭐️也就是說，問題不在於 HTTP-01 理論上做不到，而在於 **你為了讓它可靠續約，必須持續照顧那條公開 HTTP 驗證路徑**；這正是 WeaMind 偏向 DNS-01 的原因之一。
 
 ### 一句話收斂
 
@@ -42,7 +42,7 @@
 
 - 你這個追問很重要，因為它剛好能修正一個過度粗糙的說法：**有 HTTP→HTTPS redirect，不等於 HTTP-01 一定失敗。**
 - 更精準的說法應該是：**若 redirect 規則沒有擋到 `/.well-known/acme-challenge/`，或 Web server 對這條路徑保留了例外處理，HTTP-01 仍然可以成功。**
-- 這件事現在已經有答案了。從你提供的單機 nginx 設定可直接看出：HTTP 80 的 server block 先對 `/.well-known/acme-challenge/` 設了獨立 `location`，把 challenge 檔案從 certbot 的 webroot 提供出去；只有其他一般請求才在 `location /` 裡被 `301` 轉去 HTTPS。
+- ⭐️這件事現在已經有答案了。從你提供的單機 nginx 設定可直接看出：HTTP 80 的 server block 先對 `/.well-known/acme-challenge/` 設了獨立 `location`，把 challenge 檔案從 certbot 的 webroot 提供出去；只有其他一般請求才在 `location /` 裡被 `301` 轉去 HTTPS。
 - 這代表你的單機版不是「redirect 開了之後 HTTP-01 仍自動神奇成立」，而是 **challenge 路徑被刻意保留下來，所以 HTTP-01 續約依然能 work**。
 - 也就是說，真正成立的不是「HTTP-01 不怕 redirect」，而是：**redirect 可以存在，但必須替 ACME challenge 路徑保留例外。**
 - 這也同時回答了你前面的續約疑問：若憑證續約仍走 HTTP-01，那續約時一樣需要這條 HTTP challenge 路徑可用；你的單機版之所以沒壞掉，就是因為 nginx 設定確實保住了它。

@@ -132,7 +132,7 @@ kubectl get pods -n weamind -w
 
 ## 為什麼 WeaMind 偏向 DNS-01
 
-簡答：因為 WeaMind 的 DNS 在 Cloudflare，不在 Hetzner；既然不走 Hetzner Managed Certificate，憑證就交給 K3s 內的 cert-manager + Traefik，而 DNS-01 剛好能避開正式流量路徑。
+簡答：因為 WeaMind 的 DNS 在 Cloudflare，不在 Hetzner；既然不走 Hetzner Managed Certificate，憑證就交給 K3s 內的 cert-manager + Traefik，而 DNS-01 剛好**能避開正式流量路徑**。
 
 - Cloudflare 繼續負責 DNS，所以 cert-manager 可以用 Cloudflare API Token 寫 `_acme-challenge` TXT record。
 - Hetzner LB 在這個設計裡退回 L4 TCP passthrough，不負責保管或簽發 TLS 憑證。
@@ -142,3 +142,52 @@ kubectl get pods -n weamind -w
 所以這裡不是 DNS-01 永遠比 HTTP-01 好，而是 WeaMind 已經選擇 Cloudflare DNS + Hetzner L4 LB + Traefik termination。DNS-01 可以讓憑證申請與續期主要留在 DNS 控制面，不必為了 ACME challenge 去調整正式入口設計。
 
 一句話記法：WeaMind 用 DNS-01，是為了讓憑證驗證走 Cloudflare DNS，不要綁住 LB + Ingress 的正式流量路徑。
+
+## HTTP-01 成功後，續約為什麼還要再走驗證
+
+簡答：因為憑證續約不是單純延長舊憑證，而是重新向 CA 申請一張新憑證；CA 仍然要確認你現在還控制這個網域。
+
+- 第一次 HTTP-01 成功，只代表當時你能控制公開 HTTP challenge 路徑。
+- 到了續約時間，Let's Encrypt 不會只因為你以前成功過，就直接相信你現在仍然控制這個網域。
+- 如果 cert-manager 的 Issuer / solver 還設定成 HTTP-01，續約時就會再次建立 HTTP-01 challenge，讓 CA 重新驗證。
+
+所以更精準地說，不是 ACME 規定「第一次用 HTTP-01，以後永遠不能改」。而是你的自動化設定如果仍然使用 HTTP-01，後續每次續約都會照這個 solver 再跑一次。要改成 DNS-01，必須調整 Issuer / ClusterIssuer 與相關 Secret 設定。
+
+一句話記法：續約其實是重新拿新憑證；solver 沒改，就會用同一種驗證方式重新證明網域控制權。
+
+## HTTP-01 驗證時保留外部 80 常見嗎
+
+簡答：常見。因為 HTTP-01 的驗證入口就是公開 HTTP，也就是 CA 需要能透過 port 80 打到 `/.well-known/acme-challenge/`。
+
+- HTTP-01 不需要你的正式服務長期提供不加密內容，但需要 challenge 路徑在驗證當下可被外部存取。
+- 很多架構會保留 80，然後把一般 HTTP 流量導到 HTTPS，只對 ACME challenge 路徑保留例外。
+- 如果完全關掉外部 80，HTTP-01 通常就沒辦法完成，除非前面還有其他元件能替你處理這段 challenge。
+
+所以「保留 80」常見，但它的目的不是鼓勵正式流量走 HTTP，而是讓 HTTP-01 驗證有入口。像單機版 Nginx + certbot 常見做法就是：一般路徑全部 redirect 到 HTTPS，只有 `/.well-known/acme-challenge/` 這條驗證路徑在 Nginx config 裡保留例外，讓 CA 可以用 HTTP 讀到 challenge 檔案。
+
+一句話記法：HTTP-01 常需要外部 80；一般流量可以 redirect，ACME challenge 路徑要保留 HTTP 可讀。
+
+## cert-manager 的 Issuer 和 solver 是什麼
+
+簡答：Issuer 是「我要去哪個 CA 申請憑證、用哪個帳號與規則申請」；solver 是「遇到 ACME 驗證時，要用哪種方法證明我控制這個網域」。
+
+- Issuer / ClusterIssuer 像是 cert-manager 的憑證簽發設定檔，會指定 CA，例如 Let's Encrypt，以及 ACME 帳號資訊。
+- solver 是 Issuer 裡面負責解 challenge 的方法，可以是 DNS-01，也可以是 HTTP-01。
+- DNS-01 solver 會去寫 DNS TXT record；HTTP-01 solver 會建立公開 HTTP challenge 路徑，讓 CA 讀到指定內容。
+- Certificate 物件會引用某個 Issuer / ClusterIssuer，cert-manager 再依照裡面的 solver 設定完成驗證與簽發。
+
+所以不要把 Issuer 和 solver 想成兩個同層級的東西。Issuer 是「整份申請憑證的規則來源」，solver 是其中「怎麼通過網域驗證」的那一段設定。
+
+一句話記法：Issuer 決定向誰申請憑證；solver 決定用 DNS-01 還是 HTTP-01 證明網域控制權。
+
+## 為什麼單機 Nginx redirect 後 HTTP-01 仍能成功
+
+簡答：因為它不是把所有 HTTP 請求都無條件 redirect，而是先讓 ACME challenge 路徑例外通過，其他一般路徑才轉去 HTTPS。
+
+- HTTP 80 的 server block 會先對 `/.well-known/acme-challenge/` 設獨立 `location`。
+- 這個 `location` 會把 certbot webroot 裡的 challenge 檔案提供給 Let's Encrypt 讀取。
+- 只有一般 `location /` 的請求才會被 `301` redirect 到 HTTPS。
+
+所以重點不是「HTTP-01 不怕 redirect」，而是 redirect 規則有保留 ACME challenge 例外。這也是單機版 HTTP-01 能長期續約成功的關鍵：續約時 CA 還是能透過 HTTP 讀到驗證檔案。
+
+一句話記法：HTTP 可以整體轉 HTTPS，但 `/.well-known/acme-challenge/` 要先被 Nginx 放行。
