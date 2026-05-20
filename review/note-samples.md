@@ -22,8 +22,10 @@
 
 兩者卡住的階段不同：
 
-- `CreateContainerError`：container 還沒成功建立。優先查 ConfigMap / Secret 引用、volume 掛載、env 設定是否有誤。WeaMind 有過 `invalid UTF-8` 案例，根因是 Secret 使用方式錯誤
-- `CrashLoopBackOff`：container 建立成功但 app 啟動後反覆 crash。優先查 app logs、啟動指令、健康檢查
+- `CreateContainerError`：container 還沒成功建立。優先查 ConfigMap / Secret 引用、volume 掛載、env 設定
+- `CrashLoopBackOff`：container 建立成功，但 app 啟動後反覆 crash。優先查 app logs、啟動指令、健康檢查
+
+WeaMind 有過 `invalid UTF-8` 案例，根因是 Secret 使用方式錯誤，當時更接近 `CreateContainerError` 這一類。
 
 一句話記法：CreateContainerError 是「還沒生出來」，CrashLoopBackOff 是「生出來但一直掛」。
 
@@ -66,8 +68,7 @@ L7 LB 的例子：AWS ALB、GCP HTTP(S) Load Balancer、Cloudflare、Nginx、HAP
 
 - 想在 LB 層就做 host-based 或 path-based routing
 - 想在 LB 層終止 TLS（SSL offloading）
-- 想在 LB 層做 WAF、rate limiting、認證
-- 用雲端託管服務，不想自己管 Ingress Controller
+- 想在 LB 層做 WAF、rate limiting 或認證
 
 兩種架構的取捨：
 
@@ -75,6 +76,8 @@ L7 LB 的例子：AWS ALB、GCP HTTP(S) Load Balancer、Cloudflare、Nginx、HAP
 |------|------|------|
 | L7 LB 一層做完 | 簡單、少一層元件 | 彈性較低、綁定協定 |
 | L4 LB + Ingress Controller | 彈性高、職責清楚 | 複雜度較高 |
+
+如果用雲端託管 L7 LB，就可能少管一層 Ingress Controller；如果要保留叢集內的彈性，就常見 L4 LB + Ingress Controller。
 
 WeaMind 用的是 L4 + Ingress（Hetzner LB + Traefik）。這是一種選擇，不是唯一正解。
 
