@@ -117,3 +117,28 @@ kubectl get pods -n weamind -w
 - 如果你還想看到 Pod 一個一個被換掉的過程，可以再搭配 `kubectl get pods -w`。
 
 一句話記法：`apply` 之後，預設就接 `rollout status` 看更新有沒有完成。
+
+## DNS-01 與 HTTP-01 的白話差異
+
+簡答：DNS-01 是證明「我能改這個網域的 DNS」；HTTP-01 是證明「我能控制這個網域對外的 HTTP 入口」。
+
+- DNS-01 驗證的是 DNS 控制權，重點是能不能在 `_acme-challenge` 底下新增指定的 TXT record。
+- HTTP-01 驗證的是公開 HTTP 路徑控制權，重點是 Let's Encrypt 能不能從 `/.well-known/acme-challenge/` 拿到指定內容。
+- HTTP-01 不是直接證明你能改 DNS，而是證明目前這個網域指到的 HTTP 服務由你控制。
+
+所以差別不是「哪個比較高級」，而是驗證點不同：DNS-01 走 DNS 控制面，HTTP-01 走公開流量路徑。單機 Nginx 架構下 HTTP-01 通常很直覺；但在 WeaMind 這種 LB + Ingress 架構裡，HTTP-01 就比較容易被 routing、redirect 或 Ingress 設定影響。
+
+一句話記法：DNS-01 證明我能改 DNS；HTTP-01 證明我能控制公開 HTTP 入口。
+
+## 為什麼 WeaMind 偏向 DNS-01
+
+簡答：因為 WeaMind 的 DNS 在 Cloudflare，不在 Hetzner；既然不走 Hetzner Managed Certificate，憑證就交給 K3s 內的 cert-manager + Traefik，而 DNS-01 剛好能避開正式流量路徑。
+
+- Cloudflare 繼續負責 DNS，所以 cert-manager 可以用 Cloudflare API Token 寫 `_acme-challenge` TXT record。
+- Hetzner LB 在這個設計裡退回 L4 TCP passthrough，不負責保管或簽發 TLS 憑證。
+- Traefik 在叢集內做 TLS termination，實際使用 cert-manager 準備好的 TLS Secret。
+- HTTP-01 理論上也能做，但它會讓憑證驗證依賴 LB、Ingress、redirect、solver path 這整條公開流量路徑。
+
+所以這裡不是 DNS-01 永遠比 HTTP-01 好，而是 WeaMind 已經選擇 Cloudflare DNS + Hetzner L4 LB + Traefik termination。DNS-01 可以讓憑證申請與續期主要留在 DNS 控制面，不必為了 ACME challenge 去調整正式入口設計。
+
+一句話記法：WeaMind 用 DNS-01，是為了讓憑證驗證走 Cloudflare DNS，不要綁住 LB + Ingress 的正式流量路徑。
