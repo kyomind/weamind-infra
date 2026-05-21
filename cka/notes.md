@@ -100,3 +100,94 @@ kubectl run app-pod --image=httpd:latest --port=80 --dry-run=client -o yaml > po
 - 多資源 YAML（`---` 分隔）：先 `--dry-run=server`，避免前面建了、後面才報錯，造成半成品要清理
 
 清理半成品：`kubectl delete -f pod.yaml`，不存在的資源會跳過（NotFound 不影響）。
+
+## 加 label 的兩種方式
+
+問題：命令式 vs 宣告式哪個好？
+
+- 命令式：`kubectl label pod app-pod app=app-lab`，Pod 已存在時最快
+  - 必須指定目標，全部加用 `--all`，即 `kubectl label pod --all app=app-lab`
+- 宣告式：改 YAML 的 `metadata.labels` 再 apply，多一步
+
+最佳做法：`kubectl run` 時直接帶 `--labels`，一次到位：
+
+```bash
+kubectl run app-pod --image=httpd:latest --labels="app=app-lab"
+```
+
+好處：後續 `kubectl expose` 的 selector 會自動對上。
+
+## --show-labels 是複數
+
+`kubectl get pod --show-labels`，不是 `--show-label`。
+
+## kubectl expose 建 Service
+
+```bash
+kubectl expose pod app-pod --name=app-svc --port=80 --target-port=80 --type=ClusterIP
+```
+
+- `pod app-pod`：對哪個 Pod 建 Service
+- `--name`：Service 名稱
+- `--port`：Service 對外埠
+- `--target-port`：轉進 Pod 的埠
+- `--type`：ClusterIP（預設）、NodePort、LoadBalancer
+
+selector 會自動從 Pod 的**所有** label 抓。例如 Pod 有 `run=app-pod` 和 `app=app-lab`，expose 產出的 selector 會包含兩者。
+
+坑：題目可能只要求特定 label 當 selector，但 expose 會塞全部。骨架生完第一件事檢查 selector，多的刪掉。
+
+## kubernetes Service 是預設的
+
+`kubectl get svc` 會看到 `kubernetes` 這個 Service，是叢集自帶的，指向 API Server。不用管它。
+
+## kubectl port-forward
+
+```bash
+kubectl port-forward pod/app-pod 8080:80
+```
+
+把本機 `8080` 轉到 Pod 的 `80`，用 `curl localhost:8080` 測試。
+
+注意：終端會被佔住，要另開 terminal 測。
+
+也可以 forward svc 或 deploy，省得查 Pod name：
+- `kubectl port-forward svc/app-svc 8080:80`
+- `kubectl port-forward deploy/app-deploy 8080:80`
+
+## port 對應順序：本機:目標
+
+`8080:80` = 本機 8080 → 目標 80
+
+Docker `-p`、SSH `-L`、kubectl port-forward 都是這個順序。
+
+## 核心操作流程
+
+不用硬記太多命令式操作，一套流程打天下：
+
+1. `kubectl run/create/expose --dry-run=client -o yaml > x.yaml` 生骨架
+2. `vi x.yaml` 改
+3. `kubectl apply -f x.yaml`
+
+`kubectl edit` 是捷徑，改單一欄位快，但不是必須。
+
+## kubectl edit 基本操作
+
+```bash
+kubectl edit <resource> <name>
+kubectl edit svc app-svc
+kubectl edit pod app-pod
+```
+
+開啟預設編輯器（通常是 vi），直接改 YAML，存檔退出即生效。
+
+vi 速查：`/keyword` 搜尋、`dd` 刪整行、`i` 進入編輯、`Esc` 退出編輯、`:wq` 存檔離開、`:q!` 不存檔離開。
+
+## kubectl edit vs vi 本地檔案
+
+- `kubectl edit svc app-svc`：改 cluster 裡的 live 物件，存檔即生效，不動本地檔案
+- `vi svc.yaml` + `kubectl apply -f`：改本地檔案，apply 後才生效
+
+坑：用 `kubectl edit` 改完後，本地 YAML 檔還是舊的。如果之後又 `kubectl apply -f svc.yaml`，會把改動蓋回去。
+
+選一條路走：要嘛全用 edit，要嘛全用本地檔案 + apply。
