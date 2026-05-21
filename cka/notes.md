@@ -146,6 +146,7 @@ selector 會自動從 Pod 的**所有** label 抓。例如 Pod 有 `run=app-pod`
 ```bash
 kubectl port-forward pod/app-pod 8080:80
 ```
+🐱：注意，不是 `port-forward pod app-pod`！
 
 把本機 `8080` 轉到 Pod 的 `80`，用 `curl localhost:8080` 測試。
 
@@ -191,3 +192,31 @@ vi 速查：`/keyword` 搜尋、`dd` 刪整行、`i` 進入編輯、`Esc` 退出
 坑：用 `kubectl edit` 改完後，本地 YAML 檔還是舊的。如果之後又 `kubectl apply -f svc.yaml`，會把改動蓋回去。
 
 選一條路走：要嘛全用 edit，要嘛全用本地檔案 + apply。
+
+## port-forward 只能用 type/name 語法
+
+大多數指令兩種寫法都行：
+```bash
+kubectl describe pod app-pod      # ✓ 兩個欄位
+kubectl describe pod/app-pod      # ✓ 一個欄位
+```
+
+但 `port-forward` 只接受 `type/name`：
+```bash
+kubectl port-forward pod/app-pod 8080:80   # ✓
+kubectl port-forward pod app-pod 8080:80   # ✗ pod 被當成名稱
+```
+
+坑：寫成兩個欄位會直接報錯或行為錯誤。
+
+## logs、exec、attach 也不能 type name 分開
+
+```bash
+kubectl logs app-pod           # ✓ 直接名稱
+kubectl logs pod/app-pod       # ✓ type/name
+kubectl logs pod app-pod       # ✗ app-pod 被當成 container name
+```
+
+規律：「對單一資源操作」的指令（logs、exec、attach、port-forward）第一個參數就是目標，不接受 `type name` 分開。
+
+對比 `get`、`describe`、`delete` 是 `<command> <type> <name>` 結構，兩種寫法都行。
