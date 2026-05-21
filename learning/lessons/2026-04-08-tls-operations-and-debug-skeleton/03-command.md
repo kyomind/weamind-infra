@@ -1,5 +1,5 @@
 # 2026-04-08 TLS Operations and Debug Skeleton Command
-
+複習：2026-05-21
 > 提示：今天的 command drill 重點是把 TLS 問題拆到正確資源層，不是把所有 `kubectl` 指令都背下來。
 
 ## 今日指令練習目標

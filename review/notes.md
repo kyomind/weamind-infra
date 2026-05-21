@@ -191,3 +191,131 @@ kubectl get pods -n weamind -w
 所以重點不是「HTTP-01 不怕 redirect」，而是 redirect 規則有保留 ACME challenge 例外。這也是單機版 HTTP-01 能長期續約成功的關鍵：續約時 CA 還是能透過 HTTP 讀到驗證檔案。
 
 一句話記法：HTTP 可以整體轉 HTTPS，但 `/.well-known/acme-challenge/` 要先被 Nginx 放行。
+
+## 為什麼單機版新服務常要先拿掉 HTTPS 區塊
+
+簡答：問題不在 HTTP-01，而在 Nginx 啟動順序。
+
+- Nginx 啟動時會讀設定檔，如果 443 那段寫了「用這個憑證檔」，但檔案還不存在，Nginx 直接起不來。
+- 所以第一次新服務要先註解掉 HTTPS 區塊，不是 ACME 規定，而是要讓 Nginx 先能活著，才有辦法跑 certbot 拿憑證。
+- 這是 bootstrap 的雞蛋問題：Nginx 要憑證才能啟動，certbot 要 Nginx 活著才能驗證。
+
+一句話記法：先拿掉 HTTPS 區塊是為了讓 Nginx 先活著，不是 HTTP-01 的要求。
+
+## TLS Secret 和一般 Secret 差在哪
+
+簡答：本質上都是 Kubernetes Secret，差別在用途和消費者。
+
+| | TLS Secret | 一般 Secret |
+|---|---|---|
+| type | `kubernetes.io/tls` | `Opaque` |
+| 內容 | `tls.crt` + `tls.key` | 任意 key-value |
+| 誰用 | Ingress / Traefik | App Pod |
+| 誰建 | cert-manager 自動產生 | 人手寫 manifest |
+
+一句話記法：都是 Secret，但 TLS Secret 給 Ingress 用，一般 Secret 給 App 用。
+
+## k8s-kyomind-tw-tls 是什麼、誰建的、誰用的
+
+簡答：這是一個 TLS Secret，裝的是 `k8s.kyomind.tw` 的憑證和私鑰。
+
+- 名字是你建 `Certificate` 資源時在 `spec.secretName` 先決定的，不是 Ingress 自動生的
+- cert-manager 看到 Certificate，去跑 DNS-01 驗證、申請憑證，然後把結果寫進這個 Secret 並持續維護
+- Ingress 宣告「這個 host 要用哪個 TLS Secret」
+- Traefik 真正讀這個 Secret，做 TLS termination
+- Hetzner LB 只做 TCP passthrough，完全不碰憑證
+
+常用指令：
+
+```bash
+# 看 Certificate 狀態與 secretName
+kubectl -n weamind get certificate
+kubectl -n weamind get certificate k8s-kyomind-tw -o yaml
+
+# 看 TLS Secret 是否存在
+kubectl -n weamind get secret k8s-kyomind-tw-tls
+
+# 看 Ingress 引用哪個 Secret
+kubectl -n weamind get ingress -o yaml | grep -A2 'tls:'
+```
+
+一句話記法：Certificate 決定 Secret 名字，cert-manager 建立並維護，Traefik 使用，LB 只 pass 流量。
+
+## cert-manager 四層資源鏈怎麼理解
+
+簡答：用「申請憑證像網購」來想。
+
+| 資源 | 白話角色 |
+|---|---|
+| Certificate | 需求單：我要什麼憑證、結果放哪個 Secret |
+| CertificateRequest | 這一次的正式申請 |
+| Order | ACME 那邊建立的簽發訂單 |
+| Challenge | 驗證你真的控制這個網域 |
+| TLS Secret | 最終產物，裝憑證和私鑰 |
+
+流程：Certificate 宣告需求 → cert-manager 建 CertificateRequest → ACME 建 Order → 跑 Challenge 驗證網域 → 成功後寫進 TLS Secret。
+
+一句話記法：Certificate 是需求單，中間三層是流程，TLS Secret 是最終拿到的貨。
+
+## HTTPS redirect middleware 做了什麼
+
+簡答：把 HTTP 請求用 301 導去 HTTPS，僅此而已。
+
+middleware 本身只有兩個設定：
+
+```yaml
+spec:
+  redirectScheme:
+    scheme: https    # 把 scheme 改成 https
+    permanent: true  # 用 301 永久 redirect
+```
+
+要讓它生效，還需要在 Ingress 用 annotation 掛載：
+
+```yaml
+traefik.ingress.kubernetes.io/router.middlewares: weamind-https-redirect@kubernetescrd
+```
+
+注意：`Ingress.spec.tls` 只管 HTTPS 要用哪個憑證，不會自動 redirect。redirect 要靠這個 middleware。
+
+一句話記法：tls 區塊管憑證，redirect 靠 middleware；兩件事分開設定。
+
+## Ingress 三個設定維度是正交的
+
+簡答：`rules`、`tls`、`middleware` 三者彼此獨立，可以任意組合。
+
+| 維度 | 負責什麼 |
+|---|---|
+| `rules.host/path` | 路由匹配規則，HTTP 和 HTTPS 都用這份 |
+| `spec.tls` | HTTPS 用哪個憑證 |
+| middleware annotation | 是否把 HTTP redirect 到 HTTPS |
+
+常見誤解：
+- 以為 rules 只給 HTTPS 用 → 錯，HTTP 也用同一份 rules
+- 以為設了 tls 就會自動 redirect → 錯，redirect 要另外掛 middleware
+
+一句話記法：rules、tls、middleware 是三條獨立的軸，各管各的，改一個不會連動另一個。
+
+## TLS Secret 和一般 Secret 的基本格式一樣嗎
+
+簡答：一樣，都是 Kubernetes Secret，差別只在 `type` 和 `data` 的 key。
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ...
+type: kubernetes.io/tls  # 或 Opaque
+data:
+  tls.crt: ...  # TLS 固定要有這兩個 key
+  tls.key: ...
+```
+
+| | TLS Secret | 一般 Secret |
+|---|---|---|
+| type | `kubernetes.io/tls` | `Opaque` |
+| data key | 固定 `tls.crt`、`tls.key` | 自訂 |
+
+底層都是同一種資源，用同樣的 `kubectl get secret` 查。
+
+一句話記法：結構一樣，差別在 type 和 key 的約定。
