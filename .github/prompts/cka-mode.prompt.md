@@ -42,6 +42,11 @@ description: "Enter CKA exam prep mode: answer CKA practice questions and append
 
 `cka/notes.md` 的每個 `##` 代表一條獨立筆記。
 
+**使用者貼內容時的模式：**
+
+- 預設是「整理」：直接萃取內容重點，不需要問題脈絡
+- 若使用者說「對話」：會附上原始問題，用問題來定調筆記角度
+
 **整理外部對話時：**
 
 - 掃過整段對話，找出值得記的點
