@@ -506,3 +506,66 @@ data:
 | `kubernetes.io/basic-auth` | 帳密認證，`username` + `password` |
 
 CKA 最常考 `Opaque` 和 `kubernetes.io/tls`。
+
+## stringData vs data
+
+題目給明文用 `stringData`，K8s 自動幫你 base64。或直接 imperative 最快：
+
+```bash
+kubectl create secret generic db-secret \
+  --from-literal=DB_Host=mysql-host \
+  --from-literal=DB_User=root \
+  --from-literal=DB_Password=dbpassword
+```
+
+## create secret 後面要接類型
+
+```bash
+kubectl create secret generic db-secret ...  # ✓
+kubectl create secret db-secret ...          # ✗ unknown flag
+```
+
+99% 的題目都是 `generic`。
+
+## env 優先於 envFrom
+
+`env` 會覆蓋 `envFrom` 的同名變數。用 `envFrom` 整包灌時，記得刪掉原本硬編碼的 `env`。
+
+## envFrom 是 array
+
+```yaml
+# ✗ 少了 -
+envFrom:
+  secretRef:
+    name: db-secret
+
+# ✓ 正確
+envFrom:
+- secretRef:
+    name: db-secret
+```
+
+## secretRef 是 camelCase
+
+小寫 `s` 開頭。寫成 `SecretRef` 會報錯，YAML key 是 case-sensitive。
+
+## envFrom vs valueFrom 選擇
+
+| 做法 | 寫法 | 適合場景 |
+|------|------|----------|
+| `envFrom.secretRef` | 一行整包灌 | 全部從 Secret 來，最快 |
+| `valueFrom.secretKeyRef` | 逐個指定 | 題目已有 env 列表要你改來源 |
+
+題目沒指定就挑最快的。
+
+## Deployment 的 template 可以改
+
+`kubectl edit deployment` 改 `spec.template`，存檔即生效，自動觸發 rolling update。
+
+這是改 Deployment 資源本身，不是直接改 Pod。Deployment controller 會建新 Pod、砍舊 Pod。
+
+對比：直接 `kubectl edit pod` 改 immutable 欄位會被擋。
+
+## Job 的 spec.template 是 immutable
+
+Deployment 的 template 隨時可改，Job 的不行。常搞混。
