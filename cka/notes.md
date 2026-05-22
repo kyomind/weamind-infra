@@ -220,3 +220,71 @@ kubectl logs pod app-pod       # ✗ app-pod 被當成 container name
 規律：「對單一資源操作」的指令（logs、exec、attach、port-forward）第一個參數就是目標，不接受 `type name` 分開。
 
 對比 `get`、`describe`、`delete` 是 `<command> <type> <name>` 結構，兩種寫法都行。
+
+## Deployment YAML 最小結構
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+```
+
+必填：`apiVersion: apps/v1`、`kind`、`metadata.name`、`spec.selector.matchLabels`、`spec.template`（整個 Pod spec）。
+
+注意：`selector.matchLabels` 必須和 `template.metadata.labels` 對上，否則 apply 會報錯。`replicas` 預設 1 可省略，`ports` 可省略。
+
+## 判斷要不要產 YAML
+
+拿到題目先看：題目要求的欄位，`kubectl create/run` 的參數能不能全覆蓋？
+
+- 能全覆蓋 → 直接 `create`/`run`，一行搞定
+- 有參數蓋不到的欄位 → `--dry-run=client -o yaml` 產骨架再改
+
+例：`Create a deployment named nginx-app-deployment using nginx image, scale to 3`
+
+```bash
+kubectl create deployment nginx-app-deployment --image=nginx --replicas=3
+```
+
+三個欄位都有參數，直接執行，不需要繞 YAML。
+
+## kubectl create deployment 支援的參數
+
+```bash
+kubectl create deployment <name> --image=<image> --replicas=<n> --port=<port>
+```
+
+- `--image`：container image（必填）
+- `--replicas`：副本數，預設 1
+- `--port`：containerPort
+
+這三個最常用，能覆蓋大部分簡單 Deployment 題目。
+
+## create/run 名稱是位置參數，不是 --name
+
+```bash
+kubectl create deployment nginx-app --image=nginx   # ✓
+kubectl create deployment --name nginx-app --image=nginx   # ✗ unknown flag: --name
+```
+
+`kubectl run`、`kubectl create deployment`、`kubectl create configmap` 等，名稱都是緊跟在資源類型後面的位置參數。
+
+對比 `kubectl expose` 用 `--name` 指定 Service 名稱，因為它已經有位置參數指定來源（如 `expose pod app-pod`）。
