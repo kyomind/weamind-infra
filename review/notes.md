@@ -319,3 +319,67 @@ data:
 底層都是同一種資源，用同樣的 `kubectl get secret` 查。
 
 一句話記法：結構一樣，差別在 type 和 key 的約定。
+
+## Kubernetes 為什麼可以有 Certificate 這種物件
+
+簡答：Kubernetes 本身就支援讓別人追加新物件。
+
+- 內建的 `Pod`、`Service`、`Deployment` 是 Kubernetes 自己定義的
+- `Certificate` 是 cert-manager 透過 CRD 機制掛進來的新物件
+- 一旦 CRD 裝好，Kubernetes 就認得它，`kubectl get certificate` 就能查
+
+重點不是 Kubernetes 原生有沒有 Certificate，而是 Kubernetes 的 API 本來就可以被擴充。cert-manager 裝進叢集後，就把憑證相關的物件型別一起帶進來了。
+
+一句話記法：Kubernetes 是可擴充平台，cert-manager 用 CRD 把 `Certificate` 掛進去。
+
+## Hetzner LB health check 和正式流量是什麼關係
+
+簡答：兩件獨立的事。
+
+- 正式流量有兩條：`80` 給 HTTP redirect，`443` 給真正的 HTTPS 請求
+- health check 是 LB 自己發的探測，用來確認後端還活著
+- 目前 WeaMind 的 health check 設定成走 `443 + TLS`，探測 `/health`
+
+關鍵觀念：LB 的 listener 怎麼設，和 health check 怎麼探測，是分開設定的。它們可以走同一條入口，但不是綁死的。
+
+一句話記法：正式流量是給使用者的；health check 是 LB 自己去敲門確認後端還活著。
+
+## 正式流量 443 和 health check 443 差在哪
+
+簡答：都走 `443`，但發起者和目的不同。
+
+| | 正式 443 流量 | health check 443 |
+|---|---|---|
+| 誰發的 | 外部使用者、LINE webhook | LB 自己 |
+| 目的 | 處理真實業務請求 | 確認後端還活著 |
+| 請求內容 | 各種 path、method、payload | 固定打 `/health`，只看狀態碼 |
+
+後半段共用同一套系統：Traefik → Ingress → Service → Pod。差別只在前面是誰發的、為了什麼。
+
+一句話記法：正式流量是使用者的真實請求；health check 是 LB 用固定條件敲門確認通不通。
+
+## 為什麼 Certificate 放在 weamind namespace 而不是 cert-manager namespace
+
+簡答：因為 Secret 是 namespaced 資源，Ingress 只能引用同 namespace 的 Secret。
+
+- cert-manager controller 跑在 `cert-manager` namespace
+- 但 `Certificate` 產出的 TLS Secret 要給 `weamind` 的 Ingress 用
+- Ingress 只能讀同 namespace 的 Secret，所以 Certificate 和 Secret 都要放 `weamind`
+
+核心觀念：controller 跑在哪裡，和它管理的資源放在哪裡，是兩件事。
+
+一句話記法：Certificate 跟著 Ingress 放，因為產出的 Secret 要給同 namespace 的 Ingress 用。
+
+## Certificate、CertificateRequest、Order、Challenge 各自存什麼
+
+簡答：分成三類來記。
+
+| 資源 | 角色 |
+|---|---|
+| `Secret` | 最終產物，存實際的 `tls.crt` 和 `tls.key` |
+| `Certificate` | 需求單 + 狀態回報：我要什麼憑證、現在 ready 沒 |
+| `CertificateRequest` / `Order` / `Challenge` | 流程中間物件，驅動申請、驗證、簽發各階段 |
+
+它們不只是被動記錄，controller 真的靠這些物件來推進流程、回報狀態。
+
+一句話記法：Secret 是最終產物；Certificate 是需求單；中間三個是流程狀態物件。
