@@ -413,3 +413,19 @@ WeaMind 曾經踩過的坑：
 如果 Flannel 這層出問題，最先壞的是 Pod / node 之間的叢集內網路，不是單純某條 Ingress path。
 
 一句話記法：Flannel 管 Pod 跨 node 連線；Ingress 管外部流量導入。兩層不同。
+
+## kubectl get events 會出現在 CKA 嗎
+
+簡答：會，排查問題時很實用。
+
+常用變化：
+
+```bash
+kubectl get events -n <namespace>
+kubectl get events --sort-by='.lastTimestamp'
+kubectl get events --field-selector reason=Failed
+```
+
+不過 CKA 更常見的排查起點是 `kubectl describe pod`，它的 Events 區塊已經包含該 Pod 相關的事件。`get events` 比較適合想看整個 namespace 發生了什麼。
+
+一句話記法：`describe pod` 看單一 Pod 事件，`get events` 看整個 namespace 發生了什麼。

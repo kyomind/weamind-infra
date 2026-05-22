@@ -1,5 +1,5 @@
 # 2026-04-13 Darkmind Get Describe Events Command
-
+複習：2026-05-22
 ## 今日指令練習目標
 
 1. 建立 Day 1 的固定套路：先看 `get`、再看 `describe`、最後用 `events` 補時間序列。
