@@ -425,18 +425,18 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: dotfile-secret
-data:
-  .secret-file: dmFsdWUtMg0KDQo=
+data:  # data 的值必須是 base64 編碼
+  .secret-file: dmFsdWUtMg0KDQo=  # key 會變成檔名，value 解碼後變成檔案內容
 ---
 apiVersion: v1
 kind: Pod
 metadata:
   name: secret-dotfiles-pod
 spec:
-  volumes:
-    - name: secret-volume
+  volumes:  # 先在 Pod 層級定義 volume
+    - name: secret-volume  # volume 名稱，volumeMounts 要對應
       secret:
-        secretName: dotfile-secret
+        secretName: dotfile-secret  # 指向上面的 Secret 名稱
   containers:
     - name: dotfile-test-container
       image: registry.k8s.io/busybox
@@ -444,10 +444,10 @@ spec:
         - ls
         - "-l"
         - "/etc/secret-volume"
-      volumeMounts:
-        - name: secret-volume
+      volumeMounts:  # container 層級掛載 volume
+        - name: secret-volume  # 對應上面 volumes[].name
           readOnly: true
-          mountPath: "/etc/secret-volume"
+          mountPath: "/etc/secret-volume"  # container 內的路徑
 ```
 
 - Secret 的 `data` 值是 base64 編碼
@@ -484,3 +484,25 @@ metadata:
 `---` 是 YAML 標準的文件分隔符，一個檔案放多個資源就這樣隔開。
 
 `kubectl apply -f` 會依序建立全部資源。
+
+## Secret type
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+type: Opaque  # 省略時預設就是 Opaque
+data:
+  username: YWRtaW4=
+```
+
+| type | 用途 |
+|------|------|
+| `Opaque` | 通用，任意 key-value（預設）|
+| `kubernetes.io/tls` | TLS 憑證，必須有 `tls.crt` 和 `tls.key` |
+| `kubernetes.io/dockerconfigjson` | Docker registry 認證 |
+| `kubernetes.io/service-account-token` | ServiceAccount token |
+| `kubernetes.io/basic-auth` | 帳密認證，`username` + `password` |
+
+CKA 最常考 `Opaque` 和 `kubernetes.io/tls`。
