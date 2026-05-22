@@ -288,3 +288,74 @@ kubectl create deployment --name nginx-app --image=nginx   # ✗ unknown flag: -
 `kubectl run`、`kubectl create deployment`、`kubectl create configmap` 等，名稱都是緊跟在資源類型後面的位置參數。
 
 對比 `kubectl expose` 用 `--name` 指定 Service 名稱，因為它已經有位置參數指定來源（如 `expose pod app-pod`）。
+
+## kubectl create configmap --from-literal
+
+```bash
+kubectl create configmap webapp-config --from-literal=APPLICATION=web-app
+```
+
+ConfigMap 也能一行 create，不用寫 YAML。多個 key-value 就重複 `--from-literal`。
+
+## kubectl set env 注入 ConfigMap
+
+```bash
+kubectl set env deployment/webapp-deployment --from=configmap/webapp-config
+```
+
+`--from=configmap/...` 的 `=` 同樣可用空格代替。
+
+一行把 ConfigMap 所有 key-value 注入現有 Deployment 的環境變數，連 `edit` 都不用開。
+
+## YAML 冒號後一定要空格
+
+```yaml
+# ❌ 不合法
+APPLICATION:web-app
+
+# ✅ 正確
+APPLICATION: web-app
+```
+
+沒空格會被當成一整個字串，不是 key-value。
+
+## --from-literal 用 =，YAML 用 :
+
+`--from-literal=APPLICATION=web-app` 裡用 `=`，但生出來的 YAML 是 `APPLICATION: web-app`。
+
+注意這裡有兩個 `=`：第一個是 flag 語法（可用空格代替），第二個是 key-value 分隔（不能省）。
+
+```bash
+--from-literal=APPLICATION=web-app   # ✓
+--from-literal APPLICATION=web-app   # ✓
+```
+
+坑：手寫 YAML 時容易把 `=` 帶進去，直接報錯。能讓 kubectl 生的就別手打。
+
+## value vs valueFrom 互斥
+
+```yaml
+# 硬寫值
+env:
+- name: APPLICATION
+  value: web-app
+
+# 從 ConfigMap 讀
+env:
+- name: APPLICATION
+  valueFrom:
+    configMapKeyRef:
+      name: webapp-config
+      key: APPLICATION
+```
+
+題目說用 ConfigMap 就要換成 `valueFrom`，不能留著 `value`，兩者互斥。
+
+## valueFrom.configMapKeyRef 結構
+
+三層巢狀：`valueFrom` → `configMapKeyRef` → `name` + `key`。
+
+- `name`：ConfigMap 名稱
+- `key`：ConfigMap 裡的 key
+
+Secret 同理，換成 `secretKeyRef`。
