@@ -359,3 +359,128 @@ env:
 - `key`：ConfigMap 裡的 key
 
 Secret 同理，換成 `secretKeyRef`。
+
+## Pod resource requests 與 limits
+
+```yaml
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "250m"
+  limits:
+    memory: "128Mi"
+    cpu: "500m"
+```
+
+- `requests`：保證給 container 的資源，scheduler 用來決定放哪個 node
+- `limits`：container 能用的上限，超過 memory 會被 OOMKilled，超過 CPU 會被 throttle
+
+單位：
+- memory：`Mi`（mebibytes，≈ MB）、`Gi`（≈ GB），K8s 用二進位制
+- cpu：`m`（millicores），`250m` = 0.25 核，`1000m` = 1 核
+
+位置在 `spec.containers[].resources`，每個 container 各自設定。
+
+## Pod immutable 欄位
+
+Pod 一旦建立，大部分欄位不能改。可變欄位白名單：
+
+- `spec.containers[*].image`
+- `spec.initContainers[*].image`
+- `spec.activeDeadlineSeconds`
+- `spec.tolerations`（只能加，不能刪）
+- `spec.terminationGracePeriodSeconds`
+
+其餘都是 immutable，包括 resource limits/requests。`kubectl edit` 會被 API server 擋。
+
+## 改 Pod immutable 欄位：先 delete 再 apply
+
+```bash
+kubectl get pod my-pod -o yaml > my-pod.yaml
+vim my-pod.yaml   # 改目標欄位
+kubectl delete pod my-pod
+kubectl apply -f my-pod.yaml
+```
+
+順序不能反。Pod 還活著時 `apply` 等於「更新」，一樣會被擋。
+
+## kubectl replace --force（參考）
+
+```bash
+kubectl get pod my-pod -o yaml | sed 's/100Mi/50Mi/' | kubectl replace --force -f -
+```
+
+一行搞定刪除重建。熟 sed 的話最快，不熟就走四步流。
+
+## vim 搜尋跳轉
+
+在 vim 裡按 `/keyword` 然後 Enter，直接跳到該關鍵字。
+
+例：`/100Mi` 可以快速定位到要改的那行。大檔案必備。
+
+## Secret 掛載為 Volume
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dotfile-secret
+data:
+  .secret-file: dmFsdWUtMg0KDQo=
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secret-dotfiles-pod
+spec:
+  volumes:
+    - name: secret-volume
+      secret:
+        secretName: dotfile-secret
+  containers:
+    - name: dotfile-test-container
+      image: registry.k8s.io/busybox
+      command:
+        - ls
+        - "-l"
+        - "/etc/secret-volume"
+      volumeMounts:
+        - name: secret-volume
+          readOnly: true
+          mountPath: "/etc/secret-volume"
+```
+
+- Secret 的 `data` 值是 base64 編碼
+- `spec.volumes[]`：定義 volume，用 `secret.secretName` 指定來源
+- `volumeMounts`：掛進 container，`mountPath` 決定路徑
+- 結果：Secret 每個 key 變成一個檔案，value 是內容（自動 base64 decode）
+
+ConfigMap 同理，把 `secret` 換成 `configMap`，`secretName` 換成 `name`。
+
+## Secret vs ConfigMap 注入方式比較
+
+| 方式 | 用途 | 結構 |
+|------|------|------|
+| `valueFrom.secretKeyRef` | 單一 key → env 變數 | `env[].valueFrom` |
+| `envFrom.secretRef` | 全部 key → env 變數 | `envFrom[]` |
+| `volumes[].secret` | 掛載為檔案 | `volumes[]` + `volumeMounts[]` |
+
+ConfigMap 同理，把 `secret` 相關字眼換成 `configMap`。
+
+## YAML 多資源分隔符
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+```
+
+`---` 是 YAML 標準的文件分隔符，一個檔案放多個資源就這樣隔開。
+
+`kubectl apply -f` 會依序建立全部資源。
