@@ -383,3 +383,33 @@ data:
 它們不只是被動記錄，controller 真的靠這些物件來推進流程、回報狀態。
 
 一句話記法：Secret 是最終產物；Certificate 是需求單；中間三個是流程狀態物件。
+
+## CoreDNS 在 Kubernetes 裡的角色
+
+簡答：讓 Pod 能用名字找到 Service。
+
+- 當 Pod 想連 `weamind-line-bot`，不用硬寫 IP，DNS 會解析成 Service 的 ClusterIP
+- CoreDNS 跑在 `kube-system`，是叢集內建的 DNS server
+- 每個 Pod 的 `/etc/resolv.conf` 預設就指向它
+
+為什麼在 WeaMind 裡不顯眼：它是基礎設施，K3s 裝好就有，不用額外設定。只要 Service name 連線能通，CoreDNS 就在背後默默運作。
+
+一句話記法：CoreDNS 讓 Pod 能用 Service name 找到對方，是叢集內建的 DNS。
+
+## Flannel 在 Kubernetes 裡的角色
+
+簡答：讓 Pod 跨 node 能互相連線。
+
+- Flannel 負責 overlay network，建立 Pod-to-Pod 的虛擬網路
+- 它站在比 Ingress 更底層：Ingress 管「外部流量怎麼導到 Service」，Flannel 管「Pod 之間怎麼連得到」
+
+WeaMind 曾經踩過的坑：
+
+| 參數 | 修的是什麼 |
+|---|---|
+| `--node-ip` | node 對叢集宣告的位址（用私網 IP，不要用公網） |
+| `--flannel-iface` | overlay 封包要走哪張網卡（指定走私網介面） |
+
+如果 Flannel 這層出問題，最先壞的是 Pod / node 之間的叢集內網路，不是單純某條 Ingress path。
+
+一句話記法：Flannel 管 Pod 跨 node 連線；Ingress 管外部流量導入。兩層不同。

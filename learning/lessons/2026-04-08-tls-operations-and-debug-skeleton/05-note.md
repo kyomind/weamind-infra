@@ -1,5 +1,5 @@
 # 2026-04-08 TLS Operations and Debug Skeleton Note
-
+複習：2026-05-22
 ## 學習注意事項
 
 - 今天主題聚焦在 WeaMind 目前的 TLS 接法、cert-manager 資源鏈與最小排查順序。
