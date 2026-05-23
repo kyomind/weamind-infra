@@ -429,3 +429,137 @@ kubectl get events --field-selector reason=Failed
 不過 CKA 更常見的排查起點是 `kubectl describe pod`，它的 Events 區塊已經包含該 Pod 相關的事件。`get events` 比較適合想看整個 namespace 發生了什麼。
 
 一句話記法：`describe pod` 看單一 Pod 事件，`get events` 看整個 namespace 發生了什麼。
+
+## Namespace 的 YAML 長什麼樣
+
+簡答：很短，只需要 `apiVersion`、`kind`、`metadata.name`，沒有 `spec`。
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: darkmind
+```
+
+- Namespace 是最單純的資源之一，核心就是宣告一個名字
+- 頂多再加 `labels` 或 `annotations`，但很多時候連這些都不寫
+- 和 `kubectl create namespace darkmind` 效果一樣，差別是 YAML 可以放進 Git、可以 `apply -f`
+
+一句話記法：Namespace YAML 沒有 spec，只要 metadata.name 就夠了。
+
+## kubectl get all 是什麼
+
+簡答：一次列出 namespace 裡的常見資源，包括 Pod、Service、Deployment、ReplicaSet、Job 等。
+
+- 名字有點誤導，它不是真的「all」
+- ConfigMap、Secret、Ingress、PVC 這些不會出現
+- 平常用來快速確認 Pod 和 Deployment 狀態很方便
+
+想看真的全部：
+
+```bash
+kubectl api-resources --verbs=list --namespaced -o name | xargs -n1 kubectl get -n <namespace>
+```
+
+一句話記法：`get all` 列常見資源，不是真的全部；Secret、ConfigMap、Ingress 不在裡面。
+
+## 用 label 查詢 Pod 的做法
+
+簡答：用 `-l key=value` 指定 label selector，比用 Pod name 更穩。
+
+```bash
+kubectl get pods -n darkmind -l app=darkmind-image-pull-error
+kubectl describe pod -n darkmind -l app=darkmind-image-pull-error
+kubectl logs -n darkmind -l app=darkmind-image-pull-error
+```
+
+- Pod 重建後名字會變，但 label 通常不變
+- 用 label 查，不管 Pod 重建幾次都能抓到同一組
+
+常見 label 組合：
+
+```bash
+-l app=weamind              # 單一條件
+-l app=weamind,env=prod     # 多條件（AND）
+```
+
+一句話記法：Pod name 會變，label 不會；查 Pod 優先用 `-l`。
+
+## image pull 問題的標準訊號鏈
+
+簡答：這幾個欄位組合起來，可以快速判斷問題卡在拉 image，不是 app 崩潰。
+
+| 欄位 | 值 | 說明 |
+|---|---|---|
+| Status | Pending | Pod 還沒進入 Running |
+| container State | Waiting | container 在等，不是跑完掛掉 |
+| Reason | ImagePullBackOff | 拉 image 失敗，正在退避重試 |
+| Ready | False | 還沒 ready |
+| Restart Count | 0 | 沒重啟過，代表 container 根本沒跑起來 |
+
+關鍵判斷：Restart Count = 0 + ImagePullBackOff → 卡在拉 image。
+
+對照：如果是 app 啟動後崩潰，會看到 Restart Count > 0，Reason 會是 CrashLoopBackOff。
+
+一句話記法：Restart Count = 0 + ImagePullBackOff = 拉不到 image；Restart Count > 0 + CrashLoopBackOff = app 崩潰。
+
+## describe pod 和 get events 的差別
+
+簡答：`describe pod` 看單一 Pod 發生了什麼；`get events` 看整個 namespace 的事件時間線。
+
+```bash
+kubectl get events -n darkmind --sort-by=.lastTimestamp
+```
+
+- 會列出所有資源的事件，按時間排序
+- 可以一眼看出事件的先後順序和整體脈絡
+- 不只列失敗，成功的事件也會列，所以它是「事件流」，不是「錯誤列表」
+
+使用時機：想把問題的時間序列攤開來看，而不是只盯著一個 Pod。
+
+一句話記法：`describe pod` 看單一 Pod；`get events --sort-by=.lastTimestamp` 看整個 namespace 的時間線。
+
+## Kubernetes Event 是什麼
+
+簡答：Event 是 Kubernetes API 裡的一種 resource，用來記錄事件，生命週期很短。
+
+- 不只記錯誤，也記正常流程：`Scheduled`、`Pulled`、`Created`、`Started` 都是 Event
+- debug 時特別注意 warning 或 failure 類事件，但它本身不是「錯誤清單」
+
+一句話記法：Event 是 Kubernetes 的事件流，不是錯誤清單；故障排查時 warning event 最有訊號價值。
+
+## app.kubernetes.io 系列 labels 在 production 常見嗎
+
+簡答：常見，尤其是用 Helm 部署的應用幾乎都會自動帶這些 labels。
+
+Helm 預設會加：
+
+- `app.kubernetes.io/name`
+- `app.kubernetes.io/instance`
+- `app.kubernetes.io/version`
+- `app.kubernetes.io/component`
+- `app.kubernetes.io/managed-by: Helm`
+
+好處是跨團隊、跨工具時大家看得懂，Prometheus、Grafana、ArgoCD 這些工具也常用這些 label 來分類。
+
+但不是強制的，很多團隊只用簡單的 `app: weamind` 也能正常運作。
+
+一句話記法：Helm 部署會自動帶 `app.kubernetes.io/*` labels；手寫 manifest 可以不用，但大專案常見。
+
+## 多 replica 時，label 和 Pod 名稱怎麼取捨
+
+簡答：兩段式——先用 label 找集合，再用 Pod 名稱看單點。
+
+```bash
+# 1. 先用 label 找出這組 Pod 有哪些
+kubectl get pods -l app=xxx
+
+# 2. 從結果挑一個，用 Pod 名稱看細節
+kubectl describe pod xxx-abc12
+```
+
+- label 適合鎖定範圍、找集合
+- Pod 名稱適合看單點細節
+- 如果只有一個 replica，用 label 就夠；多個 replica 時要兩段式
+
+一句話記法：label 找集合，Pod 名稱看單點；多 replica 時兩段式。
