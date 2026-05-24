@@ -569,3 +569,85 @@ envFrom:
 ## Job 的 spec.template 是 immutable
 
 Deployment 的 template 隨時可改，Job 的不行。常搞混。
+
+## kubectl scale 改 replicas 最快
+
+```bash
+kubectl scale deployment redis-deploy -n redis-ns --replicas=3
+```
+
+scale 類題目一行收工，不用開 `kubectl edit`。
+
+## 非 default namespace 的 Tab 補全
+
+要先把 `-n <ns>` 寫在前面，才能 Tab 補全後面的資源名稱。
+
+```bash
+kubectl scale -n redis-ns deployment <Tab>  # 這樣才補得到
+```
+
+## 考試環境複製貼上是標準流程
+
+CKA 是瀏覽器終端機，滑鼠選取題目名稱 → 複製 → 貼進終端機，不用硬背硬打長名稱。
+
+## 資源名稱優先 Tab，補不出來當警報
+
+Tab 補全多一層即時驗證：補不出來 = 資源不存在、namespace 錯、類型錯，還沒執行就知道有問題。
+
+複製貼上沒這層保護，錯了要等指令跑完才報錯。
+
+考試環境是瀏覽器終端機，名稱太長或 Tab 補不出來時再切滑鼠複製。
+
+## kubectl create deployment 的 label 限制
+
+自動產生的 label 是 `app=<deployment-name>`，題目要不同 label 必須改 YAML。
+
+## 題目說 label 沒指定位置，三個全改
+
+`metadata.labels`、`selector.matchLabels`、`template.metadata.labels` 全改最保險。閱卷用 `kubectl get deployment --show-labels` 看的是頂層 label。
+
+## kubectl explain --recursive 查結構
+
+```bash
+kubectl explain deployment.spec.strategy --recursive
+```
+
+考試即時文件。`--recursive` 一次展開所有子層級，只顯示欄位名和型別，不帶說明。
+
+解讀輸出：
+- 縮排 = YAML 層級，照著寫就對
+- `FIELDS:` = 該物件底下有哪些欄位
+- `<IntOrString>` = 可填數字或百分比字串
+- `enum: A, B` = 這個欄位只能填 A 或 B
+
+用來看結構，不拿來複製貼上——手打比修格式快。
+
+## maxSurge/maxUnavailable 是 camelCase
+
+大小寫錯會靜默忽略，不報錯。`MaxUnavailable` ✗，`maxUnavailable` ✓。
+
+## Vim undo/redo
+
+`u` = undo，`Ctrl+r` = redo。
+
+## Vim 執行外部指令
+
+`:!kubectl explain deployment.spec.strategy --recursive`
+
+Vim 內直接執行 shell 命令看結果，按 Enter 回到編輯，不用切 tab。
+
+## kubectl set image 改 image
+
+```bash
+kubectl set image deployment/cache-deployment redis=redis:7.2.1
+```
+
+格式是 `容器名=新image`。用在有 Pod template 的控制器（Deployment、DaemonSet、StatefulSet），裸 Pod 不適用。
+
+## kubectl rollout history 看版本歷史
+
+```bash
+kubectl rollout history deployment/cache-deployment
+```
+
+輸出幾行 REVISION，total revision count 就是幾。
