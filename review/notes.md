@@ -563,3 +563,206 @@ kubectl describe pod xxx-abc12
 - 如果只有一個 replica，用 label 就夠；多個 replica 時要兩段式
 
 一句話記法：label 找集合，Pod 名稱看單點；多 replica 時兩段式。
+
+## CrashLoopBackOff 時為什麼重心轉到 kubectl logs
+
+簡答：因為 CrashLoopBackOff 代表 container 有啟動過但很快掛掉，問題出在 app 執行期，這時要看 app 自己印了什麼。
+
+- `describe`、`events` 是 K8s 視角：K8s 認為這個 Pod 怎麼了
+- `logs` 是 app 視角：container 裡的程式自己輸出了什麼
+- 不是取代，是接力：Day 1 工具先縮小範圍、確認問題類型，再換 `logs` 深挖 app 層證據
+- 只有 `logs` 還不夠：少了 `--previous`（上一輪最後輸出）和 K8s 視角的 restart count、state、reason
+
+一句話記法：K8s 視角先縮小範圍，app 視角再深挖；兩層互補，不是互相取代。
+
+## rollout status、history、undo 各做什麼
+
+簡答：`status` 看這次發布進度、`history` 看版本軌跡、`undo` 做回退。
+
+| 指令 | 用途 |
+|---|---|
+| `rollout status` | 這次發布現在進度如何、有沒有卡住 |
+| `rollout history` | 這個 Deployment 之前推過哪些版本 |
+| `rollout undo` | 回退到上一個版本 |
+
+和單一 Pod 排查的差別：
+
+- Pod 排查問「這顆 Pod 為什麼不健康」
+- rollout 指令問「這次版本發布成功了嗎、要不要退版」
+
+`status` 和 `history` 是觀察；`undo` 是恢復動作，會直接改變 Deployment 目標版本。
+
+一句話記法：`status` 看進度、`history` 看軌跡、`undo` 做回退；前兩個觀察，最後一個是動作。
+
+## kubectl logs -l 選到多個 Pod 怎麼辦
+
+簡答：預設會報錯或只顯示一個，要嘛加 `--prefix` 一起看，要嘛先列再挑一個。
+
+```bash
+# 方法 1：加 --prefix，一次看多個但標出來源
+kubectl logs -n darkmind -l app=xxx --prefix=true
+
+# 方法 2：先列出來，再挑一個看
+kubectl get pods -n darkmind -l app=xxx
+kubectl logs -n darkmind <挑一個 pod name>
+```
+
+實務上：單 replica 用 `-l` 很方便；多 replica 通常先列再挑。
+
+一句話記法：`-l` 選到多個時，加 `--prefix` 一起看，或先列再挑一個。
+
+## rollout undo 後 revision 為什麼往前加不是倒退
+
+簡答：`undo` 回的是內容，不是 revision 編號。它是「用舊內容做一次新 rollout」。
+
+| revision | 內容 | 發生什麼 |
+|---|---|---|
+| 1 | good version | 第一次 apply |
+| 2 | bad version | 第二次 apply |
+| 3 | 和 revision 1 一樣 | undo 後產生 |
+
+壞版本 rollout 卡住時的修復鏈：
+
+```bash
+# 1. 確認卡住
+kubectl rollout status deploy/xxx --timeout=30s
+
+# 2. 看 revision 軌跡
+kubectl rollout history deploy/xxx
+
+# 3. 回退
+kubectl rollout undo deploy/xxx
+
+# 4. 確認恢復
+kubectl rollout status deploy/xxx
+kubectl rollout history deploy/xxx
+```
+
+undo 後 revision 從 `2` 變 `3`，不是回到 `1`。因為 undo 是「用舊內容做一次新 rollout」，不是時光倒流。
+
+一句話記法：`undo` 建立新 rollout 回到舊內容，revision 往前加，不會倒退。
+
+## rollout undo 後壞 Pod 的 logs 還看不看得到
+
+簡答：可能暫時還在，但不保證。`undo` 不是 log 保存機制。
+
+- `undo` 只是改 Deployment 目標版本，控制器之後才會慢慢縮掉舊 ReplicaSet
+- 壞 Pod 可能暫時還存在，但不保證留多久
+- 想保留證據，要在 undo 前自己先存
+
+實務取捨：production 正在受影響時，通常是先拿最小證據（`logs`、`describe`），再快速 `undo`，之後再深挖。
+
+補充：如果有外部 log 系統（Loki、Datadog），壞 Pod logs 通常還查得到，因為已經被收走了。但只靠 `kubectl logs`，要在 Pod 被刪前先看。
+
+一句話記法：`undo` 是恢復動作，不是 log 保存機制；想留證據要自己先存。
+
+## 第一次 apply 建立 Deployment 算不算 rollout
+
+簡答：算。
+
+判斷標準不是「有沒有舊版」，而是：只要 Deployment controller 根據 Pod template 去建立或推進 ReplicaSet 與 Pods，就算 rollout。
+
+第一次 apply 時，controller 確實根據 template 推了第一個 ReplicaSet 和第一批 Pods 出來，所以 `kubectl rollout status` 查得到。
+
+| 情境 | 說明 |
+|---|---|
+| 第一次 apply | 第一次發布，沒有舊版對照 |
+| 之後改 template 再 apply | 後續發布，有舊版對照 |
+
+兩者都是 rollout。
+
+一句話記法：有 Pod template 被推成 ReplicaSet 和 Pods，就是 rollout；跟有沒有舊版無關。
+
+## 為什麼 namespace 只宣告一次，labels 卻要寫兩次
+
+簡答：namespace 由 Deployment 決定，子資源自動繼承；labels 是各物件各自攜帶，所以要分開寫。
+
+Pod template 不是獨立資源，它只是 Deployment spec 裡的「未來要建立的 Pod 規格」。當 Deployment 在 `darkmind` namespace，它建出來的 ReplicaSet 和 Pods 自然就在 `darkmind`。
+
+| 位置 | 貼在誰身上 |
+|---|---|
+| `metadata.labels` | Deployment 本身 |
+| `template.metadata.labels` | 未來建出來的 Pod |
+
+namespace 是範圍，由上層決定；labels 是屬性，各物件各自攜帶。
+
+一句話記法：namespace 繼承，labels 各寫各的。
+
+## restartPolicy 在 Deployment 裡扮演什麼角色
+
+簡答：Deployment 裡 restartPolicy 必須是 `Always`，這是強制的，不是習慣。
+
+兩層責任要分清楚：
+
+| 層級 | 負責什麼 |
+|---|---|
+| kubelet + restartPolicy | container 掛了，在同一顆 Pod 內重啟 |
+| Deployment / ReplicaSet | 維持幾顆 Pod、用哪個 template、要不要 rollout |
+
+container 掛掉時，不是 Deployment 馬上建新 Pod，而是 kubelet 先在同一顆 Pod 內重啟。只有當 Pod 本身消失或副本數不夠時，Deployment 才會建新 Pod。
+
+一句話記法：container 掛了 kubelet 重啟；Pod 少了 Deployment 補。
+
+## 怎麼停掉 crash-loop Pod 又不讓它自動重建
+
+簡答：改 Deployment，不要只刪 Pod。
+
+新手常見錯誤：
+
+```bash
+kubectl delete pod <crash-loop-pod-name>
+```
+
+沒用。Deployment 的期望狀態還是「我要 1 顆 Pod」，ReplicaSet 會立刻補一顆回來繼續 crash。
+
+正確做法：
+
+```bash
+# 方法 1：暫停，保留 Deployment（之後可以 scale 回來）
+kubectl scale deploy/xxx --replicas=0
+
+# 方法 2：整個不要了
+kubectl delete deploy xxx
+```
+
+一句話記法：要停自動重建，改 Deployment，不要只刪 Pod。
+
+## 哪些欄位會觸發 rollout、哪些不會
+
+簡答：看 `spec.template` 有沒有變。有變就 rollout，沒變只是調整控制器行為。
+
+會觸發 rollout（Pod template 內）：
+
+- `image`、`env`、`command`/`args`、`resources`
+- `readinessProbe`/`livenessProbe`
+- template 內的 `labels`/`annotations`
+- volumes、volumeMounts、secret/config 引用
+
+不會觸發 rollout（Deployment 外層控制欄位）：
+
+- `replicas`（這是 scale，不是 rollout）
+- `revisionHistoryLimit`
+- `strategy.rollingUpdate.*`
+- Deployment 外層的 `annotations`
+
+常見誤解：改 `replicas` 後 Pod 數量變了，但不是 rollout。那是同一版多幾顆少幾顆，不是推新版。
+
+一句話記法：`spec.template` 變了才是 rollout；外層欄位變了只是調整行為。
+
+## CrashLoopBackOff 是 Pod 狀態，但真正重啟的是什麼
+
+簡答：Pod 還是同一顆，是裡面的 container 一直掛掉、被 kubelet 重啟。
+
+常見誤解：以為 Pod 被刪掉又重建很多次。
+
+怎麼分辨：
+
+| 觀察點 | container 重啟 | Pod 重建 |
+|---|---|---|
+| Pod 名稱 | 不變 | 會變（新 Pod） |
+| RESTARTS | 一直增加 | 新 Pod 從 0 開始 |
+| 誰在處理 | kubelet | Deployment / ReplicaSet |
+
+`kubectl get pods` 的 STATUS 欄位是摘要顯示，把「container 正在 crash + backoff」濃縮成一個狀態。
+
+一句話記法：畫面上是 Pod 狀態，底層是 container 重啟；Pod 名稱不變 + RESTARTS 增加 = container 在重啟。
