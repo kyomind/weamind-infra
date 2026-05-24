@@ -1,5 +1,5 @@
 # 2026-04-14 Darkmind Logs Previous Rollout Command
-
+複習：2026-05-24
 ## 今日指令練習目標
 
 1. 用 `crash-loop` 情境練出 `logs` 與 `logs --previous` 的最小判讀鏈。

@@ -1,5 +1,5 @@
 # 2026-04-14 Darkmind Logs Previous Rollout Notes
-
+複習：2026-05-24
 ## 學習注意事項
 
 ### 今天進 lesson 前先記住的邊界
