@@ -379,6 +379,8 @@ resources:
 - memory：`Mi`（mebibytes，≈ MB）、`Gi`（≈ GB），K8s 用二進位制
 - cpu：`m`（millicores），`250m` = 0.25 核，`1000m` = 1 核
 
+CPU 換算：小數和 millicores 可互換，`0.4` = `400m`，`0.5` = `500m`，`1` = `1000m`。YAML 裡兩種寫法都合法。
+
 位置在 `spec.containers[].resources`，每個 container 各自設定。
 
 ## Pod immutable 欄位
@@ -651,3 +653,67 @@ kubectl rollout history deployment/cache-deployment
 ```
 
 輸出幾行 REVISION，total revision count 就是幾。
+
+## --revision=N 查歷史版本詳情
+
+```bash
+kubectl rollout history deploy/video-app --revision=3
+```
+
+不帶參數只列版號，加 `--revision=N` 才顯示該版本的 image 等詳細資訊。
+
+坑：`kubectl get deploy -o yaml` 只能看當前 live spec，查不到歷史版本。題目問過去某版的 image，必須用 `--revision`。
+
+## requests > limits 是規格違規
+
+`kubectl apply` 直接報錯，不用等 Pod 建出來。看到 requests 比 limits 大就對調或調小 requests。
+
+## apply 只擋規格錯，語意錯要靠 describe
+
+| 錯誤類型 | apply 會報錯？ | 怎麼抓 |
+|----------|----------------|--------|
+| requests > limits | ✅ 會 | apply 直接噴錯 |
+| YAML 語法錯誤 | ✅ 會 | apply 直接噴錯 |
+| image 名稱拼錯 | ❌ 不會 | Pod 變 `ImagePullBackOff` |
+| label selector 不匹配 | ❌ 不會 | Pod 可能不被管理 |
+
+完整驗證流程：`apply` → `get pods` → `describe pod`。
+
+## Pending + FailedScheduling 診斷
+
+Pod 卡 Pending 時，`kubectl describe pod` 看 Events：
+
+- `Insufficient cpu/memory`：node 資源不夠，降 requests 或清理其他 Pod
+- `had untolerated taint(s)`：目標 node 有 taint，Pod 沒 toleration
+
+Events 的 Message 會直接告訴你是哪個原因。
+
+## describe node 看剩餘資源
+
+```bash
+kubectl describe node <node-name>
+```
+
+看 `Allocated resources` 區段：
+
+```
+Resource   Requests    Limits
+cpu        600m (60%)  6 (600%)
+memory     110Mi (6%)  2024Mi (112%)
+```
+
+剩餘可排程 = Allocatable - Allocated。百分比 60% 表示已用 60%，還剩 40%。
+
+排程問題不要猜數字，算完再改 requests。
+
+## Rolling update 資源死鎖
+
+改 Deployment 後 apply 觸發 rolling update，新舊 Pod 共存會暫時多佔資源。
+
+死鎖情境：新 Pod 因資源不足 Pending → 舊 Pod 不會被砍（要等新 Pod Ready）→ 卡住。
+
+解法：手動刪舊 Pod 釋放資源。
+
+```bash
+kubectl delete pod <舊-pod-name>
+```
