@@ -762,3 +762,120 @@ labels 和 annotations 屬於 metadata，不在 Pod immutable 範圍內。Pod �
 ## Service port 不檢查後端
 
 Service 只是路由規則，設定 `port: 8080` 不代表後端 container 真的有在 8080 listen。題目怎麼說就怎麼設，不要因為「感覺不合理」就自己加戲。
+
+## expose 報 port 錯就補 --port
+
+```bash
+kubectl expose pod nginx-pod --name nginx-svc --port 80
+```
+
+`kubectl expose` 需要知道 port。它會嘗試從 Pod spec 的 `containerPort` 自動偵測，沒有就報錯。手動加 `--port` 解決。
+
+nginx 預設 listen 80，所以常用 `--port 80`。
+
+## --port 同時設 port 和 targetPort
+
+| 參數 | port | targetPort |
+|------|------|------------|
+| `--port 80` | 80 | 80（自動跟 port 一樣）|
+| `--port 80 --target-port 8080` | 80 | 8080 |
+
+單用 `--port` 時兩者相等，要分開設就加 `--target-port`。
+
+注意：`--port` 是必填，單用 `--target-port` 會報錯。`--target-port` 依附於 `--port` 存在。
+
+## kubectl run --restart=Never 跑一次性指令
+
+```bash
+kubectl run test --image=busybox:1.28 --restart=Never -- nslookup nginx-svc
+```
+
+`--restart=Never`：指令跑完就結束，不重啟。不加的話預設 `Always`，K8s 會一直重啟容器。
+
+`=` 可省略，`--restart Never` 也行。
+
+## --rm 需要搭配 -it
+
+```bash
+kubectl run test --image=busybox --rm -it --restart=Never -- nslookup nginx-svc
+```
+
+`--rm` 只能用在 attached 模式，要加 `-it` 才行。否則報 "should only be used for attached containers"。
+
+`--rm`：Pod 結束後自動刪除。不加的話跑完的 Pod 會留著變 `Completed` 狀態。
+
+## -it 即時看輸出 vs kubectl logs
+
+| 模式 | 行為 |
+|------|------|
+| 沒有 `-it` | kubectl 立刻返回，輸出存在 Pod log 裡，事後用 `kubectl logs` 撈 |
+| 有 `-it` | kubectl attach 上去等，即時把 stdout 印到終端 |
+
+想即時看一次性 Pod 輸出 → 加 `-it`；忘了加 → 用 `kubectl logs` 補撈。
+
+## kubectl run > 重導向抓的是 kubectl stdout
+
+```bash
+kubectl run test --restart=Never -- nslookup nginx-svc > out.txt
+# out.txt 內容是 "pod/test created"，不是 nslookup 結果
+```
+
+`>` 重導向捕捉的是 kubectl 本身的訊息，不是容器輸出。容器輸出要用 `kubectl logs`。
+
+## 存一次性 Pod 輸出最穩的方式
+
+```bash
+kubectl run test --image=busybox:1.28 --restart=Never -- nslookup nginx-svc
+kubectl logs test > out.txt
+```
+
+`run` 完再 `logs > file`，比 `-it > file` 穩，不會混進 attach 訊息。
+
+## containerPort 是文件性質
+
+`containerPort` 欄位不開 port，純粹是宣告，告訴讀 YAML 的人「這個容器用哪個 port」。
+
+真正讓 port 打開的是容器裡的程式本身（如 nginx 啟動時 bind 80）。
+
+`containerPort` 沒寫只影響一件事：`kubectl expose` 的自動偵測失敗。
+
+## Dockerfile EXPOSE vs containerPort
+
+| | Dockerfile EXPOSE | Pod spec containerPort |
+|--|-------------------|------------------------|
+| 層級 | Image 層 | K8s Pod 層 |
+| 實際效果 | 不開 port，純宣告 | 不開 port，純宣告 |
+| 給誰看 | docker inspect | kubectl expose 自動偵測 |
+
+兩者都是 metadata，真正開 port 的是程式本身。
+
+## Service targetPort 才控制流量
+
+| 層級 | 說明 |
+|------|------|
+| Container 實際監聽 | 程式啟動時 bind 的 port |
+| containerPort | 文件性質宣告，不影響網路 |
+| Service targetPort | 決定流量送到 Pod 的哪個 port，這才控制路由 |
+
+Service 的 `targetPort` 設對，不管 Pod spec 有沒有 `containerPort` 都能通。
+
+## 叢集內 DNS 格式
+
+```
+<service-name>.<namespace>.svc.cluster.local
+```
+
+例：`nginx-service-cka.default.svc.cluster.local`
+
+在叢集內可以直接用 Service 名稱（如 `nginx-service-cka`）解析到 ClusterIP，不用打完整 FQDN。
+
+驗證 DNS：起一個臨時 Pod 跑 `nslookup <service-name>`。
+
+## -it 輸出和 logs 可能有微妙差異
+
+理論上兩者都讀容器 stdout，應該一樣。但實際可能有差異：
+
+- `-it` 會分配 TTY，某些程式在 TTY 模式下輸出格式不同（如多一個空行）
+- stdout 緩衝時機不同
+
+考試如果要存輸出，選一種方式用到底，不要混用。`logs` 通常比較穩：讀的是已寫入的日誌檔，容器跑完才讀不怕漏；不開 TTY，程式以非互動模式跑，輸出格式比較一致。
