@@ -766,3 +766,84 @@ kubectl delete deploy xxx
 `kubectl get pods` 的 STATUS 欄位是摘要顯示，把「container 正在 crash + backoff」濃縮成一個狀態。
 
 一句話記法：畫面上是 Pod 狀態，底層是 container 重啟；Pod 名稱不變 + RESTARTS 增加 = container 在重啟。
+
+## endpoints 粒度是 Pod 層級
+
+- endpoints 記錄的是 Pod IP，不會再往下細分到 container
+- Service 判斷「這個後端能不能用」的單位是 Pod，看的是 Pod 的 Ready condition
+- 面試時比較準的說法是「Service 只會把 Ready 的 Pod 納入 endpoints」
+
+一句話記法：endpoints 的粒度是 Pod；Ready 的 Pod 才會被納入。
+
+## kubectl exec 裡的 `--` 是什麼
+
+`--` 把「kubectl 自己的參數」和「要在 container 裡跑的指令」分開。
+
+- `--` 前面：告訴 kubectl 怎麼連進去（哪個 namespace、哪個 Pod、要不要 `-it`）
+- `--` 後面：進去之後要跑什麼（`sh`、`bash`、`cat /etc/hosts` 等）
+
+一句話記法：`--` 前面是「怎麼進門」，後面是「進門後做什麼」。
+
+## port-forward 最常用的對象
+
+依實務順序：
+
+1. **Service**：最常用。快速測應用有沒有回應，不用經過 Ingress/LB
+2. **Pod**：第二常用。鎖定單一 Pod debug，不想讓 Service 幫你分流
+3. **Deployment**：方便寫法，kubectl 會幫你挑一顆 Pod。但 debug 時通常還是直接指定 Pod 更明確
+
+最常見的實際情境：叢集內管理 UI（Grafana、Prometheus、Argo CD）。這類工具通常不公開對外，用 port-forward 在本機瀏覽器打開最方便。
+
+一句話記法：Service first、Pod second；管理 UI 幾乎天天用。
+
+## 懷疑 rollout 交接問題時的排查順序
+
+1. `kubectl rollout status` — 先看這次 rollout 有沒有卡住
+2. `kubectl rollout history` — 看目前有幾個 revision
+3. `kubectl describe deployment` — 需要更多細節時再用，看 conditions、ReplicaSets、可用副本數
+
+關鍵判讀：
+- `exceeded its progress deadline` = rollout 在時限內沒完成，是 Deployment 層級的失敗
+- `history` 只列 revision 編號，不會直接告訴你哪版成功哪版失敗
+- 想知道卡在哪，`describe deployment` 的 `Progressing=False` 和副本數更有用
+
+一句話記法：rollout 問題先 `status` 確認卡住沒，再 `history` 看版本，細節用 `describe deployment`。
+
+## 實務排查順序：從外到內、從便宜到貴
+
+真實工作裡，錯誤通常不是先開 kubectl 發現的，而是外部症狀先跳出來：頁面打不開、API 回 5xx、QA 回報功能壞了、監控告警。
+
+排查順序：
+
+1. 看外部症狀 — 是 404、5xx、timeout 還是連不上？先判斷大概哪層出問題
+2. `get` 看資源快照 — Pod、Deployment 狀態是什麼？ImagePullBackOff？CrashLoopBackOff？Running 但 0/1 Ready？
+3. `describe` / `events` — Kubernetes 自己認為卡在哪
+4. `logs` — 已確認 container 有跑過，想看 app 吐了什麼
+5. `exec` — 需要進 container 內部看
+6. `rollout` — 懷疑是版本切換問題
+7. `port-forward` — 快速測某個 port 有沒有回應
+
+一句話記法：先看外部症狀，再 `get`/`describe`/`events` 縮圈，之後才決定要不要 `logs`、`exec`、`rollout`。
+
+## revision 看的是 Pod template 有沒有變
+
+Deployment 的 revision 不是看你 apply 幾次，而是看 Pod template 有沒有變。
+
+- 連續 apply 同一份 YAML，`spec.template` 沒改 → apply 成功但回傳 `unchanged`，不會產生新 revision，Deployment 不會產生新的 ReplicaSet，Pods 也不會重建
+- 改到 Deployment 外層欄位但沒動 `spec.template` → 也不會觸發 rollout
+- 改到 `spec.template`（image、env、probe、command 等）→ 才會建新 ReplicaSet、產生新 revision
+
+一句話記法：revision 看的是 Pod template 有沒有變，不是 apply 了幾次。
+
+## kubectl logs 真正看的是 Pod
+
+`kubectl logs` 真正看的永遠是 Pod/container 的 logs，但它有方便寫法：
+
+- `kubectl logs deployment/nginx` — kubectl 會幫你先找到這個 Deployment 底下的 Pod，再去抓 logs
+- `kubectl logs job/hello` — 同理，先找 Job 管理的 Pod
+
+所以不是 Deployment 或 Job 自己有 logs，而是 kubectl 幫你多走一步：從 workload 資源 → 找到 Pod → 抓 logs。
+
+相對的，`Service`、`Ingress` 這種不承載 container 的資源，沒有 logs 可看，`kubectl logs svc/...` 會報錯。
+
+一句話記法：logs 永遠是 Pod 的；Deployment/Job 只是方便寫法，kubectl 幫你找 Pod。

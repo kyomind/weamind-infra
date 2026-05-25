@@ -1,5 +1,5 @@
 # 2026-04-15 Darkmind Exec Port Forward Readiness Fail Command
-
+複習：2026-05-25
 ## 今日指令練習目標
 
 1. 用 healthy baseline 練出 `exec` 與 `port-forward` 各自的正常用途。
