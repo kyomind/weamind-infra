@@ -578,7 +578,7 @@ Deployment 的 template 隨時可改，Job 的不行。常搞混。
 kubectl scale deployment redis-deploy -n redis-ns --replicas=3
 ```
 
-scale 類題目一行收工，不用開 `kubectl edit`。
+改 replicas 永遠優先用 `scale`，不要進 `kubectl edit` 改數字。`scale` 比 edit 快至少 10 秒，而且不會手滑改錯其他欄位。
 
 ## 非 default namespace 的 Tab 補全
 
@@ -717,3 +717,48 @@ memory     110Mi (6%)  2024Mi (112%)
 ```bash
 kubectl delete pod <舊-pod-name>
 ```
+
+## kubectl rollout undo 回滾
+
+```bash
+kubectl rollout undo deploy/redis-deployment
+```
+
+回滾到前一版，不用指定 revision。回滾到特定版本用 `--to-revision=N`：
+
+```bash
+kubectl rollout undo deploy/redis-deployment --to-revision=2
+```
+
+## 工具型 image 需要 sleep infinity
+
+`ubuntu`、`busybox`、`alpine` 這類工具型 image 沒有前景進程，預設 entrypoint 跑完就退出，Pod 會不斷重啟進入 CrashLoopBackOff。
+
+```bash
+kubectl run ubuntu-pod --image=ubuntu --labels=app=os --command -- sleep infinity
+```
+
+注意：`--command` 要放在 `--` 之前，`sleep infinity` 放在 `--` 之後。
+
+## -- 結束選項解析
+
+`--` 是 CLI 標準慣例，意思是「選項結束，後面全是位置參數」。
+
+`--command` 只是 boolean flag，告訴 kubectl 要覆蓋 entrypoint。`--` 告訴 parser 停止解析 flag，後面的內容原封不動傳給 container。
+
+`-- <command>` 必須放最後，否則後面的 kubectl flag 會被當成容器命令的一部分：
+
+```bash
+kubectl run pod --command -- sleep infinity --labels=app=os  # ✗ --labels 被當成 sleep 的參數
+kubectl run pod --labels=app=os --command -- sleep infinity  # ✓
+```
+
+## metadata 可以 edit
+
+labels 和 annotations 屬於 metadata，不在 Pod immutable 範圍內。Pod 建完後可以 `kubectl edit pod` 改，或用 `kubectl label` 加。
+
+但能一步到位就不要兩步：`kubectl run --labels=key=value` 直接帶。
+
+## Service port 不檢查後端
+
+Service 只是路由規則，設定 `port: 8080` 不代表後端 container 真的有在 8080 listen。題目怎麼說就怎麼設，不要因為「感覺不合理」就自己加戲。
