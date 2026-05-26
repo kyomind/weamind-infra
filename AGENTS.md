@@ -172,8 +172,8 @@ Use these as the primary references when you need repo-grounded context:
 - `.privatedocs/weamind/`
 - `references/`
 
-## AGENTS.md as the project main prompt
+## AGENTS.md and CLAUDE.md
 
-- Treat `AGENTS.md` as the project's sole main prompt.
-- `CLAUDE.md` is a synchronized copy of `AGENTS.md`; if you are already reading `CLAUDE.md`, you do not need to read `AGENTS.md` again.
-- When main instruction-related changes are needed, edit `AGENTS.md` directly.
+- `AGENTS.md` is the project's main prompt.
+- `CLAUDE.md` is a symlink to `AGENTS.md`; no need to read both.
+- Edit `AGENTS.md` only; writing to `CLAUDE.md` breaks the link.
