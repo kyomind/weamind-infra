@@ -1,5 +1,5 @@
 # 2026-04-28 Helm Release Chart Values vs Raw Manifests Note
-
+複習：2026-05-26
 ## 學習注意事項
 
 - 今天先把 Helm 的核心模型放回 WeaMind repo 與 W7 的真實操作經驗，不提前展開 CD 設計。
