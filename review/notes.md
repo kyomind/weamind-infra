@@ -423,3 +423,72 @@ chart 化不只是資料夾重組，而是操作入口、review 習慣、debug �
 6. `helm rollback` ≠ `kubectl rollout undo`。`rollout undo` 只退 Deployment，`helm rollback` 退整個 release。
 
 一句話記法：Helm 是 release 管理工具，不取代 K8s 也不等於 CD，引入前要想清楚邊界和 ownership。
+
+## app repo 和 infra repo 各管什麼
+
+App repo：負責寫 code、build image、發 release。產出是「這個版本的 image 可以用了」。
+
+Infra repo：負責宣告「cluster 現在要跑哪個版本」。部署狀態的歷史記錄在這裡。
+
+第一版 CD 怎麼串：
+
+```bash
+app repo 發 release
+    ↓
+自動開 PR 到 infra repo（只改 image tag）
+    ↓
+人 review / merge
+    ↓
+infra repo 自己決定怎麼 deploy
+```
+
+為什麼不讓 app repo 直接改 cluster：如果 app repo 拿著 cluster credentials 直接部署，會把「產 image」和「決定跑哪個版本」混在一起。權限邊界模糊、部署歷史不在 infra repo 的 Git 裡、出事時搞不清楚是誰決定要部署這個版本。
+
+一句話記法：app repo 負責「有什麼可以部署」，infra repo 負責「現在要跑什麼」，中間用 PR 隔開。
+
+## PR-based deployment 是常見做法嗎
+
+是的，這在 GitOps 模式下幾乎是標準路徑。
+
+Renovate、Dependabot 做的事（自動開 PR 更新版本）是同一個概念。ArgoCD、Flux 這類 GitOps 工具也都預設 infra repo 的 Git 狀態是 source of truth。很多公司把「merge 到 main」當作 deploy 的觸發條件。
+
+這個做法流行的原因：
+- 有明確的 audit trail（誰 approve、誰 merge 都在 Git 歷史裡）
+- 權限分離乾淨（寫 code 的人不需要 cluster credentials）
+- rollback 就是 git revert
+
+一句話記法：PR-based deployment 是 GitOps 的標準做法，用 Git 歷史當 audit trail。
+
+## merge 後自動 deploy 是下一步
+
+完整的 GitOps 流程：infra repo merge 後，有個東西（ArgoCD、Flux、或自己寫的 workflow）會自動把新狀態 apply 到 cluster。
+
+WeaMind 目前停在「merge 後手動 deploy」。這是合理的第一版，先把「版本狀態由 infra repo 管」這件事做對，自動化之後再加。
+
+一句話記法：先做對 PR-based 版本管理，自動 deploy 是下一步。
+
+## Docker tag 會前移是 workflow 決定的
+
+- Git tag 不會動，`v1.1.4` 打下去就是固定的
+- 會動的是 Docker tag，workflow 可以同時把 `1.1.5`、`1.1`、`1` 指到同一個 image
+- 舊 tag 不是先刪再新增，而是同名 tag 被重新指向新的 image digest
+- GHCR 不會自己發明 tag，workflow push 什麼就存什麼
+
+WeaMind 目前兩條路：
+- main push → 產出 `latest` 和 `sha-xxx`
+- release tag → 產出 `1.1.5`、`1.1`、`1`
+
+一句話記法：tag 會不會前移、有哪些 tag，全看 workflow 怎麼 push，GHCR 只是存東西。
+
+## main push 和 release tag 各自 build 是故意的
+
+兩條 workflow（main push 產 `latest`/`sha`、release tag 產版本號）各自獨立 build。這樣設計比較直白、好懂、好 debug。代價是某些情況下同一份 code 會被 build 兩次。
+
+什麼時候才值得優化成「一次 build，多處 reuse」：
+- build 很慢
+- release 很頻繁
+- 開始在意「release 的 image 是不是和之前測過的那一份一模一樣」
+
+WeaMind 目前規模，這是可接受的冗餘。
+
+一句話記法：兩條路各自 build 是故意的設計，換取路徑清楚，等 build 成本變高再優化。
