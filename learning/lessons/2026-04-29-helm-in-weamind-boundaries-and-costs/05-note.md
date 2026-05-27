@@ -1,5 +1,5 @@
 # 2026-04-29 Helm In WeaMind Boundaries and Costs Note
-
+複習：2026-05-27
 ## 學習注意事項
 
 - 今天先把 Helm 放回 WeaMind 的 repo 邊界與 W8 CD 脈絡，不提前展開 Day 3 的 CD 設計細節。
