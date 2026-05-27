@@ -287,3 +287,139 @@ Deployment (Pod template) → ReplicaSet → Pods
 - `rollout undo` 把 Deployment 的 template 對回前一版，然後讓控制鏈重新長出 Pods
 
 一句話記法：Pod 不是被「切回舊版」，是根據舊 template 被重新建立。
+
+## Helm release 到底是什麼
+
+Release 是「這次安裝」的名字和歷史紀錄，不是某個 K8s 資源。
+
+用 WeaMind 當例子：
+
+```bash
+helm install weamind ./weamind-chart -f values.yaml
+```
+
+執行後 Helm 做三件事：
+- 把 chart templates + values render 成 K8s manifests
+- 送進 cluster 建立 Deployment、Service、Ingress 等資源
+- 在 cluster 內記一筆：「有一個叫 `weamind` 的 release，目前是 revision 1」
+
+之後 `helm upgrade weamind ...` 會變成 revision 2、3、4...
+
+Release 是 Helm 自己維護的部署身份，讓你可以：
+- `helm list` 看有哪些 release
+- `helm history weamind` 看版本演進
+- `helm rollback weamind 2` 把整批資源退回 revision 2
+
+一句話記法：chart 是模板，release 是安裝後的實例名稱加歷史。
+
+## Helm release 存在哪裡
+
+Release 不是 K8s 原生物件，但資料確實存在 cluster 內。Helm 預設把 release state 存成 Secret：
+
+```bash
+kubectl get secrets -n weamind -l owner=helm
+```
+
+會看到類似 `sh.helm.release.v1.weamind.v1` 這種 Secret，裡面存著該 revision 的 manifest 和 values。
+
+K8s 不認識 release 這個概念，`kubectl get release` 會報錯，但 Helm 把資料藏在 Secret 裡，所以 release state 確實活在 cluster 內。
+
+一句話記法：release 是 Helm 層的抽象，但資料以 Secret 形式存在 cluster 裡。
+
+## 為什麼 Helm release 存成 Secret 而不是 ConfigMap
+
+Release 資料裡包含完整的 rendered manifest，可能包含 Secret 內容（密碼、token 等）。用 Secret 存至少有 K8s 層級的存取控制，比 ConfigMap 稍微安全一點。
+
+Helm 可以改成用 ConfigMap 存，設環境變數 `HELM_DRIVER=configmap` 即可，但預設選 Secret 是比較保守的做法。
+
+一句話記法：release 資料可能含敏感內容，所以預設存 Secret。
+
+## raw manifests、Helm、Kustomize 怎麼選
+
+Raw manifests（現況）：WeaMind 現在手寫的 YAML 已經能部署完整服務，直接、好讀、review 時一眼看懂。目前不缺這一層。
+
+Helm 什麼時候值得引入：當你開始覺得「這幾個檔案應該綁在一起當一個版本」或「想用同一套模板部署到不同環境，只換幾個參數」時。它給你 release history 和 rollback 整批資源的能力，但代價是多了 template 語法和 release state 要維護。
+
+Kustomize 什麼時候比 Helm 輕：如果需求只是「prod 和 staging 的 host 不一樣」或「某個環境要多加一個 annotation」，用 overlay/patch 就能搞定，不用引入整套 template 語法。
+
+一句話記法：raw manifests 夠用就不動；Helm 管多資源版本化；Kustomize 處理小幅環境差異。
+
+## Helm 的真實成本與 WeaMind 該不該現在引入
+
+Helm 有四種成本：
+- 看不懂成本：原本一眼能讀的 YAML 變成模板，要在腦中代換 `{{ .Values.xxx }}` 才知道最後長怎樣
+- Review 成本：PR 時要同時看 template、values、render 結果，不像 raw YAML 直接比對
+- 多一層要追：部署狀態不再只看 Git + cluster，還要追 Helm release/revision
+- 操作路徑變了：更新不是改 YAML 然後 apply，而是改 values 然後 `helm upgrade`
+
+WeaMind 現在該 Helm 化嗎？不急。現在最該解的是 CD 鏈路：app release 出新 image 後，怎麼更新 infra repo、怎麼觸發 deploy。這件事不需要 Helm 也能做。
+
+如果未來要引入，不要一次全 repo Helm 化。先從最常變的那一塊開始（例如 Deployment 的 image tag、replicas），其他不常動的先不動。
+
+一句話記法：Helm 有學習和維護成本，WeaMind 現在先把 CD 做對比較重要，Helm 以後再說。
+
+## 有沒有 Helm，更新版本時在改什麼
+
+沒有 Helm：直接改那份 YAML，比如換 image tag 就去 `deployment.yaml` 改 `image: xxx:v2`，然後 `kubectl apply`。Git 看到什麼，cluster 就吃什麼。
+
+有 Helm：不是改最終 YAML，而是改 `values.yaml` 裡的 `image.tag: v2`，然後跑 `helm upgrade`。Helm 用 values 去 render 模板，產生最終 YAML 再送進 cluster。
+
+| | 沒 Helm | 有 Helm |
+|---|---|---|
+| 改什麼 | 最終 YAML | values 或 chart 輸入 |
+| 套用方式 | `kubectl apply` | `helm upgrade` |
+| Git 看到的 | 就是最終結果 | 模板 + 參數，要 render 才知道 |
+
+一句話記法：沒 Helm 你操作的是成品，有 Helm 你操作的是生成成品的材料。
+
+## 可以只 chart 一部分嗎
+
+可以，而且這樣比較穩。Chart 不是要你把整個 repo 的 YAML 都塞進去，它比較適合包住「會一起裝、一起升級、一起 rollback」的那一組資源。
+
+以 WeaMind 為例，如果要局部引入 Helm，合理的做法是先把 app 相關的那組（Deployment、Service、Ingress、部分 ConfigMap）做成一個 chart，其他不常動的資源先維持 raw manifests。
+
+但有一條線要守：同一個資源只能有一個 owner。不能今天用 Helm 管 Deployment，明天又直接 `kubectl apply` 另一份 `deployment.yaml` 去改它，這樣會搞不清楚誰才是 source of truth。
+
+一句話記法：可以只 chart 一部分，但同一個資源只能被一邊管。
+
+## repo 被 chart 化具體是什麼意思
+
+「chart 化」就是把維護的對象從「最終 YAML」換成「模板 + 參數」。
+
+具體會發生這幾件事：
+- 原本直接能 apply 的 `deployment.yaml` 變成 `templates/deployment.yaml`，裡面有 `{{ .Values.image.tag }}` 這種佔位符
+- 常變的欄位（image tag、replicas、host）被抽到 `values.yaml`
+- 部署方式從 `kubectl apply` 變成 `helm install` / `helm upgrade`
+- 這組資源從此用 release 角度被追蹤，有 revision history
+
+chart 化不只是資料夾重組，而是操作入口、review 習慣、debug 方式都會跟著改。
+
+一句話記法：chart 化就是把 source of truth 從成品 YAML 往前推一層到模板 + 參數。
+
+## 混合式管理時 helm upgrade 和 kubectl apply 會並存嗎
+
+會，而且這很正常。如果 repo 裡一部分資源用 Helm 管、一部分還是 raw manifests，同一輪部署就會出現兩種指令。
+
+奇怪的不是兩種指令並存，而是同一個資源被兩邊搶著管。比如你用 Helm 管 Deployment，但有人又直接 `kubectl apply` 另一份 `deployment.yaml` 去改它。下次 `helm upgrade` 時，Helm 會把它 render 回原本的樣子，剛才的改動就被覆蓋掉了。
+
+規則：
+- 可以混用操作方式（兩種指令並存）
+- 不能混用同一個資源的 ownership
+
+一句話記法：`helm upgrade` 和 `kubectl apply` 可以同時存在，但同一個資源只能被一邊管。
+
+## Helm 必知 6 點
+
+1. Helm 不是讓 K8s 終於會部署。K8s 本來就能部署，Helm 多給的是把一組資源變成可安裝、可升級、可 rollback 的 release。
+
+2. Helm ≠ CD ≠ GitOps。三者解不同問題：Helm 管 release，CD 管版本怎麼流到 cluster，GitOps 管誰是 source of truth。
+
+3. Chart 邊界對齊 release，不是對齊 repo。不是放在同一個 repo 就該進同一個 chart，問自己：這些資源會一起裝、一起升、一起 rollback 嗎？
+
+4. 同一個資源只能有一個 owner。可以一部分用 Helm、一部分用 raw manifests，但同一個 Deployment 不能兩邊都管。
+
+5. Helm 最大成本是可讀性和心智模型。不是多學幾條指令，是你開始維護模板而不是成品，review 和 debug 都要多追一層。
+
+6. `helm rollback` ≠ `kubectl rollout undo`。`rollout undo` 只退 Deployment，`helm rollback` 退整個 release。
+
+一句話記法：Helm 是 release 管理工具，不取代 K8s 也不等於 CD，引入前要想清楚邊界和 ownership。
