@@ -159,3 +159,33 @@ kubectl rollout status deployment/weamind -n weamind
 1. 讓 merge 後 deploy 更自動化
 2. 強化 rollback 與觀察指令
 3. 視需要再升級認證治理與 GitOps 架構
+
+---
+
+## 2026-05-27 補充：實作路徑規劃
+
+### 分兩步實作，而不是直接上 Argo CD
+
+決定採用漸進式演進：
+
+1. 先實作 GitHub Actions 版本：merge 後自動 `kubectl apply`
+2. 之後再升級到 Argo CD 版本
+
+### 為什麼分兩步更好
+
+- 有演進故事：「先用最小方案解決問題，發現痛點後再升級」是真實世界的做法
+- 能講 trade-off：為什麼 GitHub Actions 夠用、什麼情況下不夠用、為什麼升級到 Argo CD
+- 不是 over-engineering：展示「什麼時候該用什麼工具」，而不是一開始就搬大砲
+
+### 文章故事線
+
+```
+第一篇：用 GitHub Actions 實作 merge 後自動 deploy
+    → 夠用，但只是「推一次」，沒有持續同步
+
+第二篇：升級到 Argo CD
+    → 解決 drift detection、可視化、多環境管理
+    → 順便講為什麼這時候才引入
+```
+
+這種漸進式演進的敘事，面試時會比「我直接用 Argo CD」更有深度。
