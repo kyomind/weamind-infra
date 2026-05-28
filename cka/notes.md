@@ -357,3 +357,284 @@ spec:
 
 這樣 `/shop/items` 到後端就變成 `/items`。
 
+## -o wide 不是 --wide
+
+```bash
+k get pod -o wide    # ✓
+k get pod --wide     # ✗ unknown flag
+```
+
+`-o` 是 output format 的 flag，`wide` 是它的值。
+
+## NetworkPolicy 完整範例
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-network-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      role: db
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - ipBlock:
+        cidr: 172.17.0.0/16
+        except:
+        - 172.17.1.0/24
+    - namespaceSelector:
+        matchLabels:
+          project: myproject
+    - podSelector:
+        matchLabels:
+          role: frontend
+    ports:
+    - protocol: TCP
+      port: 6379
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 10.0.0.0/24
+    ports:
+    - protocol: TCP
+      port: 5978
+```
+
+## NetworkPolicy 基本結構
+
+```yaml
+spec:
+  podSelector:     # 這條規則保護誰
+    matchLabels:
+      role: db
+  policyTypes:     # 管哪個方向
+  - Ingress
+  - Egress
+  ingress:         # 誰可以進來
+  - from: [...]
+    ports: [...]
+  egress:          # 可以出去哪
+  - to: [...]
+    ports: [...]
+```
+
+## NetworkPolicy OR vs AND 陷阱
+
+`from`/`to` 陣列裡，每個 `-` 是 OR 關係。但同一個 `-` 底下放多個 selector 就變 AND：
+
+```yaml
+# OR — 兩個獨立的 -
+- namespaceSelector: {matchLabels: {project: myproject}}
+- podSelector: {matchLabels: {role: frontend}}
+
+# AND — 同一個 - 底下
+- namespaceSelector: {matchLabels: {project: myproject}}
+  podSelector: {matchLabels: {role: frontend}}
+```
+
+第一種：myproject 的任何 Pod OR default 的 frontend Pod。
+第二種：myproject 裡且 label 是 frontend 的 Pod。
+
+## NetworkPolicy 預設行為
+
+- 沒有任何 NetworkPolicy → 全部放行
+- 一旦有 policy 的 `podSelector` 選到你 → 變 deny-all，只開明確允許的
+
+## policyTypes 管哪個方向
+
+| policyTypes | Ingress | Egress |
+|-------------|---------|--------|
+| 只寫 `Ingress` | 受管制 | 全開 |
+| 只寫 `Egress` | 全開 | 受管制 |
+| 兩個都寫 | 都管制 | 都管制 |
+
+沒寫在 policyTypes 裡的方向不受這條 policy 影響。
+
+## NetworkPolicy 是 stateful 的
+
+跟 AWS Security Group 一樣，允許連線建立後 return traffic 自動放行。
+
+例如：Ingress 規則允許 frontend → db:6379，db 回應給 frontend 的封包自動放行，不需要另外寫 Egress 規則。
+
+對比 AWS NACL（stateless）：inbound 和 outbound 要分開設，少設一邊就會斷。
+
+NetworkPolicy 只需要想「誰能發起連線」，不用管 response。
+
+## ipBlock 的 except 是縮小允許範圍
+
+```yaml
+- ipBlock:
+    cidr: 172.17.0.0/16
+    except:
+    - 172.17.1.0/24
+```
+
+這是「大範圍放行，小範圍踢掉」，不是「阻擋 + 例外放行」。
+
+- `172.17.0.1` ✓ 可以進
+- `172.17.1.50` ✗ 被 except 踢掉
+- `172.17.2.100` ✓ 可以進
+
+NetworkPolicy 是 allow list，沒寫的本來就擋。except 是從已允許的範圍裡再排除。
+
+## ipBlock except 必須是 cidr 的子集
+
+```yaml
+# ✓ 合法：172.17.1.0/24 在 172.17.0.0/16 裡面
+cidr: 172.17.0.0/16
+except:
+- 172.17.1.0/24
+
+# ✗ 不合法：不相交或 except 比 cidr 大
+cidr: 172.17.0.0/16
+except:
+- 10.0.0.0/8
+```
+
+except 是從 cidr 裡挖洞，不能挖比母集還大，也不能挖不相交的範圍。
+
+## policyTypes 寫了就要給規則
+
+policyTypes 是在說「我要管這些方向」。寫了某個方向卻沒給規則 = 那個方向 deny-all。
+
+```yaml
+policyTypes:
+- Ingress
+- Egress
+ingress:
+- from: [...]
+# 沒寫 egress 規則 → Egress 變成 deny-all！
+```
+
+反過來，policyTypes 沒寫的方向不受影響（維持全開）。
+
+## NetworkPolicy 沒有 kubectl create 骨架
+
+不像 Pod、Deployment 可以 `--dry-run=client -o yaml` 生骨架，NetworkPolicy 必須手寫或從官方文件複製。
+
+考試時搜尋 `network policy` → 找到官方範例 → 複製下來改。
+
+## only from pods 怎麼寫
+
+| 題目說 | 怎麼寫 |
+|--------|--------|
+| only from pods（沒其他限制）| `podSelector: {}` — 同 namespace 所有 pod |
+| only from pods + 特定 label | `podSelector: { matchLabels: ... }` — 只寫這個，不加 `podSelector: {}` |
+
+重點是「只用 podSelector，不加 ipBlock / namespaceSelector」。NetworkPolicy 是白名單，不寫 ipBlock，外部 IP 自然進不來。
+
+## from 三種來源類型
+
+| 來源類型 | 用途 |
+|---------|------|
+| `podSelector` | 同 namespace 的 pod |
+| `namespaceSelector` | 其他 namespace 的 pod |
+| `ipBlock` | 外部 IP 範圍（cluster 外的流量）|
+
+題目說「only from pods」= 只拿 podSelector 這把武器。
+
+## ingress 層級 vs from 層級
+
+```yaml
+# 兩條獨立規則
+ingress:
+- from:            # ← 第一條 rule
+  - podSelector: {}
+- from:            # ← 第二條 rule
+  - podSelector:
+      matchLabels:
+        app: trusted
+
+# 一條規則內的 OR
+ingress:
+- from:            # ← 一條 rule
+  - podSelector: {}
+  - podSelector:
+      matchLabels:
+        app: trusted
+```
+
+結構不同，但效果等價（都是 OR 關係）。練習平台可能比對結構，真實 CKA 只驗行為。
+
+`ingress` 陣列的 `-` = 獨立規則；`from` 陣列的 `-` = 同一規則內的 OR 條件。
+
+## 實務上哪種寫法常見
+
+同 port 用同一條 rule（多個 from 條件）：
+
+```yaml
+ingress:
+- from:
+  - podSelector: {...}
+  - namespaceSelector: {...}
+  ports:
+  - port: 80
+```
+
+不同 port 才拆成獨立 rules：
+
+```yaml
+ingress:
+- from:
+  - podSelector: {matchLabels: {app: web}}
+  ports:
+  - port: 80
+- from:
+  - podSelector: {matchLabels: {app: monitoring}}
+  ports:
+  - port: 9090
+```
+
+## CKA 煙霧彈資源
+
+題目提到的資源不一定都要動。認準「Create / Configure / Edit」後面接的對象才是目標。
+
+例如題目說「X and Y deployed」但只要求對 X 建 NetworkPolicy，Y 就是煙霧彈。
+
+## 題目冗餘規則照做
+
+題目有時會給邏輯上冗餘的規則（例如 `podSelector: {}` 已包含 `app=trusted`）。
+
+不要幫它優化合併，題目說兩條就寫兩條。CKA 考的是照規格交付，不是最佳實踐。
+
+## CKA 真實考試驗行為不驗結構
+
+真正 CKA 考試驗證的是流量能不能通，不是比對 YAML 結構。
+
+KillerCoda 等練習平台會比對結構甚至順序，這是平台限制，不用太糾結。
+
+## 有檔案用 apply -f，沒檔案才用 edit
+
+| 方式 | 適用情境 |
+|------|---------|
+| 改檔案 + `apply -f` | 自己建的資源，有 YAML 留底 |
+| `kubectl edit` | 別人建的資源，手邊沒檔案 |
+
+有檔案可以反覆修改、回溯，比 edit 穩。
+
+## vi 刪除快捷鍵
+
+`d` + 移動指令 = 從游標刪到那個位置。
+
+| 按 | 移動指令的意思 | 結果 |
+|---|--------------|------|
+| `dG` | `G` = 跳到檔尾 | 從游標刪到檔尾 |
+| `dgg` | `gg` = 跳到檔頭 | 從游標刪到檔頭 |
+| `d$` 或 `D` | `$` = 跳到行尾 | 從游標刪到行尾 |
+| `d0` | `0` = 跳到行首 | 從游標刪到行首 |
+
+按 `d` 後 vi 會等你輸入 motion，不用搶快。`y`（複製）、`c`（刪除並編輯）也一樣會等。
+
+## deployments.apps 是合法全名
+
+`deployments.apps` 是 fully qualified resource name（`apps` API group 底下的 `deployments`）。
+
+Tab 補全會補成這個，不用刪，直接用。跟 `deployment`、`deploy` 完全等價。
+
+Tab 補全出來的值語法上一定正確（從 API server 拿的），善用它補資源類型、資源名稱、flag。
+
