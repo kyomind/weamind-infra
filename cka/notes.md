@@ -638,3 +638,69 @@ Tab 補全會補成這個，不用刪，直接用。跟 `deployment`、`deploy` 
 
 Tab 補全出來的值語法上一定正確（從 API server 拿的），善用它補資源類型、資源名稱、flag。
 
+## expose 對 Pod/Deployment/ReplicaSet 行為一致
+
+不管對象是 Pod、Deployment 還是 ReplicaSet，`kubectl expose` 都是去讀 spec 裡的 `containerPort`。找不到就報錯，必須手動帶 `--port`。
+
+不會因為對象類型不同而改變解析邏輯。
+
+## containerPort 是宣告不是開 port
+
+`containerPort` 是純文件性質的欄位，不影響 container 實際監聽什麼 port。
+
+實際 port 是 image 自己決定的（例如 WordPress 預設跑 80），寫不寫 `containerPort` 都不影響流量能不能通。
+
+但寫了之後 `kubectl expose` 可以自動抓，算是好習慣。
+
+## NodePort 免 YAML 流程
+
+當所有參數都能用 flag 搞定時，可以完全不寫 YAML：
+
+```bash
+kubectl create deployment my-app --image=wordpress --replicas=2
+kubectl expose deployment my-app --type=NodePort --port=80 --name=my-svc
+kubectl edit svc my-svc  # 補上 nodePort: 30770
+```
+
+唯一要 edit 的是 `nodePort`，因為 `kubectl expose` 沒有 flag 可以指定它。
+
+## RS/DaemonSet/StatefulSet 沒有 kubectl create 捷徑
+
+這類資源沒有 `kubectl create <resource>` 的指令，考試最快路徑：
+
+1. 官方文件搜尋資源名稱
+2. 複製範例 YAML
+3. 改欄位 → `kubectl apply -f`
+
+不要浪費時間從頭手寫。
+
+## selector.matchLabels ⟷ template.metadata.labels 必須一致
+
+RS / Deployment / DaemonSet 共通的配對機制：
+
+- `selector.matchLabels` — controller 用來「找 Pod」的查詢條件
+- `template.metadata.labels` — Pod 出生時被貼上的標籤
+
+兩邊必須吻合，少一邊或不一致就報錯。label 叫什麼名字不重要，重要的是對得上。
+
+## kubernetes.default 測 DNS
+
+`kubernetes.default` 是每個叢集自動建立的 Service，指向 API Server。
+
+拿來測 DNS 解析最方便，因為它一定存在：
+
+```bash
+kubectl exec pod-name -n ns -- nslookup kubernetes.default
+```
+
+能查到 = CoreDNS 活著、Pod 網路通。
+
+## kubectl exec 重導向在本機 shell
+
+`>` 是在執行 kubectl 的那台機器做重導向，不是在 Pod 裡面：
+
+```bash
+kubectl exec pod-name -n ns -- nslookup kubernetes.default > output.txt
+```
+
+這會把輸出存到你跑 kubectl 的節點上，不是 Pod 內部。
