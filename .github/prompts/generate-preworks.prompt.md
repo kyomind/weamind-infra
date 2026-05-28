@@ -1,5 +1,5 @@
 ---
-description: "Generate one or a few standalone prework files for Kubernetes or DevOps topics by reading repo context and writing to learning/prework/."
+description: "Generate standalone Kubernetes or DevOps prework files only after the user explicitly provides a topic or source material."
 ---
 
 # Generate Preworks
@@ -9,6 +9,24 @@ description: "Generate one or a few standalone prework files for Kubernetes or D
 Create one or a few focused `learning/prework/YYYY-MM-DD-slug.md` files for a Kubernetes / DevOps / CKA concept gap the user wants to study before returning to repo-backed work.
 
 This is a standalone generator. It does not enter the lesson workflow, reopen phase planning, create lesson skeletons, or update progress records. Its job is to turn a topic into external-AI-ready prework that fits this repo's existing prework system.
+
+## Input Gate
+
+The user must explicitly provide the prework topic or source material.
+
+Before reading repo context, inspect the request itself. Continue only when it clearly names at least one of these:
+
+- a concrete topic, such as `NetworkPolicy`, `Service DNS`, `ReplicaSet selector`, or `Terraform state`
+- a concrete source material to turn into prework, such as a note file, pasted text, issue, lesson report, or CKA question
+- an explicit follow-up target, such as "make a follow-up prework for the concept gap in this file"
+
+If the topic or material is not explicit, stop immediately and ask:
+
+```text
+你想要這份 prework 聚焦在哪個明確主題或材料？
+```
+
+Do not infer the topic from open editor tabs, recent files, CKA notes, existing prework files, git status, phase plans, or nearby repo context. Those sources can shape the prework only after the user has explicitly provided the topic or material.
 
 ## Success Criteria
 
@@ -22,6 +40,8 @@ A successful run:
 - follows the existing `learning/prework/` rules instead of inventing a new format
 
 ## Sources
+
+Read these only after the input gate passes.
 
 Always read these first:
 
@@ -46,7 +66,7 @@ Do not read full phase plans unless the user asks to reconnect the topic to form
 
 ### Frame The Topic
 
-Infer from the user's request:
+Use the explicit topic or source material from the user's request to identify:
 
 - the core topic
 - the specific concept gap
@@ -54,7 +74,7 @@ Infer from the user's request:
 - the repo-specific questions to defer until after prework
 - one or more descriptive slugs
 
-Ask a short clarification question only when the topic is not usable enough to produce a good file.
+Ask a short clarification question when the user gave a topic or material, but it is still too broad or underspecified to produce a good file.
 
 If the topic is outside Kubernetes, DevOps, infrastructure, CKA, cloud, observability, CI/CD, or IaC, confirm before adding it to this repo.
 
@@ -83,12 +103,13 @@ Do not include real secrets, tokens, private operational details, or unnecessary
 
 ## Workflow
 
-1. Infer the topic and split shape; ask only if ambiguity blocks a good file.
-2. Read the authoritative prework rules and template.
-3. Search existing prework and topic-related notes to avoid duplicates.
-4. Inspect the most relevant repo evidence.
-5. Create the prework file(s) under `learning/prework/`.
-6. Validate the file(s) against the authoritative rules and template.
+1. Apply the input gate. Stop there if the request lacks an explicit topic or source material.
+2. Use the explicit input to frame the topic and decide whether to split.
+3. Read the authoritative prework rules and template.
+4. Search existing prework and topic-related notes to avoid duplicates.
+5. Inspect the most relevant repo evidence.
+6. Create the prework file(s) under `learning/prework/`.
+7. Validate the file(s) against the authoritative rules and template.
 
 Use today's date unless the user provides a specific date.
 
