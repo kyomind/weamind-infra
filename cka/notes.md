@@ -704,3 +704,145 @@ kubectl exec pod-name -n ns -- nslookup kubernetes.default > output.txt
 ```
 
 這會把輸出存到你跑 kubectl 的節點上，不是 Pod 內部。
+
+## local Volume PV 必須搭配 nodeAffinity
+
+local volume 綁定節點上的實際路徑，必須告訴 scheduler 這個 PV 只能在哪個節點用：
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: example-pv
+spec:
+  capacity:
+    storage: 100Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: local-storage
+  local:
+    path: /mnt/disks/ssd1  # 節點上的實際路徑
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - example-node  # 指定節點名稱
+```
+
+當 `local` volume type 存在時，`nodeAffinity` 是必填。原因：local volume 指向特定節點的路徑，scheduler 必須知道這個 PV 只能在哪個節點用，才能把 Pod 排到正確的節點。
+
+結構是 `nodeAffinity.required.nodeSelectorTerms[].matchExpressions[]`，常用 `kubernetes.io/hostname` 指定節點。
+
+## PV nodeAffinity 範例在 Volumes 頁
+
+官方文件搜 `local persistent volume`，範例在 Volumes 頁的 `local` 段，不在 Persistent Volumes 頁。
+
+考試時找 PV + nodeAffinity 骨架，去這裡抄：https://kubernetes.io/docs/concepts/storage/volumes/#local
+
+## hostPath 的 nodeAffinity 不強制但更危險
+
+| volume type | nodeAffinity |
+|-------------|--------------|
+| `local` | API 強制必填，少了直接報錯 |
+| `hostPath` | 不強制，沒寫也能建 |
+
+hostPath 更危險：題目要求綁 node 你漏寫，K8s 不會報錯提醒，PV 正常建立但考試扣分。
+
+## 資料綁 node → local 概念 → nodeAffinity
+
+心智模型：hostPath / local 的資料只存在特定 node 的磁碟上，天生跟那台 node 綁死。nodeAffinity 是把這個物理事實告訴 K8s，讓 scheduler 不會把 Pod 排到拿不到資料的 node。
+
+題目出現「hostPath + 指定 node」→ 自動連結到 nodeAffinity。
+
+## nodeAffinity 是 PV spec 層級
+
+跟 volume type 無關，`hostPath`、`local` 的 nodeAffinity 結構完全相同。從文件複製 `local` 範例，把 `local:` 改成 `hostPath:` 就能用。
+
+## labels 是 map 不是 array
+
+```yaml
+# ✗ 錯誤（寫成 matchExpressions 格式）
+labels:
+- key: tier
+  value: white
+
+# ✓ 正確
+labels:
+  tier: white
+```
+
+常見陷阱，labels 是 key-value map。
+
+## PVC selector.matchLabels 對應 PV 的 metadata.labels
+
+```yaml
+# PV
+metadata:
+  labels:
+    tier: white
+
+# PVC
+spec:
+  selector:
+    matchLabels:
+      tier: white  # 對應 PV 的 labels，不是 name
+```
+
+題目說「from PV `xxx` using matchLabels」容易誤解成用名字 match，但 matchLabels 永遠是比對 label。
+
+## matchLabels 是篩選不是指定
+
+`selector.matchLabels` 縮小候選範圍，過濾完可能剩一個，也可能剩多個。
+
+| 做法 | 機制 |
+|------|------|
+| `selector.matchLabels` | PVC 端用 label 篩選（可能多個）|
+| `claimRef` | PV 端直接寫死 PVC 名字（一對一）|
+
+`claimRef` 才是真正的指名綁定。
+
+多個候選時，K8s 選**容量最小但足夠**的（smallest fitting），避免小 PVC 綁到大 PV 浪費空間。
+
+## WaitForFirstConsumer 導致 PVC Pending
+
+PVC 卡在 Pending + Events 顯示 `WaitForFirstConsumer` ≠ 錯誤。
+
+這是 StorageClass 的 `volumeBindingMode` 設定，要等 Pod 使用這個 PVC 時才觸發綁定。題目只要求建 PV/PVC，這樣就算完成。
+
+確認方式：`k get sc <name> -o yaml` 看 `volumeBindingMode`。
+
+## kubectl apply -f 不看副檔名
+
+只看內容格式，叫 `pv.yaml`、`pv.yml`、`pv.txt`、甚至沒副檔名都行，內容是合法 YAML 或 JSON 就能吃。
+
+考試省事：`vi pv` → `k apply -f pv`。
+
+## vim A 跳到行末並進 insert mode
+
+`$` 跳到行末（停在 normal mode），`A` 跳到行末並直接進 insert mode。考試時 `A` 更實用，到了就能直接打字。
+
+## PV/PVC 沒有 kubectl create dry-run
+
+不像 Pod、Deployment 可以 `--dry-run=client -o yaml` 生骨架，PV 和 PVC 必須手寫或從官方文件複製。
+
+## apply 順序：先 PV 後 PVC
+
+PVC 要找 PV 來綁，PV 得先存在。
+
+```bash
+k apply -f pv
+k apply -f pvc
+```
+
+## 確認 PV/PVC 綁定狀態
+
+```bash
+k get pv,pvc
+```
+
+兩邊 STATUS 都是 `Bound`、互相指向對方就是成功。
