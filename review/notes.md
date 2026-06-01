@@ -492,3 +492,75 @@ WeaMind 目前兩條路：
 WeaMind 目前規模，這是可接受的冗餘。
 
 一句話記法：兩條路各自 build 是故意的設計，換取路徑清楚，等 build 成本變高再優化。
+
+## PV 和 PVC 的基本定位
+
+PersistentVolume (PV) 是 cluster 層級的儲存資源，由管理員預先建立或透過 StorageClass 動態產生。它和 Node 一樣是 cluster resource，生命週期獨立於任何 Pod。
+
+PersistentVolumeClaim (PVC) 是使用者對儲存的請求。Pod 消耗 Node 資源，PVC 消耗 PV 資源。PVC 可以指定容量和 access mode。
+
+一句話記法：PV 是「有什麼儲存可用」，PVC 是「我要用多少儲存」。
+
+## PV 的 Provisioning：Static vs Dynamic
+
+| 方式 | 誰建 PV | 什麼時候建 |
+|------|---------|------------|
+| Static | 管理員手動建 | 事先建好，等 PVC 來 claim |
+| Dynamic | K8s 自動建 | PVC 建立時，依 StorageClass 自動產生 |
+
+Dynamic provisioning 的前提：
+- PVC 要指定 storageClassName
+- 該 StorageClass 必須存在且支援 dynamic provisioning
+- API server 要啟用 DefaultStorageClass admission controller
+
+一句話記法：Static 是先備好 PV 等人用，Dynamic 是用的時候才生。
+
+## PV 和 PVC 的 Binding
+
+PVC 建立後，control plane 的 control loop 會找符合條件的 PV 綁定。綁定後是一對一關係，透過 ClaimRef 雙向指向。
+
+綁定邏輯：
+- Dynamic provisioning 的 PV 一定綁回觸發它的 PVC
+- Static PV 配對時，使用者至少拿到要求的量，但可能拿到更大的
+- 沒有符合的 PV 時，PVC 會一直 Pending，直到有符合的 PV 出現
+
+一句話記法：PVC 和 PV 是一對一綁定，綁不到就 Pending。
+
+## Pod 怎麼用 PVC
+
+Pod 的 `volumes` 區塊用 `persistentVolumeClaim` 指向 PVC，K8s 會找到綁定的 PV 並 mount 給 Pod。
+
+```yaml
+volumes:
+  - name: my-storage
+    persistentVolumeClaim:
+      claimName: my-pvc
+```
+
+如果 PV 支援多種 access mode，Pod 在使用時要指定要用哪一種。
+
+一句話記法：Pod 不直接看 PV，透過 PVC 間接取得 volume。
+
+## Storage Object in Use Protection
+
+K8s 保護正在使用中的 PVC 和已綁定的 PV，不會讓它們被立即刪除。
+
+- 刪除正在被 Pod 使用的 PVC：PVC 進入 Terminating，但實際刪除延後到 Pod 不再使用
+- 刪除已綁定 PVC 的 PV：PV 進入 Terminating，但實際刪除延後到 PVC 解綁
+
+辨識方式：status 顯示 Terminating，Finalizers 包含 `kubernetes.io/pvc-protection` 或 `kubernetes.io/pv-protection`。
+
+一句話記法：K8s 用 Finalizer 擋住刪除，避免使用中的 storage 被誤殺。
+
+## Reclaim Policy：PVC 刪除後 PV 怎麼處理
+
+| Policy | 行為 | 資料去向 |
+|--------|------|----------|
+| Retain | PV 保留，狀態變 Released，不接受新 claim | 資料留著，需手動清理 |
+| Delete | 刪除 PV，同時刪除底層儲存資源 | 資料一起刪掉 |
+
+Dynamic provisioning 的 PV 預設繼承 StorageClass 的 reclaim policy，通常是 Delete。
+
+Retain 後要重用同一塊儲存：刪 PV → 清資料 → 刪底層資源（或保留）→ 建新 PV。
+
+一句話記法：Retain 留資料但要手動處理，Delete 連資料一起清掉。
