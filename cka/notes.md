@@ -846,3 +846,20 @@ k get pv,pvc
 ```
 
 兩邊 STATUS 都是 `Bound`、互相指向對方就是成功。
+
+## Dynamic vs Static Provisioning
+
+| 方式 | 流程 | 實務常見度 |
+|------|------|-----------|
+| Static | 管理員手動建 PV → 開發者建 PVC 綁定 | 少 |
+| Dynamic | 定義 StorageClass → 開發者建 PVC → 自動建 PV | 主流 |
+
+Dynamic 主流原因：
+- 開發者自助服務，不用等管理員
+- 按需分配，不用事先猜容量
+- 雲原生（AWS EBS、GCP PD）原生支援
+- GitOps 友善，PVC manifest 進 repo 就完成
+
+Static 場景：特定硬體（local SSD）、需要精確控制綁定、沒有 dynamic provisioner。
+
+CKA 愛考 static 是因為考點多（手寫 PV、nodeAffinity、selector）。
