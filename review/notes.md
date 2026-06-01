@@ -564,3 +564,20 @@ Dynamic provisioning 的 PV 預設繼承 StorageClass 的 reclaim policy，通�
 Retain 後要重用同一塊儲存：刪 PV → 清資料 → 刪底層資源（或保留）→ 建新 PV。
 
 一句話記法：Retain 留資料但要手動處理，Delete 連資料一起清掉。
+
+## hostPath 和 local volume 的差異
+
+兩者都是用節點本地磁碟，但設計目的不同：
+
+| | hostPath | local |
+|---|---|---|
+| 用途 | 開發測試、存取節點檔案 | 正式環境的本地 SSD/磁碟 |
+| 排程意識 | 沒有。Pod 被排到哪個 node，就用那個 node 的路徑 | 有。PV 綁定 node affinity，scheduler 會把 Pod 排到對的 node |
+| 資料持久性 | Pod 重建可能換 node，資料就斷了 | Pod 重建會被排回同一個 node，資料還在 |
+| 搭配 PV/PVC | 可以但不常見 | 設計上就是配 PV 使用 |
+
+hostPath 的問題：沒辦法保證 Pod 下次還會被排到同一個 node，換 node 資料就斷。
+
+local volume 的解法：PV 上寫 node affinity，告訴 scheduler「這個 PV 只能在 node-1 用」，綁定這個 PVC 的 Pod 就會被排到 node-1。
+
+一句話記法：hostPath 是「碰巧用到這個 node」，local 是「保證用到這個 node」。
