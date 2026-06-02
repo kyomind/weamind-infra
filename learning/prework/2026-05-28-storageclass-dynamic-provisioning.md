@@ -75,21 +75,75 @@
 
 ### 今日學到什麼
 
-- 待填
+- `StorageClass` 本身是 Kubernetes API object，不是 PVC 裡的一個普通字串，也不是實際的一塊 storage。它描述的是某一類 storage 應該如何被建立。
+- PV、PVC、StorageClass 分別回答不同問題：
+  - PV：cluster 裡目前有哪些可用的 storage？
+  - PVC：workload 需要什麼 storage？
+  - StorageClass：如果需要動態供應 storage，應該用什麼規則與 provisioner 建立？
+- static provisioning 與 dynamic provisioning 的分界，不是「有沒有 StorageClass」，而是 PV 在 PVC 出現前是否已經存在：
+
+```text
+Static:
+PV -> PVC -> Bound
+
+Dynamic:
+PVC -> StorageClass -> Provisioner -> Backend Storage -> PV -> Bound
+```
+
+- static PV 和 PVC 仍然可以帶相同的 `storageClassName`。只要 PV 是管理員事先建立，仍然屬於 static provisioning。
+- StorageClass 裡的 `provisioner` 指定由誰實際建立 storage。實務上常由 CSI driver 承接；CKA 階段先記住它是實際執行者即可。
+- StorageClass 的 `reclaimPolicy` 描述 PVC 釋放後如何處理動態建立的 PV 與底層 storage：
+  - `Delete`：刪除 PV，通常也刪除底層 storage。
+  - `Retain`：保留 PV 與資料，交由管理員後續處理。
+- `volumeBindingMode` 影響建立或綁定 PV 的時機：
+  - `Immediate`：PVC 建立後立即建立或綁定 PV。
+  - `WaitForFirstConsumer`：等到 Pod 使用 PVC，再根據 Pod 的排程位置建立或綁定適合的 PV。這能避免 topology / zone 不相容。
+- default StorageClass 使用 annotation 標示：
+
+```yaml
+annotations:
+  storageclass.kubernetes.io/is-default-class: "true"
+```
+
+- PVC 的 `storageClassName` 有三種重要情況：
+  - 省略：若 cluster 有 default StorageClass，PVC 會使用它。
+  - 指定名稱，例如 `fast`：選擇該 StorageClass，也可以與事先存在的同 class static PV 配對。
+  - 明確寫成 `""`：不使用任何 StorageClass，也不套用 default class，只尋找沒有 class 的現有 PV。
+- `allowVolumeExpansion: true` 代表 StorageClass 允許 PVC 提出擴容申請，但不是 resize 一定成功的保證。實際結果仍取決於 storage backend、CSI driver 與檔案系統支援。
+- CKA 排查 PVC `Pending` 時，第一步應先分辨目前走的是 static provisioning、dynamic provisioning，還是 `WaitForFirstConsumer` 正在等待 Pod。
+
+```bash
+kubectl get sc
+kubectl get sc <name> -o yaml
+kubectl get pv,pvc
+kubectl describe pvc <name> -n <namespace>
+```
 
 ### 已能白話講清楚什麼
 
-- 待填
+- StorageClass 像一份建立 storage 的規格書；PV 是實際可用的 storage resource；PVC 是 workload 提出的 storage 需求。
+- Dynamic provisioning 的完整路徑是 `PVC -> StorageClass -> Provisioner -> Backend Storage -> PV -> Bound`。
+- StorageClass 和 dynamic provisioning 不是同義詞。PV 若事先存在，即使帶有 `storageClassName`，仍可能是 static provisioning。
+- `storageClassName: ""` 不是漏寫，而是明確要求不要使用任何 StorageClass。
+- `WaitForFirstConsumer` 是先知道 Pod 要排到哪裡，再準備合適的 storage，避免 topology 衝突。
+- `allowVolumeExpansion` 只是允許申請擴容的必要條件之一，不是成功保證。
 
 ### 目前還卡住什麼
 
-- 待填
+- PV 與 StorageClass 的 matching 細節，以及同時存在多個候選 PV 時 Kubernetes 如何選擇。
+- 多個 StorageClass 共存時，PVC 明確指定 class、使用 default class、完全不要 class 的行為邊界。
+- PVC resize 的完整操作流程，以及修改 PVC request 後如何觀察 PV、Pod 與檔案系統狀態。
+- CSI driver 與 backend storage 的實際互動方式，目前先保留在概念層。
 
 ### 今日最重要的觀念
 
-- 待填
+1. StorageClass 是描述 provisioning 規則的 Kubernetes object，不是 storage 本身。
+2. static / dynamic provisioning 的真正分界是 PV 是否事先存在，不是有沒有 StorageClass。
+3. dynamic provisioning 的核心流程是 `PVC -> StorageClass -> Provisioner -> PV -> Bound`。
+4. 省略 `storageClassName`、指定 class、明確寫成 `storageClassName: ""` 是三種不同語意。
+5. `WaitForFirstConsumer` 與 `allowVolumeExpansion` 都是 StorageClass 的重要行為設定：前者控制綁定時機，後者只允許提出擴容申請。
 
 ### 帶回 repo 內對照的問題
 
-1.
-2.
+1. 建立或讀取一份 StorageClass YAML，將 `provisioner`、`reclaimPolicy`、`volumeBindingMode`、`allowVolumeExpansion` 全部翻譯成白話，並用 `kubectl get sc <name> -o yaml` 驗證。
+2. 故意建立一個使用 `storageClassName: ""` 的 PVC，在沒有符合 PV 時觀察 `kubectl describe pvc` 與 `kubectl get pv,pvc`，解釋它為什麼維持 `Pending`。
