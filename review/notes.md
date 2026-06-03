@@ -581,3 +581,243 @@ hostPath 的問題：沒辦法保證 Pod 下次還會被排到同一個 node，�
 local volume 的解法：PV 上寫 node affinity，告訴 scheduler「這個 PV 只能在 node-1 用」，綁定這個 PVC 的 Pod 就會被排到 node-1。
 
 一句話記法：hostPath 是「碰巧用到這個 node」，local 是「保證用到這個 node」。
+
+## 跨 repo 發 PR 的本質是什麼
+
+沒有什麼神奇機制。本質就是「先把目標 repo clone 下來，然後做一次正常的 Git 操作」。
+
+以 WeaMind 為例：
+- app repo 的 release workflow 先 checkout `weamind-infra`
+- 改 `deployment.yaml` 裡的 image tag
+- push 一個 branch，對 `weamind-infra` 開 PR
+
+跟你平常在本機改 code、push、開 PR 一模一樣，**只是執行環境換成 CI runner**。
+
+權限（token）是通行證；真正的動作本身，就是一次普通的 Git 變更提案。
+
+一句話記法：跨 repo PR = 在 CI 裡 clone target repo，然後做正常的 git push + 開 PR。
+
+## 什麼是 CI runner
+
+CI runner 就是「執行 CI workflow 的機器」。
+
+當你在 GitHub push code 或開 PR，GitHub Actions 會找一台機器來跑 workflow 裡的步驟，那台機器就是 runner。
+
+可以把它想成：
+- 一台臨時的 Linux/macOS/Windows 機器
+- 自動 checkout repo、裝套件、跑測試、build image
+- 跑完就丟，下次再開一台新的
+
+「在 CI runner 上 git push」就是讓這台臨時機器代替你執行 git 操作。
+
+一句話記法：CI runner = 幫你跑 workflow 的臨時機器。
+
+## Fine-grained PAT、classic PAT、GitHub App 怎麼選
+
+三種是不同「重量級」的授權方案：
+
+| 方案 | 特色 | 適合場景 |
+|------|------|----------|
+| Fine-grained PAT | 可鎖定特定 repo + 特定權限 | 單一用途、權限好縮 |
+| Classic PAT | 權限較粗，容易開太大 | 歷史包袱才用，不推薦新專案首選 |
+| GitHub App | 權限最細、有獨立機器身份、可審計 | 多 repo 自動化、長期基礎設施 |
+
+Fine-grained PAT 全稱是 Fine-grained personal access tokens，是 GitHub 較新的 PAT 類型。
+
+WeaMind 第一版只需要對 `weamind-infra` 做 clone、push branch、開 PR，fine-grained PAT 剛好能縮到只給這三件事。
+
+GitHub App 更正式，但現在引入會把注意力從「先打通」轉到 app 設定、私鑰管理，第一版不划算。
+
+一句話記法：第一版用 fine-grained PAT，等這條路變成長期核心設施再考慮 GitHub App。
+
+## Terraform state 為什麼不是單純 cache
+
+State 做的事是 **資源身份對應**，不是快取內容。
+
+舉例：`.tf` 裡寫了 `google_compute_instance.web`，apply 後 GCP 建出一台真的 VM，有真實 instance ID。State 記住的就是「`google_compute_instance.web` 對應到 GCP 那台 ID 是 `xxxxx` 的 VM」。
+
+為什麼重要？下次改 `.tf` 跑 `plan` 時，Terraform 要判斷：
+- 這個改動應該 update 哪台既有 VM
+- 還是 VM 不見了要重新 create
+- 還是你把資源刪掉要 destroy
+
+沒有 state，Terraform 不知道 config 在管理「誰」，可能會建新的而不是更新既有的，或搞不清楚該刪誰。
+
+一句話記法：State 不是快取，是資源身份對應表；沒有它，Terraform 就不知道變更該套到誰身上。
+
+## Terraform 和 Kubernetes 都是宣告式，差在哪
+
+兩者都是寫「我要什麼」而不是「怎麼做」，但 reconcile 模型完全不同。
+
+Kubernetes：持續自動 reconcile
+- manifest 送進 cluster 後，controller 持續監控
+- 有人手動改 Pod，controller 自動改回來
+- 24 小時都在逼近 desired state
+
+Terraform：人為觸發的一次性 reconcile
+- 跑 `plan` 比對 config + state + 雲端現況，算出 diff
+- 跑 `apply` 執行變更，然後就沒了
+- 有人手動改雲端資源，要等你再跑 `plan` 才會發現 drift
+
+| | Kubernetes | Terraform |
+|---|---|---|
+| reconcile 觸發 | 自動、持續 | 人為、一次性 |
+| 誰在 reconcile | cluster 內的 controller | 你跑的 CLI |
+| drift 處理 | controller 自動修正 | 等你下次 `plan` 才發現 |
+
+一句話記法：Kubernetes 是「controller 一直在看」，Terraform 是「你叫它看它才看」。
+
+## Terraform 常控制哪些資源
+
+VM 只是入門練習最常見的例子，Terraform 能管的東西大致分三類：
+- Compute 與基礎網路：VM、VPC、subnet、firewall、load balancer
+- 雲端配套資源：storage bucket、database、DNS record、static IP
+- 權限與整合：IAM、service account、secret manager、甚至部分 K8s 物件
+
+一句話記法：Terraform 不是「開 VM 工具」，是跨雲端的基礎設施宣告工具。
+
+## Terraform 能控制到哪裡，受什麼限制
+
+不是雲端有這個資源，Terraform 就一定能管。真正的上限受三層限制：
+
+| 限制層 | 意思 |
+|--------|------|
+| 平台有沒有 API | 沒有公開 API，Terraform 沒辦法自動化 |
+| Provider 有沒有實作 | 有 API 但 provider 沒做或做不完整，也管不到 |
+| 適不適合宣告式管理 | 太即時、lifecycle 太互動式的資源，用 Terraform 反而卡 |
+
+一句話記法：Terraform 能管到哪，看「平台 API × provider 實作 × 適合宣告式」三層交集。
+
+## Terraform plan 怎麼把 state、config、real world 對起來
+
+`terraform plan` 不是只讀 `.tf`，它同時看三個東西：
+
+| 來源 | 提供什麼 |
+|------|----------|
+| Config（`.tf`） | 你想要它變成什麼樣子 |
+| State | 這個 resource 對應到真實世界的哪個對象 |
+| Provider 查回來的現況 | 那個對象現在實際長什麼樣 |
+
+三者放在一起比對，算出 diff：「從現在這樣變成你要的那樣，需要做這些事」。
+
+看到 unexpected diff 時，不能只怪 `.tf` 寫錯，也要想：
+- 有人手動改過雲端資源？
+- provider 回報的狀態和你想的不一樣？
+
+一句話記法：`plan` = 以 state 定位、以 provider 觀察現況、以 config 為目標，三者比對算 diff。
+
+## HCL、plan、apply、state 各自扮演什麼角色
+
+| | 是什麼 | 比喻 |
+|---|---|---|
+| HCL | 宣告「我要什麼」的語言 | 菜單 |
+| Plan | 比對現況與目標，算出 diff | 列出要買什麼、煮什麼 |
+| Apply | 真正執行變更 | 動手做菜 |
+| State | 記錄真實世界長什麼樣 | 冰箱存貨清單 + 每道菜的身份證 |
+
+常見誤區：
+- HCL 不是操作步驟，是目標狀態描述
+- Plan 不只看 HCL，同時看 HCL + state + 雲端現況
+- Apply 不是執行檔案，是執行算出來的變更動作
+- State 不是 HCL 備份，裡面有 instance ID、IP 等 HCL 沒寫的東西
+
+一句話記法：HCL 寫目標、plan 算差異、apply 執行、state 記錄真實世界。
+
+## `-out`、state 與 apply 的關係
+
+沒用 `-out` 時：
+- `terraform plan` 印出預覽，但沒存下來
+- `terraform apply` 會重新算一次 plan，再執行
+- 兩次 plan 通常很接近，但不保證完全一樣
+
+用 `-out` 時：
+- `terraform plan -out=tfplan` 把 plan 存成檔案
+- `terraform apply tfplan` 直接執行那份，不重算
+- 確保「你看到的」和「實際執行的」是同一份
+
+Plan 和 State 不是同一件事：
+
+| | Plan | State |
+|---|---|---|
+| 是什麼 | 這次準備做什麼（一次性） | 目前世界長什麼樣（持續更新） |
+| 生命週期 | 算完就丟，除非 `-out` | 每次 apply 後更新，長期保留 |
+
+一句話記法：不用 `-out` 的 plan 只是螢幕預覽，apply 會重算；state 是 Terraform 理解世界的狀態記錄。
+
+## 改了 infra 內容後再 apply 舊的 `-out` 檔會怎樣
+
+三種常見情況：
+
+| 情況 | 結果 |
+|------|------|
+| 你改了 `.tf` 檔 | Terraform 執行舊 plan，不理新改動。下次 `plan` 會看到 diff |
+| 有人手動改了雲端資源 | 可能失敗，或成功但蓋掉別人的改動 |
+| state 被改過（別人先 apply 了） | Terraform 檢查 serial/lineage 不符，拒絕執行 |
+
+實務建議：
+- `-out` 存下來的 plan 要盡快 apply
+- 不確定時先跑一次新的 `plan` 比對
+- CI/CD 裡常用 `-out`，因為 plan → 審核 → apply 是連續流程
+
+一句話記法：`-out` 的 plan 是當下快照，環境變了再 apply 可能失敗或覆蓋別人改動。
+
+## 什麼是 HCL
+
+HCL 全名 HashiCorp Configuration Language，是 HashiCorp 公司設計的設定檔語言。
+
+你寫 `.tf` 檔時用的語法就是 HCL：
+
+```hcl
+resource "google_compute_instance" "web" {
+  name         = "my-vm"
+  machine_type = "e2-micro"
+}
+```
+
+為什麼不用 JSON 或 YAML：
+- JSON 太多引號括號，寫起來囉嗦
+- YAML 縮排容易出錯
+- HCL 設計成人好讀好寫、機器好解析的中間地帶
+
+HCL 用在 Terraform、Packer、Vault、Nomad 等 HashiCorp 工具。
+
+一句話記法：HCL 是 HashiCorp 的設定檔語言，Terraform 的 `.tf` 檔就是用它寫的。
+
+## terraform validate 是什麼
+
+`terraform validate` 檢查 `.tf` 檔「寫得對不對」。
+
+檢查什麼：
+- 語法有沒有打錯
+- 區塊結構、變數型別對不對
+- 欄位名稱是不是 provider 認得的
+
+不檢查什麼：
+- 雲端資源能不能真的建成功
+- SSH 能不能登入、認證有沒有設好
+- 安不安全（`0.0.0.0/0` 開給全世界也會過）
+
+常見順序：`fmt` → `validate` → `plan` → `apply`
+
+一句話記法：`validate` 檢查「配置合不合法」，不檢查「雲端能不能成功」。
+
+## Terraform 的 metadata 在 GCP VM 代表什麼
+
+`metadata` 是一組 key/value 設定，會被送到 GCP 成為 VM 的「附加控制資料」。
+
+和其他欄位的差別：
+
+| 欄位 | 描述的是 |
+|------|----------|
+| `machine_type`、`boot_disk` | GCP 要建什麼 VM（硬體規格） |
+| `metadata` | VM 起來後，平台和 guest 環境要帶給它什麼設定 |
+
+`metadata` 可以放：
+- `ssh-keys`：告訴 guest agent 讓誰用哪把 key 登入
+- `startup-script`：VM 開機時跑的腳本
+- `enable-oslogin`：切換登入模型
+- 自訂 key/value（給腳本或應用讀取）
+
+本質上是 VM 的 control/config channel，不是只給 SSH 用。
+
+一句話記法：`metadata` 不是硬體規格，是「VM 起來後要知道什麼」的附加控制資料。
