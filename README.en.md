@@ -10,7 +10,7 @@
 
 > 📖 [中文版](README.md)
 
-Kubernetes infrastructure for [WeaMind](https://github.com/kyomind/weamind) — demonstrating a migration from a single-server Docker Compose setup to a K8s cluster.
+Kubernetes infrastructure for [WeaMind](https://github.com/kyomind/weamind) — a complete migration from single-server Docker Compose to a K8s cluster.
 
 > Main application: [WeaMind](https://github.com/kyomind/weamind) — LINE Bot built with FastAPI
 
@@ -58,13 +58,13 @@ flowchart TD
 
 ## Tech Stack
 
-This repository currently covers the runtime infrastructure stack, observability tooling, and Terraform-based IaC work.
+This repository covers the runtime infrastructure stack, observability tooling, and Terraform-based IaC work.
 
 - **K3s** cluster (1 control plane + 2 worker nodes) on Hetzner Cloud
 - **Traefik** Ingress Controller (bundled with K3s)
 - **Hetzner Load Balancer**
 - **cert-manager** + Let's Encrypt (Cloudflare DNS-01 challenge)
-- **PostgreSQL** and **Redis** on the bastion VM (outside K8s)
+- **PostgreSQL** and **Redis** on the bastion VM
 - **Helm** + **kube-prometheus-stack** (Prometheus / Grafana observability)
 - **Terraform** on GCP Free Tier for IaC experiments
 

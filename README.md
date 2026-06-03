@@ -10,7 +10,7 @@
 
 > 📖 [English Version](README.en.md)
 
-WeaMind 的 Kubernetes 基礎設施 — 展示從單機 Docker 到 K8s 叢集的遷移實踐。
+WeaMind 的 Kubernetes 基礎設施 — 從單機 Docker 到 K8s 叢集的完整遷移。
 
 > 主應用程式：[WeaMind](https://github.com/kyomind/weamind) - LINE Bot FastAPI application
 
@@ -58,13 +58,13 @@ flowchart TD
 
 ## Tech Stack
 
-本 repo 目前涵蓋執行中基礎設施、可觀測性，以及以 Terraform 為主的 IaC 實作。
+本 repo 涵蓋執行中基礎設施、可觀測性，以及以 Terraform 為主的 IaC 實作。
 
 - **K3s** 叢集（1 控制平面 + 2 工作節點）於 Hetzner Cloud
 - **Traefik** Ingress Controller（K3s 內建）
 - **Hetzner Load Balancer** 負載平衡器
 - **cert-manager** + Let's Encrypt（Cloudflare DNS-01 驗證）
-- **PostgreSQL** 與 **Redis** 於堡壘機（不在 K8s 內）
+- **PostgreSQL** 與 **Redis** 於堡壘機
 - **Helm** + **kube-prometheus-stack**（Prometheus / Grafana observability）
 - **Terraform** 於 GCP Free Tier 的 IaC 實作
 
