@@ -13,6 +13,7 @@
 ## 目前內容
 
 - `gcp-free-tier-vm/`：Phase 2 W9 的最小 Terraform 練習，目標是用 Terraform 建出一台符合 Free Tier 條件的 GCP VM。
+- `gcp-e2-micro-tw/`：台灣區低成本 `e2-micro` VM 練習，目標是用 Terraform 建出一台付費區域 VM，並刻意關閉監控 agent 與自動備份相關擴張。
 
 ## 未來方向
 

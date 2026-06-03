@@ -1,0 +1,13 @@
+project_id          = "your-gcp-project-id"
+region              = "asia-east1"
+zone                = "asia-east1-b"
+instance_name       = "e2-micro-tw"
+machine_type        = "e2-micro"
+boot_disk_size_gb   = 25
+boot_disk_type      = "pd-balanced"
+image_project       = "debian-cloud"
+image_family        = "debian-12"
+network_name        = "default"
+ssh_source_ranges   = ["0.0.0.0/0"]
+ssh_username        = "your-linux-username"
+ssh_public_key_path = "/absolute/path/to/your/public-key.pub"
