@@ -64,7 +64,7 @@ flowchart TD
 - **Traefik** Ingress Controller（K3s 內建）
 - **Hetzner Load Balancer** 負載平衡器
 - **cert-manager** + Let's Encrypt（Cloudflare DNS-01 驗證）
-- **PostgreSQL** 與 **Redis** 於堡壘機
+- **PostgreSQL** 與 **Redis** 部署於堡壘機
 - **Helm** + **kube-prometheus-stack**（Prometheus / Grafana observability）
 - **Terraform** 於 GCP Free Tier 的 IaC 實作
 
