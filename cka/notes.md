@@ -816,6 +816,8 @@ PVC 卡在 Pending + Events 顯示 `WaitForFirstConsumer` ≠ 錯誤。
 
 確認方式：`k get sc <name> -o yaml` 看 `volumeBindingMode`。
 
+考試陷阱：給一個 Pending 的 PVC 要你找原因 → 先查 SC 的 `volumeBindingMode`。
+
 ## kubectl apply -f 不看副檔名
 
 只看內容格式，叫 `pv.yaml`、`pv.yml`、`pv.txt`、甚至沒副檔名都行，內容是合法 YAML 或 JSON 就能吃。
@@ -1042,3 +1044,24 @@ sidecar 常用技巧。沒有持續運行的指令，container 跑完就退出�
 https://kubernetes.io/docs/concepts/storage/persistent-volumes/#claims-as-volumes
 
 這段有最精簡的 Pod + PVC 掛載範例，複製下來改 `claimName` 和 `mountPath` 就能用。
+
+## PVC 自動綁定 PV 的匹配條件
+
+不用 `volumeName` 指定時，K8s 自動配對要滿足三個條件：
+
+1. `storageClassName` 一致
+2. `accessModes` 一致
+3. PVC request ≤ PV capacity
+
+三個都符合才會 Bound。多個 PV 符合時選容量最小但足夠的。
+
+## volumeBindingMode 是 SC 的事
+
+綁定時機由 StorageClass 決定，不是 PVC 控制：
+
+| `volumeBindingMode` | 行為 |
+|---------------------|------|
+| `Immediate`（預設） | PVC 建立後立刻嘗試綁定 |
+| `WaitForFirstConsumer` | 等 Pod 掛載這個 PVC 時才綁定 |
+
+沒設或 SC 不存在 = `Immediate`。
