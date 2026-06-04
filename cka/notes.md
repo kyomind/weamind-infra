@@ -826,9 +826,9 @@ PVC 卡在 Pending + Events 顯示 `WaitForFirstConsumer` ≠ 錯誤。
 
 `$` 跳到行末（停在 normal mode），`A` 跳到行末並直接進 insert mode。考試時 `A` 更實用，到了就能直接打字。
 
-## PV/PVC 沒有 kubectl create dry-run
+## Storage 三件套都沒有 kubectl create
 
-不像 Pod、Deployment 可以 `--dry-run=client -o yaml` 生骨架，PV 和 PVC 必須手寫或從官方文件複製。
+SC、PV、PVC 全部沒有 `kubectl create` 捷徑，都要從官方文件複製或手寫。
 
 ## apply 順序：先 PV 後 PVC
 
@@ -863,3 +863,69 @@ Dynamic 主流原因：
 Static 場景：特定硬體（local SSD）、需要精確控制綁定、沒有 dynamic provisioner。
 
 CKA 愛考 static 是因為考點多（手寫 PV、nodeAffinity、selector）。
+
+## StorageClass 完整範例
+
+```yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: low-latency
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: csi-driver.example-vendor.example
+reclaimPolicy: Retain  # 預設是 Delete
+allowVolumeExpansion: true
+mountOptions:
+  - discard
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  guaranteedReadWriteLatency: "true"  # provider-specific
+```
+
+關鍵欄位：
+- `provisioner`：指定用哪個 CSI driver 建 volume
+- `reclaimPolicy`：`Delete`（預設）或 `Retain`，PVC 刪除後 PV 怎麼處理
+- `allowVolumeExpansion`：是否允許事後擴容
+- `volumeBindingMode`：`Immediate`（預設）或 `WaitForFirstConsumer`
+- `parameters`：傳給 provisioner 的參數，各家不同
+- `storageclass.kubernetes.io/is-default-class: "true"`：標記為 default StorageClass，沒指定 StorageClass 的 PVC 會用這個
+
+## Storage 三件套都沒有 kubectl create
+
+SC、PV、PVC 全部沒有 `kubectl create` 捷徑，都要從官方文件複製或手寫。
+
+## Apply 順序：SC → PV → PVC
+
+按依賴關係走。PV 要指定 `storageClassName`，PVC 要綁 PV，所以順序不能亂。
+
+## PVC 綁定特定 PV 用 volumeName
+
+題目出現「should be bound to 某 PV」→ 用 `volumeName` 直接指定：
+
+```yaml
+spec:
+  storageClassName: blue-stc-cka
+  volumeName: blue-pv-cka
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Mi
+```
+
+`volumeName` 是一對一指定，`selector.matchLabels` 是篩選（可能多個）。
+
+## volumeName 跳過 WaitForFirstConsumer
+
+`volumeName` 是強制指定，Kubernetes 直接綁定，不管 StorageClass 的 `volumeBindingMode` 設成什麼。
+
+## storageClassName 是配對條件
+
+即使用了 `volumeName` 指定 PV，PVC 和 PV 的 `storageClassName` 也必須一致才能綁定。
+
+可以想成：`storageClassName` 驗票，`volumeName` 選座位。票不對，指定座位也沒用。
+
+## CKA 題目沒要求的欄位不寫
+
+題目要什麼給什麼，多寫沒加分還可能出錯。沒要求的欄位讓它用預設值。
