@@ -75,21 +75,74 @@
 
 ### 今日學到什麼
 
-- 待填
+- Pod 使用 storage 時有兩層模型：
+  - `spec.volumes` 定義 volume 來源，回答「這個 Pod 有哪些 storage 可以用」。
+  - `containers[].volumeMounts` 定義掛載位置，回答「這個 container 要在哪個路徑看到這份 storage」。
+- PVC 掛到 Pod 時，Pod YAML 裡使用 `persistentVolumeClaim.claimName`，而且填的是 PVC 名稱，不是 PV 名稱。
+
+```yaml
+volumes:
+- name: data-volume
+  persistentVolumeClaim:
+    claimName: weather-data-pvc
+```
+
+- 正確心智模型是：
+
+```text
+Pod -> PVC -> PV -> Storage
+```
+
+- shared volume 不一定等於 `ReadWriteMany`。同一個 Pod 內多個 containers 共享同一個 `emptyDir` 或同一個 volume，不需要先思考 RWO / ROX / RWX；accessModes 主要影響多 Pod / 多 node 使用同一份 persistent storage 的能力。
+- `emptyDir` 是跟 Pod 生命週期綁定的暫存 volume，適合 sidecar、log sharing、暫存檔案。Pod 刪除後資料也消失。
+- ConfigMap 掛載成 volume 後，不是把 YAML 原樣放進 container，而是 key 變成檔名、value 變成檔案內容。
+
+```text
+ConfigMap data key -> file name
+ConfigMap data value -> file content
+```
+
+- PVC volume 才是 persistent storage 的入口，適合 database、user upload、application data 等需要跨 Pod 重建保留的資料。
+- `ReadWriteOnce` 不是「只能寫一次」，也不等於「只能給一個 Pod」。它的重點是同一時間只能由一個 node 掛載讀寫。
+- PVC resize 時應修改 PVC 的 `spec.resources.requests.storage`，不是直接改 PV capacity。因為 PVC 是需求來源，PV 是供給結果。
+- StorageClass 控制 resize 能否被接受，因為真正能否擴容取決於底層 storage backend 與 CSI driver 能力。流程可以理解成：
+
+```text
+PVC 提出需求
+StorageClass 描述能力
+CSI Driver 執行擴容
+PV 反映結果
+Storage Backend 提供實際容量
+```
+
+- resize 後最常用 `kubectl describe pvc <name>` 觀察 capacity、conditions、events，再用 `kubectl get pv` 確認 PV capacity 是否同步更新；必要時用 `kubectl describe pod <pod-name>` 看 filesystem resize 相關事件。
 
 ### 已能白話講清楚什麼
 
-- 待填
+- `volumes` 是來源，`volumeMounts` 是 container 內的掛載位置。
+- Pod 永遠透過 PVC 使用 persistent storage，不直接找 PV。
+- 同 Pod 內多 container 共享 volume，和多 Pod 共享 persistent storage，是兩種不同問題。
+- `emptyDir` 適合 Pod 內暫存與 sidecar sharing；PVC 適合需要保留的資料。
+- ConfigMap volume 會把 key-value 轉成檔案，不是把 ConfigMap YAML 原樣掛進去。
+- RWO 的重點是 node，不是「一次」或「一個 Pod」。
+- resize 改 PVC，不改 PV；StorageClass 決定這個 resize request 是否有能力被實現。
 
 ### 目前還卡住什麼
 
-- 待填
+- CSI driver 實際如何執行 expansion，目前只理解到它是執行者。
+- 不同 storage backend，例如 NFS、Longhorn、EBS，對 resize 與 access mode 的支援差異。
+- filesystem resize 與 volume resize 的細節，以及哪些情況需要 Pod 重啟或等待 filesystem resize 完成。
 
 ### 今日最重要的觀念
 
-- 待填
+1. `volumes` 定義來源，`volumeMounts` 定義掛載位置。
+2. Pod 透過 PVC 使用 storage，不直接引用 PV。
+3. shared volume 不等於 RWX；同 Pod 共享與多 Pod 共享要分開想。
+4. ConfigMap 掛載後是檔案模型：key 是檔名，value 是檔案內容。
+5. PVC resize 改 PVC，不改 PV；StorageClass 與 CSI driver 決定能不能真正完成擴容。
 
 ### 帶回 repo 內對照的問題
 
-1.
-2.
+1. 如果未來把 WeaMind 的 PostgreSQL 搬進 Kubernetes，PVC、StorageClass、access mode 應該如何設計？目前 PostgreSQL 留在 VM 的混合架構，避免了哪些 in-cluster storage 維運問題？
+2. 如果 `line-bot` Pod 增加一個 log sidecar，使用 `emptyDir` 共享日誌的 YAML 會怎麼設計？哪些欄位屬於 `volumes`，哪些欄位屬於 `volumeMounts`？
+3. 如果未來導入 Longhorn，PVC resize 是否仍可理解成 `修改 PVC -> StorageClass -> CSI Driver -> PV`？Longhorn 在這條鏈路中扮演哪個角色？
