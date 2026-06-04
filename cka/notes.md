@@ -891,9 +891,9 @@ parameters:
 
 SC、PV、PVC 全部沒有 `kubectl create` 捷徑，都要從官方文件複製或手寫。
 
-## Apply 順序：SC → PV → PVC
+## Apply 順序：SC → PV → PVC → Pod
 
-按依賴關係走。PV 要指定 `storageClassName`，PVC 要綁 PV，所以順序不能亂。
+按依賴關係走。PV 要指定 `storageClassName`，PVC 要綁 PV，Pod 要掛 PVC，所以順序不能亂。
 
 ## PVC 綁定特定 PV 用 volumeName
 
@@ -1035,3 +1035,10 @@ volumeMounts:
 ## tail -f /dev/null 讓容器保持運行
 
 sidecar 常用技巧。沒有持續運行的指令，container 跑完就退出，Pod 會變成 CrashLoopBackOff。
+
+## Pod 掛 PVC 範例在 Claims As Volumes
+
+官方文件搜 `Claims As Volumes`，在 Persistent Volumes 頁：
+https://kubernetes.io/docs/concepts/storage/persistent-volumes/#claims-as-volumes
+
+這段有最精簡的 Pod + PVC 掛載範例，複製下來改 `claimName` 和 `mountPath` 就能用。
