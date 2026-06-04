@@ -925,3 +925,11 @@ spec:
 ## CKA 題目沒要求的欄位不寫
 
 題目要什麼給什麼，多寫沒加分還可能出錯。沒要求的欄位讓它用預設值。
+
+## StorageClass 的 provisioner 是必填
+
+`provisioner` 是 SC 唯一的必填欄位，告訴 K8s 用什麼 driver 建 volume。
+
+常見值：
+- `kubernetes.io/no-provisioner`：static provisioning，不自動建 PV
+- CSI driver：各雲廠商或 local-path-provisioner
