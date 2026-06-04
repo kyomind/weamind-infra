@@ -989,3 +989,49 @@ spec:
 ```
 
 `volumes[].name` 和 `volumeMounts[].name` 必須對應。
+
+## Pod 的 containers 是不可變欄位
+
+不能用 `k edit pod` 加新 container，必須走 export → delete → apply：
+
+```bash
+k get pod my-pod -o yaml > pod.yaml
+# 編輯 pod.yaml
+k delete pod my-pod
+k apply -f pod.yaml
+```
+
+## /dev/null 是絕對路徑
+
+```yaml
+# ✗ 錯誤
+command: ["tail", "-f", "dev/null"]
+
+# ✓ 正確
+command: ["tail", "-f", "/dev/null"]
+```
+
+少了 `/` 變相對路徑，container 找不到檔案會 CrashLoopBackOff。
+
+## readOnly 是 volumeMounts 層級
+
+```yaml
+volumeMounts:
+- mountPath: /var/www/shared
+  name: shared-storage
+  readOnly: true  # 跟 mountPath、name 同層
+```
+
+不是寫在 `volumes` 那邊。
+
+## container 必填欄位：name、image
+
+每個 container 都必須有 `name` 和 `image`，缺一不可。
+
+## k get pod -o yaml 導出有系統欄位
+
+`status`、`metadata.uid`、`metadata.resourceVersion` 等是系統自動產生的。apply 時通常會自動忽略，考試不用特別清理。
+
+## tail -f /dev/null 讓容器保持運行
+
+sidecar 常用技巧。沒有持續運行的指令，container 跑完就退出，Pod 會變成 CrashLoopBackOff。
