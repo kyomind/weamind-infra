@@ -826,10 +826,6 @@ PVC 卡在 Pending + Events 顯示 `WaitForFirstConsumer` ≠ 錯誤。
 
 `$` 跳到行末（停在 normal mode），`A` 跳到行末並直接進 insert mode。考試時 `A` 更實用，到了就能直接打字。
 
-## Storage 三件套都沒有 kubectl create
-
-SC、PV、PVC 全部沒有 `kubectl create` 捷徑，都要從官方文件複製或手寫。
-
 ## apply 順序：先 PV 後 PVC
 
 PVC 要找 PV 來綁，PV 得先存在。
