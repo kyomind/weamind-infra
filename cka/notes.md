@@ -933,3 +933,59 @@ spec:
 常見值：
 - `kubernetes.io/no-provisioner`：static provisioning，不自動建 PV
 - CSI driver：各雲廠商或 local-path-provisioner
+
+## PV 必填欄位
+
+- `capacity`
+- `accessModes`
+- volume type（如 `hostPath`、`local`）
+
+## accessModes 題目沒給就用 ReadWriteOnce
+
+`ReadWriteOnce` 是最常見的選擇，單節點讀寫。題目沒特別指定時用這個。
+
+## hostPath PV 基本範例
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: task-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:  # 必填
+    storage: 10Gi
+  accessModes:  # 必填
+    - ReadWriteOnce
+  hostPath:  # 必填（volume type）
+    path: "/mnt/data"
+```
+
+最簡單的 PV 形式，沒有 nodeAffinity。注意 hostPath 不強制要 nodeAffinity，但資料只存在特定節點，實務上應該要加。
+
+## Pod 使用 PVC 範例
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: task-pv-pod
+spec:
+  volumes:  # 宣告要用哪個 PVC
+    - name: task-pv-storage
+      persistentVolumeClaim:
+        claimName: task-pv-claim
+  containers:
+    - name: task-pv-container
+      image: nginx
+      ports:
+        - containerPort: 80
+          name: "http-server"
+      volumeMounts:  # 掛載到容器內的路徑
+        - mountPath: "/usr/share/nginx/html"
+          name: task-pv-storage  # 對應上面 volumes 的 name
+```
+
+`volumes[].name` 和 `volumeMounts[].name` 必須對應。
