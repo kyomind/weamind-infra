@@ -36,7 +36,7 @@ A successful run:
 - uses repo context to choose the right angle, vocabulary, scope, and deferred repo questions
 - keeps the prework concept-focused, leaving WeaMind-specific YAML, implementation, and debug drills for later repo work
 - avoids duplicate or overlapping prework unless the user explicitly wants a follow-up
-- splits large topics into 2-3 coherent preworks when that makes the learning sharper
+- splits large topics into coherent preworks when that makes the learning sharper, using 2-3 as the normal range
 - follows the existing `learning/prework/` rules instead of inventing a new format
 
 ## Sources
@@ -82,7 +82,7 @@ If the topic is outside Kubernetes, DevOps, infrastructure, CKA, cloud, observab
 
 Default to one prework. Split only when one file would become too broad for a focused 45-60 minute session.
 
-Split into 2-3 files when:
+Split into 2-3 files by default when:
 
 - the topic contains different mental models, such as resource metrics vs observability stack
 - one prework would become a broad survey instead of a focused scaffold
@@ -91,7 +91,16 @@ Split into 2-3 files when:
 
 Use meaningful slugs such as `metrics-server-hpa-basics` or `prometheus-grafana-alertmanager-basics`; avoid `part-1` / `part-2`.
 
-If the topic needs more than 3 preworks, stop and propose the split before writing files.
+Treat 3 preworks as the normal upper bound for an unconfirmed split, not as a hard content limit.
+
+If the topic appears to need more than 3 preworks:
+
+1. Stop before writing files.
+2. Explain why 4 or more files would be clearer than compressing the topic into 3.
+3. Propose the concrete file split and suggested order.
+4. Ask the user to confirm.
+
+After the user explicitly allows the larger split, continue with the approved number of preworks. Do not compress distinct learning models into 3 files merely to satisfy the default limit.
 
 ### Keep The Evidence Boundary
 
@@ -104,7 +113,7 @@ Do not include real secrets, tokens, private operational details, or unnecessary
 ## Workflow
 
 1. Apply the input gate. Stop there if the request lacks an explicit topic or source material.
-2. Use the explicit input to frame the topic and decide whether to split.
+2. Use the explicit input to frame the topic and decide whether to split. If more than 3 preworks are needed and the user has not already approved that larger split, stop and ask for confirmation.
 3. Read the authoritative prework rules and template.
 4. Search existing prework and topic-related notes to avoid duplicates.
 5. Inspect the most relevant repo evidence.
