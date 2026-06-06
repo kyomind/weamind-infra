@@ -59,21 +59,11 @@ If the prework decision is unclear, ask the user a short readiness question befo
 
 ### Self-Check Before Starting
 
-After creating prework or lesson files, run a document self-check before the actual lesson begins:
+Before creating prework or lesson files, resolve today's topic, mode, and authoritative file from the controlling plan. After creating files, run the self-check described in `learning/AGENTS.md`.
 
-- compare the work against `learning/AGENTS.md`
-- compare it against the second-level `AGENTS.md` actually in use
-- if a new lesson skeleton was created, compare it against `learning/lessons/lesson-template.md`
+### Continue Requests
 
-Before creating any new prework or lesson skeleton, resolve three things from the controlling files: today's topic, today's mode, and which file is authoritative for each.
-
-If the active plan already answers them, do not re-decide them from repo-local evidence.
-
-Fix structural problems before continuing.
-
-When a lesson is already in progress and the user says only "continue" or "繼續", treat that as continuing the current interactive lesson turn. Use the current lesson files and `learning/lessons/AGENTS.md` to identify whether the lesson is in `QA`, `command`, `implementation`, or `report`; continue one appropriate interaction step and wait when the lesson is still interactive.
-
-Load detailed learning-file rules from lower-level `AGENTS.md` files when the active workflow reaches that layer.
+When the user says "continue" or "繼續", follow the continue logic in `learning/AGENTS.md` to locate the current position and resume.
 
 ### Scope Discipline
 
@@ -87,14 +77,7 @@ Load detailed learning-file rules from lower-level `AGENTS.md` files when the ac
 - This applies to lesson notes, session notes, progress logs, implementation notes, and similar internal records.
 - These files are read primarily as study/debug notes inside the editor; inline paths keep them easy to scan.
 
-If the user asks to continue in a new conversation, determine the current learning position from the formal progress anchors.
-
-Instead:
-
-1. read `.privatedocs/12週計畫.md` and determine the current phase first
-2. read the detailed plan for the active phase: Phase 1 uses `.privatedocs/六週版學習計畫.md`, Phase 2 uses `.privatedocs/Phase2三週計畫.md`
-3. if there is an in-progress lesson, read the current lesson's `02-qa.md`
-4. continue unfinished work before opening a new topic
+If the user asks to continue in a new conversation, use the formal progress anchors (see Source of Truth below) and `learning/AGENTS.md` continue logic to locate the current position.
 
 ## Source of Truth and Memory
 
