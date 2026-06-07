@@ -102,11 +102,23 @@ normal lesson 預設流程：
 - 停在 `06-implementation.md`：依 implementation guide 找目前 Step，收斂下一個具體動作。
 - 互動部分完成後：再進 `04-report.md` 收斂。
 
+## 分支命名
+
+- 學習內容預設要先開一個獨立 git 分支並 checkout，再用 PR 方式合併回 main。
+- 從 2026-03-23 起，分支命名統一為 `lesson/<slug>`。
+- `<slug>` 直接使用當天 lesson 的 slug 去掉日期部分（例如 `2026-03-16-deployment-basics` → `lesson/deployment-basics`）。
+- 若同一分支承接多天但屬同一學習主軸，可改用週級或主題級 slug（例如 `lesson/k8s-debug-and-troubleshooting`）。
+- 命名重點是保留 `lesson/` 前綴並讓 slug 反映學習主題；不要把日期放進分支名稱。
+
 ## 內容原則
 
 - 聚焦 WeaMind 的實際路徑、設計理由、trade-off 與 debug sequence。
 - 優先保留三個月後仍值得複習的 repo-specific 理解。
 - 讓 command、QA、note、report 各自承擔自己的工作，避免同一份檔案膨脹成第二份總結。
+- 補寫 `05-note.md` 時，預設優先 append 模式追加；只有為了同主題關聯性與可讀性才插回前面段落之間。
+- QA 只保留主答案與最小修正；延伸追問、額外原理、旁支理解預設移到 `05-note.md`。
+- Flashcards 只有在使用者明確下指令時才建立或更新；不要在補 note 或補 QA 時順手新增。
+- lesson / note 內容若出現「這樣做的好處是：」「最小鏈路可以收成：」這類上層項目，下面的子項目要做明確縮排，不和上層 bullet 混成同一層。
 
 ## 維護方式
 
