@@ -238,7 +238,12 @@ command: ["/bin/sh", "-c"]
 args: ["tail -f /config/log.txt"]
 ```
 
-沒有 `-c` 時，shell 會把後面的字串當檔案路徑去找，直接報錯。
+沒有 `-c` 時，shell 會把後面的字串當檔案路徑去找，兩種寫法都報錯但原因不同：
+
+- `args: ["tail", "-f", "/config/log.txt"]` → 找一個叫 `tail` 的腳本檔案，`-f` 和路徑變成腳本的 `$0`、`$1`
+- `args: ["tail -f /config/log.txt"]` → 找一個檔名含空格的檔案
+
+實際錯誤訊息：`/bin/sh: can't open 'tail -f /config/log.txt': No such file or directory`
 
 ## command 和 args 是拼接關係
 
