@@ -211,3 +211,96 @@ kubectl 負責取、grep 負責篩、`>` 負責存：
 k logs <pod> | grep "ERROR" > errors.txt
 ```
 
+## /bin/sh -c 後面是一整個字串
+
+```yaml
+# 錯：拆成多個元素，-f 和路徑變成 $0、$1
+args:
+  - tail
+  - -f
+  - /config/log.txt
+
+# 對：一整個字串當命令執行
+args:
+  - "tail -f /config/log.txt"
+```
+
+`-c` 只看第一個 arg，後面的變成 shell 的位置參數。
+
+分開寫時，shell 只執行 `tail`（**沒參數**），`-f` 和路徑變成 shell 的 `$0`、`$1`，**根本沒傳給** `tail`。
+
+## -c 是必要的但題目可能不寫
+
+看到 `/bin/sh` + 命令字串的組合，要自己知道補 `-c`：
+
+```yaml
+command: ["/bin/sh", "-c"]
+args: ["tail -f /config/log.txt"]
+```
+
+沒有 `-c` 時，shell 會把後面的字串當檔案路徑去找，直接報錯。
+
+## command 和 args 是拼接關係
+
+K8s 執行時把 command + args 串起來：
+
+| K8s 欄位 | Docker 對應 | 用途 |
+|----------|-------------|------|
+| `command` | ENTRYPOINT | 執行器 |
+| `args` | CMD | 參數 |
+
+題目指定哪個欄位放什麼就照做，全塞 command 功能上可行但會被扣分。
+
+## kubectl run 的 container name = pod name
+
+`kubectl run` 生成的 container name 預設等於 pod name，沒有 flag 可改。要不同名只能編輯 YAML：
+
+```yaml
+containers:
+  - name: alpine-container  # 手動改這裡
+```
+
+## mountPath 從命令路徑反推
+
+題目不直接給 mountPath，要從命令推：
+
+```
+tail -f /config/log.txt
+        ^^^^^^^ 這就是 mountPath
+```
+
+## ConfigMap volume 範例位置
+
+官方文件：`kubernetes.io/docs/concepts/storage/volumes/#configmap`
+
+考試直接抄，改三個值：volume `name`、`configMap.name`、`mountPath`。
+
+## YAML 的 - 代表新物件
+
+同一個 container 內只有開頭有 `-`，其他欄位縮排對齊不加 `-`：
+
+```yaml
+containers:
+- command:      # <- 第一個 container 開始
+    - /bin/sh
+    - -c
+  args:         # <- 同個 container，不加 -
+    - "tail -f /config/log.txt"
+  image: alpine:latest
+  name: alpine-container
+```
+
+在 `args` 前面加 `-` 會變成宣告第二個 container。
+
+## Debug SOP: describe + logs
+
+```
+Status Error / CrashLoopBackOff
+        ↓
+k describe pod  → 看 State、Exit Code、Events
+        ↓
+k logs <pod>    → 看實際錯誤訊息
+```
+
+describe 告訴你「死了」，logs 告訴你「怎麼死的」。Exit Code 2 通常是 shell 層級錯誤（找不到檔案、語法錯）。
+
