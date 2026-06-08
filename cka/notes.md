@@ -95,3 +95,119 @@ kubectl get pods -o jsonpath="{.items[*].metadata.name}"
 
 實戰：先 `-o yaml` 看結構，再把層級翻譯成 jsonpath。
 
+## --sort-by 也是 jsonpath，一律加單引號
+
+`--sort-by` 用的是 jsonpath 語法。官方文件有時省略引號，但有 `[]` 等字元時 shell 會嘗試展開。統一加單引號最安全：
+
+```bash
+kubectl get pods --sort-by='.status.containerStatuses[0].restartCount'
+```
+
+## boolean flag 不能空格接值
+
+Boolean flag 出現即是 true，不需要帶值。空格後的字會被當成下一個參數。
+
+```bash
+k logs pod --all-containers true   # 錯：true 被當成 container name
+k logs pod --all-containers        # 對：出現即 true
+k logs pod --all-containers=true   # 對：明確寫法
+k logs pod --all-containers=false  # 要關掉才需要 =false
+```
+
+所有 boolean flag 同理：`--watch`、`--dry-run`、`--force` 等。
+
+## 已知 pod name，找它在哪個 namespace
+
+```bash
+k get pod -A | grep <pod-name>
+k get pod --all-namespaces | grep <pod-name>
+```
+
+`-A` 是 `--all-namespaces` 的簡寫。
+
+## kubectl logs 記得加 --all-containers
+
+```bash
+k logs <pod> --all-containers > logs.txt
+```
+
+考試題目可能是多容器 pod，養成習慣加這個 flag，避免漏掉其他 container 的 log。
+
+## kubectl top node --sort-by
+
+找資源用量最高/最低的 node：
+
+```bash
+k top node --sort-by memory
+k top node --sort-by cpu
+```
+
+此時 `--sort-by` 只接受 `cpu` 或 `memory` 兩個值。
+
+## tab completion 不補 flag 的值
+
+Tab 補齊範圍：子命令、flag 名稱、資源類型、資源名稱。
+
+Flag 的可選值（如 `--sort-by` 的 `cpu`/`memory`）不在補齊範圍，要自己打完整字串。
+
+## CKA 改卷看結果不看過程
+
+能用眼睛看出答案就直接手寫，不需要硬湊 pipeline。省下的時間拿去做下一題。
+
+```bash
+echo "$(k config current-context),controlplane" > high_memory_node.txt
+```
+
+## k config current-context
+
+取得當前 context 名稱，題目常要求輸出格式包含 context。
+
+```bash
+k config current-context
+```
+
+## CKA 常用兩層子命令
+
+不用背，`-h` 看一眼就知道有哪些子命令。
+
+| 命令群組 | 常用子命令 | CKA 用途 |
+|----------|------------|----------|
+| `config` | `current-context`, `get-contexts`, `use-context`, `set-context` | context 切換、查詢 |
+| `rollout` | `status`, `history`, `undo`, `restart` | Deployment 滾動更新 |
+| `certificate` | `approve`, `deny` | CSR 簽發 |
+| `auth` | `can-i` | RBAC 權限檢查 |
+| `top` | `node`, `pod` | 資源用量查詢 |
+| `cluster-info` | `dump` | 叢集資訊 |
+
+## kubectl logs 沒有內容過濾參數
+
+`kubectl logs` 的參數都是時間/行數/容器層級，不做內容過濾：
+
+| 參數 | 過濾什麼 |
+|------|----------|
+| `--since=1h` | 最近 1 小時 |
+| `--tail=100` | 最後 100 行 |
+| `--previous` | 前一個容器的 log |
+| `-c <name>` | 指定容器 |
+
+內容過濾交給 shell：`grep`、`awk` 等。
+
+## CKA 常用 grep
+
+| 用法 | 效果 |
+|------|------|
+| `grep "ERROR"` | 只看含 ERROR 的行 |
+| `grep -i "error"` | 不分大小寫 |
+| `grep -c "ERROR"` | 算有幾行符合 |
+| `grep -v "INFO"` | 反向——排除含 INFO 的行 |
+
+速記：`grep "關鍵字"` = 只留匹配行，`-v` = 反向排除
+
+## CKA log 題套路
+
+kubectl 負責取、grep 負責篩、`>` 負責存：
+
+```bash
+k logs <pod> | grep "ERROR" > errors.txt
+```
+
