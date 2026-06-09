@@ -752,4 +752,186 @@ etcd backup、kubeadm upgrade、節點維護這類題目不深，但沒練過考
 
 策略：每種至少完整跑過一次，讓流程變肌肉記憶。考試這些題應該是送分題，省時間給核心資源的複雜題。
 
+## etcd 3.6+ restore 改用 etcdutl
+
+```bash
+# 3.5 以前
+etcdctl snapshot restore ...
+
+# 3.6+（etcdctl snapshot restore 已移除）
+etcdutl snapshot restore ...
+```
+
+網路上大部分教學還是舊寫法，直接照抄會報 `unknown flag: --data-dir`。
+
+## save 用 etcdctl，restore 用 etcdutl
+
+```bash
+etcdctl snapshot save /opt/backup.db ...
+etcdutl snapshot restore /opt/backup.db --data-dir /root/default.etcd
+```
+
+這樣寫不管 etcd 版本都能跑，不用記哪個版本支援什麼。
+
+## etcdctl vs etcdutl
+
+| | etcdctl | etcdutl |
+|--|---------|---------|
+| 全名 | control | utility |
+| 本質 | client，透過 gRPC 連 server | 本地工具，直接操作檔案 |
+| 需要連線 | ✓ 要 endpoint + TLS 憑證 | ✗ 不需要 server 運行 |
+| 代表操作 | save、put、get、member list | restore、defrag（離線）|
+
+要跟 server 講話的 → `etcdctl`；純粹操作檔案的 → `etcdutl`。
+
+## restore 的 --data-dir 必須空或不存在
+
+```bash
+# 報錯：data-dir "/root/default.etcd" not empty or could not be read
+etcdutl snapshot restore ... --data-dir /root/default.etcd
+
+# 清掉重跑
+rm -rf /root/default.etcd
+etcdutl snapshot restore ... --data-dir /root/default.etcd
+```
+
+## etcdutl 實務用途
+
+| 操作 | 場景 |
+|------|------|
+| `snapshot restore` | 災難復原，從備份重建 |
+| `defrag` (離線) | 維護時整理磁碟、回收空間 |
+| `snapshot status` | 檢查備份檔是否完整 |
+
+平常不碰，災難復原才用。日常的 CRUD、健康檢查、member 管理全走 `etcdctl`。
+
+## 重導向完整寫法對照
+
+| 寫法 | 效果 |
+|------|------|
+| `> file` | 只捕 stdout，stderr 還是印螢幕 |
+| `2>&1 > file` | ❌ 順序錯，stderr 還是跑到螢幕 |
+| `> file 2>&1` | ✓ stdout + stderr 都進檔案 |
+| `&> file` | ✓ 同上，bash 簡寫 |
+| `2>&1 \| tee file` | ✓ 進檔案同時螢幕也看得到 |
+
+不確定就用 `&>`；想邊跑邊看就用 `tee`。
+
+## kubeadm upgrade 三階段
+
+```bash
+# 0. 確認目標版本存在（minor 升級要先改 repo）
+# minor 升級：先改 /etc/apt/sources.list.d/kubernetes.list 裡的版號
+sudo apt-get update
+apt-cache madison kubeadm  # 找到你要的版本
+
+# 1. 升 kubeadm
+apt-mark unhold kubeadm
+apt-get install -y kubeadm='1.35.2-*'
+apt-mark hold kubeadm
+
+# 2. 升 cluster
+kubeadm upgrade plan
+kubeadm upgrade apply v1.35.2
+
+# 3. 升 kubelet/kubectl
+kubectl drain controlplane --ignore-daemonsets
+apt-mark unhold kubelet kubectl
+apt-get install -y kubelet='1.35.2-*' kubectl='1.35.2-*'
+apt-mark hold kubelet kubectl
+systemctl daemon-reload
+systemctl restart kubelet
+kubectl uncordon controlplane
+```
+
+順序不能亂：kubeadm 先 → cluster → kubelet/kubectl。
+
+## patch vs minor 升級差異
+
+| 類型 | 例子 | 換 repo？ |
+|------|------|-----------|
+| patch | 1.27.1 → 1.27.2 | ✗ 不用 |
+| minor | 1.27.x → 1.28.x | ✓ 要 |
+
+K8s apt repo 按 minor version 分開：
+
+```
+https://pkgs.k8s.io/core:/stable:/v1.27/deb/  # 1.27.0, 1.27.1, 1.27.2 ...
+https://pkgs.k8s.io/core:/stable:/v1.28/deb/  # 1.28.0, 1.28.1, 1.28.2 ...
+```
+
+minor 升級要先改 repo 再 `apt-get update`：
+
+```bash
+sudo nano /etc/apt/sources.list.d/kubernetes.list
+# 把 v1.27 改成 v1.28
+
+sudo apt-get update
+```
+
+patch 升級不用動 repo，直接從 `apt-get update` 開始。
+
+## apt-cache madison 查版號
+
+```bash
+apt-cache madison kubeadm
+```
+
+列出所有可裝的版號，確認目標版本存在再裝。
+
+## 版號格式用 x.y.z-*
+
+```bash
+apt-get install -y kubeadm='1.35.2-*'
+```
+
+`-*` 自動 match build suffix（如 `-1.1`），不用查完整版號。
+
+## apply vs upgrade node
+
+| 指令 | 用在哪 |
+|------|--------|
+| `kubeadm upgrade apply v1.35.2` | 第一個 control plane |
+| `kubeadm upgrade node` | 其他 cp 和 worker nodes |
+
+CKA 通常只有一個 cp，所以 cp 升級用 `apply`。但如果題目要求升級 worker node，在 worker 上要用 `upgrade node`。
+
+## k get nodes 的 VERSION 是 kubelet
+
+```bash
+$ k get nodes
+NAME           STATUS   ROLES           AGE   VERSION
+controlplane   Ready    control-plane   23d   v1.35.2   # <- 這是 kubelet 版本
+node01         Ready    <none>          23d   v1.35.1
+
+$ k version
+Client Version: v1.35.2      # <- kubectl 版本
+Server Version: v1.35.2      # <- API server 版本
+```
+
+## upgrade 驗收三件套
+
+| 檢查項目 | 指令 |
+|----------|------|
+| kubeadm | `kubeadm version` |
+| cluster (API server) | `k version` → Server Version |
+| kubelet | `k get nodes` → VERSION |
+| kubectl | `k version` → Client Version |
+
+## upgrade 題是文件導航題
+
+搜 "upgrade" 進 "Upgrading kubeadm clusters" 頁面，照 checklist 做。不用背流程，但要練到知道大概有哪些步驟，看文件時才不會漏。
+
+## drain/uncordon 別忘
+
+```bash
+# 升 kubelet 前
+kubectl drain <node> --ignore-daemonsets
+
+# 升完後
+kubectl uncordon <node>
+```
+
+漏掉 drain 不會報錯但不符合 best practice；漏掉 uncordon 節點會一直是 SchedulingDisabled。
+
 
