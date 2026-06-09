@@ -309,3 +309,74 @@ k logs <pod>    → 看實際錯誤訊息
 
 describe 告訴你「死了」，logs 告訴你「怎麼死的」。Exit Code 2 通常是 shell 層級錯誤（找不到檔案、語法錯）。
 
+## Role YAML 範例
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default  # Role 是 namespace-scoped
+  name: pod-reader
+rules:
+- apiGroups: [""]  # "" = core API group（pods, services, configmaps 等）
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
+```
+
+`apiGroups` 其他常見值：`apps`（Deployment）、`batch`（Job, CronJob）、`rbac.authorization.k8s.io`（Role, RoleBinding）。
+
+## ClusterRole YAML 範例
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  # ClusterRole 沒有 namespace，是 cluster-scoped
+  name: secret-reader
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "watch", "list"]
+```
+
+結構跟 Role 一樣，差別只在沒有 `namespace` 欄位。ClusterRole 可搭配 RoleBinding（限定 namespace）或 ClusterRoleBinding（全叢集）。
+
+## RoleBinding YAML 範例
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-pods
+  namespace: default
+subjects:
+- kind: User  # User / Group / ServiceAccount
+  name: jane  # name 是 case sensitive
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role  # Role 或 ClusterRole
+  name: pod-reader  # 要綁定的 Role 名稱
+  apiGroup: rbac.authorization.k8s.io
+```
+
+subjects 可以有多個。roleRef 指向同 namespace 的 Role，或任意 ClusterRole（此時權限限縮在這個 namespace）。
+
+## ClusterRoleBinding YAML 範例
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: read-secrets-global  # 沒有 namespace，cluster-scoped
+subjects:
+- kind: Group  # 這例子用 Group
+  name: manager  # name 是 case sensitive
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: secret-reader
+  apiGroup: rbac.authorization.k8s.io
+```
+
+ClusterRoleBinding + ClusterRole = 全叢集權限。subjects 可以是 User、Group、ServiceAccount。
+
