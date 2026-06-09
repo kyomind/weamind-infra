@@ -380,3 +380,142 @@ roleRef:
 
 ClusterRoleBinding + ClusterRole = 全叢集權限。subjects 可以是 User、Group、ServiceAccount。
 
+## RBAC subjects 三種類型
+
+| | User | Group | ServiceAccount |
+|--|------|-------|----------------|
+| K8s 管理 | ✗ | ✗ | ✓ |
+| 用途 | 人 | 人的集合 | Pod 內程式 |
+| 有 API 物件 | ✗ | ✗ | ✓ |
+
+User/Group 由外部系統定義（憑證 CN、OIDC），叢集內查不到。ServiceAccount 是 K8s 原生物件，`kubectl get sa` 可查。題目給 SA 就綁 SA，給人名就綁 User。
+
+## RBAC 資源沒有 shortname
+
+Role、ClusterRole、RoleBinding、ClusterRoleBinding 都沒有官方縮寫，要打全名或靠 tab 補齊。只有 ServiceAccount 有 `sa`。
+
+## RBAC 權限更新題型拆解
+
+題目給 SA + ClusterRole + ClusterRoleBinding，要你改權限：
+
+1. SA 和 Binding 已經綁好，不用動
+2. 只改 ClusterRole 的 rules
+3. `k edit clusterrole <name>` 最快
+
+關鍵字「only」代表改完後 rules 裡只能剩指定的 resources 和 verbs。
+
+## YAML list 格式陷阱
+
+```yaml
+# 錯：這是一個字串 "get,list,create"
+verbs:
+- get,list,create
+
+# 對：三個獨立元素
+verbs: ["get", "list", "create"]
+
+# 或
+verbs:
+- get
+- list
+- create
+```
+
+YAML list 每個元素要獨立 `-`，用逗號串在一起只是一個字串。
+
+## apiGroups 常見組合速查表
+
+| apiGroups | resources |
+|-----------|-----------|
+| `""` (core) | pods, services, configmaps, secrets, persistentvolumeclaims, nodes, namespaces, serviceaccounts |
+| `apps` | deployments, statefulsets, daemonsets, replicasets |
+| `batch` | jobs, cronjobs |
+| `networking.k8s.io` | ingresses, networkpolicies |
+| `rbac.authorization.k8s.io` | roles, clusterroles, rolebindings, clusterrolebindings |
+| `storage.k8s.io` | storageclasses |
+
+不確定時現查：`k api-resources | grep <resource>`，看 APIVERSION 欄位。
+
+## 不同 apiGroups 要分開寫 rules
+
+一條 rule 內的 resources 必須屬於同一個 apiGroups。要授權 pods (core) + deployments (apps) 要寫兩條：
+
+```yaml
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list"]
+```
+
+注意：`apiGroups: []` 是空陣列（錯），`apiGroups: [""]` 才是 core group。
+
+## apiGroups 和 resources 必須對應正確
+
+`apiGroups: [""]` + `resources: ["deployments"]` 是錯的——deployments 屬於 apps，不在 core group。
+
+API server 不會報錯，但權限不會生效（silent failure）。這是 RBAC 題常見陷阱。
+
+## APIVERSION 格式就是 group/version
+
+`k api-resources` 的 APIVERSION 欄位格式是 `<group>/<version>`：
+
+- `v1` → core group，apiGroups 寫 `""`（特例，省略 group 名）
+- `apps/v1` → apiGroups 寫 `"apps"`
+- `batch/v1` → apiGroups 寫 `"batch"`
+- `networking.k8s.io/v1` → apiGroups 寫 `"networking.k8s.io"`
+
+斜線前面那段就是 `apiGroups` 的值。
+
+## RBAC 三件套都有 kubectl create 捷徑
+
+```bash
+kubectl create serviceaccount app-account
+kubectl create role app-role --verb=get --resource=pods
+kubectl create rolebinding app-binding --role=app-role --serviceaccount=default:app-account
+```
+
+不用手寫 YAML，直接 `kubectl create` 最快。
+
+## RBAC kubectl create 語法在官方 RBAC 文件頁
+
+考試搜 "rbac" 直接到位，往下滑就有 `kubectl create role`、`kubectl create rolebinding` 的完整範例。
+
+文件位置：`kubernetes.io/docs/reference/access-authn-authz/rbac/`
+
+## --api-group 預設空字串 = core group
+
+```bash
+# pods 在 core group，不用指定
+k create role my-role --verb=get --resource=pods
+
+# deployments 在 apps group，要指定
+k create role my-role --verb=get --resource=deployments --api-group=apps
+```
+
+`--api-group` 預設是 `""`（core），只有非 core 資源才要明確指定。
+
+## --serviceaccount 格式是 namespace:name
+
+```bash
+k create rolebinding app-binding --role=app-role --serviceaccount=default:app-account
+```
+
+`--serviceaccount` 要帶 `namespace:name`，不能只寫名字。
+
+## kubectl create role 多個 verb 寫法
+
+```bash
+# 逗號串起來
+k create role my-role --verb=get,list,watch --resource=pods
+
+# 或重複 flag
+k create role my-role --verb=get --verb=list --verb=watch --resource=pods
+```
+
+CLI 用逗號串是可以的，跟 YAML 不同（YAML 要每個元素獨立 `-`）。
+
+原因：kubectl 的 flag parser 專門設計成逗號分隔 = 多個值，但 YAML parser 不做這種處理，逗號就是字串的一部分。
+
