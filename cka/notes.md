@@ -640,3 +640,116 @@ k top pod --sort-by memory
 
 前提：叢集要有 metrics-server，CKA 考試環境已裝好。
 
+## etcd backup SOP
+
+kubeadm 叢集的 etcd 跑 static pod，連線參數全在 pod 的 `command` 裡。用 `describe` + `grep` 取出來，轉成 `etcdctl` 的參數名填進去。
+
+```bash
+# 1. 確認在 control plane 節點
+hostname
+
+# 2. 取連線參數（從 etcd pod 的 command）
+k describe pod -n kube-system etcd-controlplane | grep -- '--'
+
+# 3. 執行備份（參數名要轉換，見下一條筆記）
+etcdctl snapshot save /opt/backup.db \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key
+```
+
+題目要存 console output 就加 `&> output.txt`。
+
+## etcd → etcdctl 參數名轉換
+
+| etcd 啟動參數 | etcdctl 參數 |
+|---------------|--------------|
+| `--cert-file` | `--cert` |
+| `--key-file` | `--key` |
+| `--trusted-ca-file` | `--cacert` |
+| `--advertise-client-urls` | `--endpoints` |
+
+左右兩欄名字不一樣，從 pod 複製後要改。
+
+## --endpoints 有 s
+
+```bash
+# 錯
+etcdctl snapshot save ... --endpoint=https://...
+
+# 對
+etcdctl snapshot save ... --endpoints=https://...
+```
+
+`--endpoint` 會報 `unknown flag`。
+
+## etcdctl 沒 tab completion
+
+CKA 環境只有 `kubectl` 裝了 bash completion，`etcdctl` 沒有。參數要從 `describe` 結果複製貼上，不要硬背。
+
+## 存 console output 用 &>
+
+`etcdctl` 同時輸出 stdout（`Snapshot saved at...`）和 stderr（JSON log），用 `>` 只拿到一半。
+
+```bash
+# 完整捕捉
+etcdctl snapshot save ... &> backup.txt
+```
+
+題目要求存 output 就用 `&>`，不要賭它走哪一邊。
+
+## grep -- 開頭的字串
+
+```bash
+# 錯：grep 把 -- 當選項結束標記，後面沒 pattern
+grep "--"
+
+# 對：第一個 -- 告訴 grep 選項結束，第二個 -- 是 pattern
+grep -- '--'
+```
+
+## 確認當前節點
+
+```bash
+hostname
+# 或直接看 prompt: root@controlplane:~#
+```
+
+etcd 只跑在 control plane，題目說 `ssh controlplane` 就要照做。
+
+## kubeadm etcd = static pod
+
+kubeadm 建的叢集，etcd 跑的是 static pod，所有設定都在 `command` 參數裡，沒有另外的 config file。
+
+CKA 固定 pattern：etcd 相關題目，參數一律從 pod 的 `command` 拿。
+
+## etcdctl 不帶連線參數會卡住
+
+`etcdctl` 預設連 `http://127.0.0.1:2379`，但 etcd 開了 `--client-cert-auth=true`，只接受帶憑證的 HTTPS。
+
+不帶參數 → TLS 握手失敗 → 卡住等 timeout。`Ctrl+C` 中斷後補齊參數。
+
+## 三種重導向寫法
+
+| 寫法 | 捕捉什麼 |
+|------|----------|
+| `> file` | 只有 stdout |
+| `2> file` | 只有 stderr |
+| `&> file` | stdout + stderr |
+
+不確定程式輸出走哪邊，用 `&>` 最保險。
+
+## 重導向驗證法
+
+執行完螢幕還有輸出 = 漏網之魚。
+
+正確的 `&>` 執行後螢幕應該**什麼都沒有**，全部進了檔案。
+
+## CKA 冷門題型策略
+
+etcd backup、kubeadm upgrade、節點維護這類題目不深，但沒練過考場上現翻文件會耗大量時間。
+
+策略：每種至少完整跑過一次，讓流程變肌肉記憶。考試這些題應該是送分題，省時間給核心資源的複雜題。
+
+
