@@ -519,3 +519,124 @@ CLI 用逗號串是可以的，跟 YAML 不同（YAML 要每個元素獨立 `-`�
 
 原因：kubectl 的 flag parser 專門設計成逗號分隔 = 多個值，但 YAML parser 不做這種處理，逗號就是字串的一部分。
 
+## env 引用的兩種寫法
+
+| 情境 | 寫法 | 誰展開 |
+|------|------|--------|
+| `sh -c` 裡面 | `echo "$VAR"` | shell |
+| `args` 裡面（無 shell） | `["echo", "$(VAR)"]` | Kubernetes |
+
+用 `sh -c` 就用 `$VAR`，用 `args` 就用 `$(VAR)`。
+
+## 有空格的值要雙引號包 $VAR
+
+```bash
+# 錯：$ 在引號外面，這是 bash localization 語法
+echo $"MY_VAR"
+
+# 對：$ 在引號裡面
+echo "$MY_VAR"
+```
+
+`Sony Tv Is Good` 有空格，不加引號會被 shell 拆成多個參數。
+
+## Pod command/env 不可變，改了要刪掉重建
+
+`k edit` 改 `command` 或 `env` 會被 API server 拒絕。流程：
+
+```bash
+k get pod product -o yaml > product.yaml
+# 改 yaml
+k delete pod product
+k apply -f product.yaml
+```
+
+Pod 除了 `image`、`activeDeadlineSeconds`、`tolerations` 等少數欄位外，幾乎都不可變。
+
+## k run --env 可以直接帶環境變數
+
+```bash
+k run mypod --image=busybox --env="MY_VAR=Sony Tv Is Good" -- sh -c 'echo "$MY_VAR"'
+```
+
+從零建 Pod 比手寫 YAML 快。多個變數就重複 `--env`。
+
+## env 是 array，每個項目要 -
+
+```yaml
+# 錯：沒有 -，變成 key 而不是 list 項目
+env:
+  name: MY_VAR
+  value: hello
+
+# 對：有 -
+env:
+- name: MY_VAR
+  value: hello
+```
+
+跟其他 list（`containers`、`ports`、`volumeMounts`）同理。
+
+## env YAML 範例（官方文件）
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: print-greeting
+spec:
+  containers:
+  - name: env-print-demo
+    image: bash
+    env:
+    - name: GREETING
+      value: "Warm greetings to"
+    - name: HONORIFIC
+      value: "The Most Honorable"
+    - name: NAME
+      value: "Kubernetes"
+    - name: MESSAGE
+      value: "$(GREETING) $(HONORIFIC) $(NAME)"  # env 可以引用其他 env
+    command: ["echo"]
+    args: ["$(MESSAGE)"]  # args 用 $(VAR) 語法，K8s 替換
+```
+
+重點：沒有 `sh -c` 時，用 `$(VAR)` 讓 Kubernetes 做替換。env 的 value 裡也可以用 `$(OTHER_VAR)` 組合其他變數。
+
+## echo 內容不確定時加雙引號
+
+```bash
+echo "kube-apiserver-controlplane,kube-system" > high_cpu_pod.txt
+```
+
+內容沒有特殊字元時可以不加，但習慣加雙引號零成本防禦，不用每次判斷。
+
+## --sort-by 是字串排序，有坑
+
+`k top pod --sort-by cpu` 是 lexicographic（字串）排序：
+
+- `9m` 會排在 `19m` 前面（因為 `'9' > '1'`）
+- 數據少時碰巧對，數據多時可能出錯
+
+## --sort-by 結果要肉眼驗證
+
+考試數據量不大，跑完 `--sort-by` 後看一眼確認第一筆確實是最大值，不要直接相信工具排對了就抄第一行。
+
+## k top 基本用法
+
+```bash
+# node 資源用量
+k top node
+k top node --sort-by cpu
+k top node --sort-by memory
+
+# pod 資源用量
+k top pod                    # 當前 namespace
+k top pod -A                 # 所有 namespace
+k top pod -n kube-system     # 指定 namespace
+k top pod --sort-by cpu
+k top pod --sort-by memory
+```
+
+前提：叢集要有 metrics-server，CKA 考試環境已裝好。
+
