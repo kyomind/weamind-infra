@@ -1090,4 +1090,71 @@ k get secret <name> -o yaml
 
 名稱對了 key 也要對，兩個都是 typo 高發區。
 
+## Troubleshooting 三層流程
+
+```
+get → describe → logs
+```
+
+| 層級 | 指令 | 看什麼 |
+|------|------|--------|
+| 1 | `k get pod <name>` | STATUS：Pending / CrashLoopBackOff / ImagePullBackOff / Error |
+| 2 | `k describe pod <name>` | Events 區塊，找失敗的具體原因 |
+| 3 | `k logs <pod>` | 容器層級的錯誤訊息 |
+
+不同 STATUS 修復方向不同，先確認狀態再往下挖。
+
+## 容器沒啟動就沒 log
+
+`CreateContainerError` 時 `k logs` 是空的——容器根本沒跑起來，當然沒 log。
+
+這時線索在 `k describe pod` 的 Events 裡，不要浪費時間查 logs。
+
+## 讀錯誤訊息的心法
+
+從後往前讀，四步驟定位問題：
+
+| 步驟 | 做什麼 | 範例 |
+|------|--------|------|
+| 1 | 找關鍵字 | `not found`、`error`、`failed` |
+| 2 | 找對象 | 引號裡的東西就是出問題的目標 |
+| 3 | 找階段 | 前綴詞告訴你發生在什麼時機（`exec` = 執行階段）|
+| 4 | 回頭對照 spec | 把錯誤指向的對象拿去 YAML 裡找本體 |
+
+引號內的東西就是「兇手」，從那裡出發去 YAML 找錯字。
+
+## executable file not found 範例
+
+```
+exec: "shell": executable file not found in $PATH
+```
+
+翻譯：容器啟動時要跑 `shell` 這個程式，但容器裡根本沒有叫 `shell` 的東西。
+
+對照 YAML 的 `command` 欄位，發現是 `/bin/sh` 的 typo。
+
+## 看到 -c 就知道前面是 shell
+
+```yaml
+command:
+- shell  # <- 這裡寫錯
+- -c
+- "while true; do echo 'Hello'; sleep 5; done"
+```
+
+`-c` + 一段 script = 只有 `sh`、`bash`、`zsh` 這類 shell 才吃的組合。
+
+看到這個 pattern 就能反推：前面那個一定是 shell，`shell` 不是任何真實程式名稱，所以是 typo。
+
+## shell 選擇優先順序
+
+| 選項 | 可不可以 | 為什麼 |
+|------|----------|--------|
+| `/bin/sh` | ✓ 首選 | POSIX 標準，幾乎所有 image 都有 |
+| `sh` | ✓ 也行 | 會透過 `$PATH` 找到 |
+| `/bin/bash` | ⚠️ 不一定 | 不是所有 image 都有（Alpine 沒有）|
+| `shell` | ✗ | 不存在這個程式 |
+
+考試除非題目指定，否則一律用 `/bin/sh` 最保險。
+
 
