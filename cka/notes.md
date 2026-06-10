@@ -76,3 +76,46 @@ get → describe → fix → get → ...
 | `PodInitializing` | init 跑完了，主容器正在啟動 |
 
 Init 階段的問題一樣用 `describe` 看 Events 找原因。
+
+## ImagePullBackOff 先查 image 拼寫
+
+Events 看到 `Failed to pull image "xxx": not found` 時，第一反應檢查 image 名稱和 tag 有沒有 typo。
+
+常見：`nginx:ltest`（少打 a）、`nginx:latst`（少打 e）。
+
+## Pod image 是少數可變欄位
+
+`spec.containers[*].image` 可以直接改，不需要 delete-recreate：
+
+```bash
+k set image pod/nginx-pod nginx-container=nginx:latest
+```
+
+或用 `k edit pod/nginx-pod` 改 image 欄位，存檔後立即生效。
+
+## Pod 可變欄位清單
+
+| 可變欄位 | 說明 |
+|----------|------|
+| `spec.containers[*].image` | 最常用 |
+| `spec.activeDeadlineSeconds` | 少見 |
+| `metadata.labels` / `annotations` | metadata 層，不影響 spec |
+| `spec.tolerations` | 只能加，不能改已有的 |
+
+其他 spec（`command`、`args`、`resources`、`ports`、`volumeMounts`、`env`）全部不可變，改了 API server 會拒絕。
+
+## 修改 Pod 的三種方式
+
+| 方式 | 速度 | 適用場景 |
+|------|------|----------|
+| `k set image` | ⚡ 最快 | 只改 image |
+| `k edit` | 🔧 快 | 改 image 或其他可變欄位 |
+| export → delete → recreate | 🐢 慢 | 改不可變欄位，沒得選 |
+
+能 `set image` 就不 `edit`，能 `edit` 就不 delete-recreate——考試省秒數。
+
+## Pod spec 預設不可變，image 是例外
+
+心智模型：把 Pod spec 當「幾乎凍結」，只有 `image` 是那個重要的例外。
+
+遇到要改 Pod 時，先判斷欄位可不可變，再決定用哪種方式。
