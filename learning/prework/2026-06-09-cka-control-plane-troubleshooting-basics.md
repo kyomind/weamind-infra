@@ -53,21 +53,36 @@
 
 ### 今日學到什麼
 
-- 待填
+- 今天的重點不是背 KillerCoda 某一題的標準答案，而是建立 CKA Troubleshooting 題型的分層排查骨架：先判斷故障在哪一層，再收集對應層級的證據，最後才做最小修改。
+- Control plane 元件不只是名詞，而是在故障時會留下不同現象：API server 是 Kubernetes API 入口，etcd 保存 cluster state，scheduler 決定 Pod 要去哪個 node，controller-manager 持續讓 actual state 追上 desired state。
+- Scheduler 和 kubelet 的責任要分清楚：scheduler 負責「決定」Pod 放到哪個 node，kubelet 負責在該 node 上「執行」Pod 並回報 node / pod 狀態。
+- Static Pod 的存在是為了解決 control plane bootstrap 的循環依賴。API server、scheduler、controller-manager、etcd 這類 control plane components 在 kubeadm 類環境中通常由 control plane node 上的 kubelet 直接監看 `/etc/kubernetes/manifests/` 來啟動。
+- Control plane 故障時，可以先用 `kubectl get pods -n kube-system` 找異常元件，再用 `kubectl describe pod` 看 events、restart count、container state，接著檢查 `/etc/kubernetes/manifests/`，必要時切到 `systemctl status kubelet` 與 `journalctl -u kubelet`。
+- Node NotReady 不一定代表主機已經掛掉；它常常代表 kubelet 無法正常回報狀態。根因可能在 kubelet、container runtime、node conditions、資源壓力或 kubelet 到 API server 的網路通訊。
+- 今天建立了三層排查模型：Workload layer 看 Deployment / ReplicaSet / Pod；Control Plane layer 看 API server / scheduler / controller-manager / etcd；Node layer 看 kubelet / container runtime / OS / network / resource pressure。
 
 ### 已能白話講清楚什麼
 
-- 待填
+- Static Pod 是讓 kubelet 直接從本機 manifest 啟動 control plane components 的機制，避免 API server 需要依賴 API server 才能啟動自己的循環問題。
+- Controller Manager 的核心工作是持續比較 desired state 和 actual state，例如 Deployment 要 3 個 replicas、實際只有 2 個時，它會推動系統補回缺少的 Pod。
+- Scheduler 是選 node 的角色，kubelet 是在 node 上真正啟動與管理 Pod 的角色；一個負責決定，一個負責執行。
+- Node NotReady 不等於 Deployment、Service 或 Ingress 壞掉；它更常是 node layer 的訊號，尤其要先想到 kubelet 是否還能正常回報。
+- Troubleshooting 的穩定節奏是：先判斷故障層級，再用該層的工具收集證據，最後才修改設定。
 
 ### 目前還卡住什麼
 
-- 待填
+- `kubectl describe pod`、檢查 manifest、`journalctl -u kubelet` 之間的切換時機還需要靠題目建立手感。概念上知道順序，但還沒練到看到輸出就能快速決定下一步。
+- Node NotReady 的根因收斂還需要更多案例。現在知道可能是 kubelet、container runtime、resource pressure 或 network，但實戰上仍需要練習如何從 `kubectl describe node`、kubelet status 與 journal 裡快速判斷主因。
 
 ### 今日最重要的觀念
 
-- 待填
+- Scheduler 負責決定，kubelet 負責執行。
+- Controller Manager 的本質是讓 desired state 和 actual state 對齊。
+- kubeadm 類環境中的 control plane components 通常是 static Pods。
+- Static Pod 的真正管理者是 node 上的 kubelet，不是 Deployment 或 ReplicaSet。
+- Node NotReady 應先從 kubelet / node layer 收斂，不要一開始就當成 workload layer 問題。
 
 ### 帶回 CKA 題庫或 repo 內對照的問題
 
-1.
-2.
+1. 在 CKA lab 中故意改壞 `/etc/kubernetes/manifests/kube-controller-manager.yaml` 的一個參數，觀察 `kubectl get pods -n kube-system`、`kubectl describe pod`、`journalctl -u kubelet` 分別提供什麼證據。
+2. 在 CKA lab 中停止 kubelet，觀察 `kubectl get nodes`、`kubectl describe node`、`kubectl get pods -n kube-system` 的變化，確認 Node NotReady、static Pod、kubelet、control plane 之間的關係。
