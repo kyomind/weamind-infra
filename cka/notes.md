@@ -934,4 +934,72 @@ kubectl uncordon <node>
 
 漏掉 drain 不會報錯但不符合 best practice；漏掉 uncordon 節點會一直是 SchedulingDisabled。
 
+## Pending Pod debug SOP
+
+```
+Pod Pending
+    ↓
+k describe pod <name>  → 看 Events 關鍵字
+    ↓
+根據關鍵字定位問題資源 → 修復
+```
+
+debug SOP 永遠是 `describe` → 讀 Events → 追根源。
+
+## Pending Pod 常見原因
+
+| 原因 | Events 關鍵字 | 追查方向 |
+|------|---------------|----------|
+| 排程失敗 | `FailedScheduling` | node 資源不足、taint 沒對應 toleration、nodeSelector/affinity 沒匹配的 node |
+| PVC 未綁定 | `unbound immediate PersistentVolumeClaims` | PVC 還在 Pending → 往下查 PV/StorageClass |
+| 節點不可用 | `no nodes available` | node 是否 Ready、是否被 cordon |
+| 資源配額超限 | `exceeded quota` | ResourceQuota 限制 |
+| 排程器名稱錯誤 | `no nodes available to schedule` | `schedulerName` 指到不存在的 scheduler |
+
+CKA 最高頻是前兩個，尤其 PVC 未綁定常跟 storage 題組合出現。
+
+## PVC Pending 常見原因
+
+| PVC Pending 原因 | 怎麼查 |
+|------------------|--------|
+| `storageClassName` 不匹配 | 比對 PV 和 PVC 的 `storageClassName` |
+| `accessModes` 不匹配 | PVC 要求的 mode 必須是 PV 提供的子集 |
+| 容量不足 | PVC `requests.storage` > PV `capacity` |
+| `volumeName` 指向不存在的 PV | PVC 指定了名稱但 PV 不存在或已 Bound |
+| `WaitForFirstConsumer` | SC 的 bindingMode 導致沒 Pod 就不綁（這種其實不算錯） |
+| selector/label 不匹配 | PVC 用了 `matchLabels` 但 PV 沒對應 label |
+
+## PVC 綁定三要素
+
+`storageClassName`、`accessModes`、`capacity`，三個都要對得上。
+
+快速排查 PVC Pending 就先比這三個。
+
+## hostPath 只支援 RWO
+
+`hostPath` 是單節點本地路徑，`ReadWriteMany` 在這裡沒意義。
+
+accessModes 不匹配時，改 PVC 去適應 PV（基礎設施層不動）。
+
+## PVC spec 建了就鎖死
+
+| 欄位 | 能否改 | 備註 |
+|------|--------|------|
+| `accessModes` | ✗ immutable | |
+| `volumeMode` | ✗ immutable | |
+| `storageClassName` | ✗ immutable | |
+| `volumeName` | ✗ immutable | |
+| `selector` | ✗ immutable | |
+| `resources.requests.storage` | ⚠️ 只能變大 | 需要 StorageClass 的 `allowVolumeExpansion: true` |
+
+PVC 建立之後 spec 幾乎全部鎖死，要改就 delete → recreate。
+
+## --dry-run 只給寫的指令用
+
+| 支援 `--dry-run` | 不支援 `--dry-run` |
+|------------------|---------------------|
+| `create`、`apply`、`run`、`expose`、`delete`、`patch`、`scale` | `get`、`describe`、`logs`、`top`、`exec` |
+
+`--dry-run=client` 只適用於寫入操作。`k get` 本身就是唯讀的，不需要也不支援 dry-run。
+
 
