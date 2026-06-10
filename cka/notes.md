@@ -1002,4 +1002,92 @@ PVC 建立之後 spec 幾乎全部鎖死，要改就 delete → recreate。
 
 `--dry-run=client` 只適用於寫入操作。`k get` 本身就是唯讀的，不需要也不支援 dry-run。
 
+## Troubleshooting YAML 標準流程
+
+```
+k apply -f xxx.yaml
+    ↓
+看錯誤訊息 → 定位問題（語法錯、欄位名錯、結構層級錯、值的型別錯）
+    ↓
+修復 → 再 apply 確認
+```
+
+題目說「Don't remove any specification」代表只能改不能刪。
+
+## apply 成功 ≠ 資源正常運作
+
+`k apply` 成功只代表 **API server 接受了你的 spec**，不代表 Pod 跑得起來。
+
+你只是過了「文件審查」，還沒上路。永遠往下查到 Pod 層級確認實際狀態。
+
+## Debug 順序永遠往下查
+
+```
+Deployment → Pod → describe pod → logs
+```
+
+Deployment 只是「責成單位」，Pod 才是「實際執行」。Deployment apply 成功只代表 API server 接受了 spec，不代表 Pod 跑得起來。
+
+## CreateContainerConfigError
+
+通常是 Secret / ConfigMap 引用問題：
+
+- Secret / ConfigMap 名稱打錯（typo）
+- Secret / ConfigMap 存在但 key 不存在
+- Secret / ConfigMap 根本不存在
+
+下一步：`k describe pod <name>` 看 Events，會告訴你具體是哪個 Secret 或 key 找不到。
+
+## 線索藏在兩個地方
+
+| 位置 | 比喻 | 看什麼 |
+|------|------|--------|
+| Events | 案發現場 | 錯誤訊息、時間軸 |
+| spec 細節 | 證人口供 | typo、引用名稱、key 名稱 |
+
+兇手不只在案發現場（Events），也可能藏在「證人口供」（spec 細節）裡。兩邊都要看。
+
+## Controller 資源 vs bare Pod 的 apply 行為
+
+| 資源 | `k apply` 能直接更新？ | 原因 |
+|------|------------------------|------|
+| Deployment | ✓ | spec 幾乎全 mutable，改了自動 rollout |
+| Service | ✓ | 大部分欄位可改（`clusterIP` 除外） |
+| PVC | ⚠️ 部分 | `accessModes`、`storageClassName` 不可改 |
+| bare Pod | ✗ 大部分不行 | 核心欄位 immutable，要刪除重建 |
+
+Controller 資源（Deployment / Service）直接 `apply` 蓋上去；bare Pod 幾乎都要刪了重建。
+
+## Troubleshooting 是剝洋蔥
+
+```
+apply 成功（不代表能跑）
+    ↓
+get 確認狀態 → 有差就往下查
+    ↓
+describe 上層資源 → 看 spec + events 找線索
+    ↓
+describe pod → 真正的錯誤訊息在這裡
+    ↓
+交叉比對引用的資源 → Secret / ConfigMap / PV 的實際內容 vs 引用名稱
+    ↓
+修一輪，再跑一輪 → 可能有多個問題，別修一個就收工
+```
+
+每次只進一層錯誤，修完再看下一層，永遠要驗證到 Pod 進 `Running` 才算收工。
+
+## 交叉比對引用資源
+
+Deployment 引用 Secret/ConfigMap 時，兩層都要對：
+
+1. **資源名稱**：`secretKeyRef.name` 要對到實際 Secret 名稱
+2. **key 名稱**：`secretKeyRef.key` 要對到 Secret 裡實際的 key
+
+```bash
+# 看 Secret 實際有哪些 key
+k get secret <name> -o yaml
+```
+
+名稱對了 key 也要對，兩個都是 typo 高發區。
+
 
