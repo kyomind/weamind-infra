@@ -212,3 +212,138 @@ Pod Pending
 ```
 
 一直問 why 直到找到可以動手修的根因。
+
+## FailedScheduling 訊息解讀
+
+`0/N nodes are available` = scheduler 的淘汰報告，N 個 node 全部不合格。
+
+後面逐一列出每個 node 被刷掉的原因：
+- `didn't match Pod's node affinity/selector` → node 缺 label
+- `had untolerated taint(s)` → node 有 taint，Pod 沒對應 toleration
+
+## FailedScheduling 後段訊息可忽略
+
+`no new claims to deallocate` 和 `preemption: 0/N ... not helpful` 不是根因。
+
+這兩段是說「收回 PVC 或搶佔都沒用」，專注看前面的淘汰原因就好。
+
+## 「Don't remove specification」= 可加可改不可刪
+
+| 動作 | 是否算 remove |
+|------|---------------|
+| 加 tolerations | ✅ 不算 |
+| 改 node label 讓 affinity 匹配 | ✅ 不算 |
+| 刪 nodeSelector / nodeAffinity | ❌ 算 remove |
+
+題目說不能刪 spec，不代表不能改 Pod 或 Node。
+
+## nodeSelector vs nodeAffinity
+
+`nodeAffinity` 是 `nodeSelector` 的**超集**——`nodeSelector` 能做的，`nodeAffinity` 全都能做；反過來不行。
+
+| | `nodeSelector` | `nodeAffinity` |
+|---|----------------|----------------|
+| 語法 | key-value 直接寫 | matchExpressions 表達式 |
+| 匹配邏輯 | 只能 `=`（完全匹配） | `In`, `NotIn`, `Exists`, `Gt`, `Lt` |
+| 硬性/軟性 | 只有硬性 | `required`（硬性）+ `preferred`（軟性）|
+| 多條件 | 全部 AND | 可 OR（多個 nodeSelectorTerms）+ AND |
+
+K8s 保留 `nodeSelector` 純粹是語法簡單，簡單場景少打字。
+
+## nodeAffinity required 結構
+
+```yaml
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:  # 硬性
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: NodeName
+              operator: In
+              values: ["frontend"]
+```
+
+`required` = 不符合就不排，`preferred` = 盡量但不強制。
+
+## 題目出現「偏好」→ preferred
+
+看到「偏好排到某 node」「盡量但不強制」，用 `preferredDuringSchedulingIgnoredDuringExecution`。
+
+```yaml
+preferredDuringSchedulingIgnoredDuringExecution:
+  - weight: 80
+    preference:
+      matchExpressions:
+        - key: disk
+          operator: In
+          values: ["ssd"]
+```
+
+## 多條件排程失敗先解決硬性條件
+
+`required` affinity 是硬性條件，必須先滿足。
+
+修復順序：先讓一個 node 符合硬性條件（加 label），再看剩下的問題（taint）是否自動消失。
+
+## 查 node taint 的指令
+
+```bash
+k describe node | grep -A 3 Taints
+```
+
+- Labels → `k get nodes --show-labels`
+- Taints → `describe` + `grep`，沒有 `--show-taints` flag
+
+## controlplane 預設有 taint
+
+`controlplane` 通常有 `node-role.kubernetes.io/control-plane:NoSchedule`。
+
+Worker node 沒特別設的話會顯示 `Taints: <none>`。
+
+## grep -A/-B/-C 記憶法
+
+| flag | 意思 | 記法 |
+|------|------|------|
+| `-A 3` | 匹配行 + 後 3 行 | **A**fter |
+| `-B 3` | 匹配行 + 前 3 行 | **B**efore |
+| `-C 3` | 匹配行 + 前後各 3 行 | **C**ontext |
+
+常用 `-A` 來撈 `describe` 輸出裡的區塊。
+
+## grep -i 當預設習慣
+
+`grep` 預設區分大小寫，`-i` 忽略。
+
+不確定 `Taints` 還是 `taints` 時直接加 `-i`，零成本防呆。
+
+## k label 語法三態
+
+```bash
+# 加 label
+k label node node01 key=value
+
+# 改 label（已存在的 key）
+k label node node01 key=newvalue --overwrite
+
+# 刪 label
+k label node node01 key-
+```
+
+報 `already has a value` → 加 `--overwrite`。
+
+## nodeAffinity required vs preferred 語法差異
+
+```yaml
+# required — 用 nodeSelectorTerms
+requiredDuringSchedulingIgnoredDuringExecution:
+  nodeSelectorTerms:
+    - matchExpressions: ...
+
+# preferred — 多 weight，改用 preference
+preferredDuringSchedulingIgnoredDuringExecution:
+  - weight: 80
+    preference:
+      matchExpressions: ...
+```
+
+`preferred` 比 `required` 多一層 `weight`（1-100），且 `nodeSelectorTerms` 變成 `preference`。
