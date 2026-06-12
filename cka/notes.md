@@ -486,3 +486,69 @@ k api-resources | grep ingress
 ```
 
 不確定縮寫能不能用時，用這指令確認 shortname。
+
+## node 上的 taint 格式
+
+```bash
+key=value:effect
+```
+
+toleration 對應填入這三個值。例如 `nodeName=workerNode01:NoSchedule`。
+
+## toleration operator 差異
+
+| operator | 匹配邏輯 | 需要寫 value |
+|----------|----------|--------------|
+| `Equal` | key + value + effect 三者完全匹配 | ✅ 必須 |
+| `Exists` | 只看 key + effect，任意 value 都過 | ❌ 不寫 |
+
+考試沒特別要求時 `Exists` 少寫一個欄位更快。
+
+## tolerations 位置
+
+寫在 `spec.template.spec`（和 `containers` 同層），不是 Deployment 的 `spec` 層級。
+
+```yaml
+spec:
+  template:
+    spec:
+      tolerations:  # 這裡
+        - key: "xxx"
+          ...
+      containers:
+        - name: ...
+```
+
+## 查 node taint
+
+```bash
+k describe node node01 | grep -i taint
+```
+
+輸出格式：`key=value:effect`。
+
+## 查 toleration 語法
+
+```bash
+k explain pod.spec.tolerations
+```
+
+欄位多（3+ 個）時直接查文件複製範例更快，`explain` 輸出不是可複製的 YAML。
+
+## 欄位少用 explain，欄位多查文件
+
+| 情境 | 最快方法 |
+|------|----------|
+| 只需確認 1-2 個欄位名 | `k explain` |
+| 需要整塊結構（3+ 欄位） | 文件複製範例 |
+| 能用指令生成 | `--dry-run=client -o yaml` |
+
+## apply 後一定要驗證
+
+考試沒有 Check 按鈕，每題結尾自己跑 validator：
+
+```bash
+k get <resource>  # 確認狀態符合預期再走
+```
+
+KillerCoda 有 Check，考試沒有——做完看起來對不代表真的對。
