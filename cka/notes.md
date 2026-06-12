@@ -347,3 +347,34 @@ preferredDuringSchedulingIgnoredDuringExecution:
 ```
 
 `preferred` 比 `required` 多一層 `weight`（1-100），且 `nodeSelectorTerms` 變成 `preference`。
+
+## CreateContainerConfigError 常見原因
+
+| 原因 | 說明 |
+|------|------|
+| ConfigMap/Secret **名稱錯誤或不存在** | 最常見，拼錯或忘記建 |
+| ConfigMap/Secret 中 **key 不存在** | 引用了 `configMapKeyRef.key` 但該 key 不在裡面 |
+| Secret **type 不匹配** | 例如要 TLS Secret 但缺 `tls.crt`/`tls.key` |
+
+範圍很窄，直接鎖定 ConfigMap/Secret 問題。
+
+## CreateContainerConfigError 只跟設定載入有關
+
+這個錯誤只發生在「容器建立前的設定載入」階段，跟 image、scheduling、runtime 無關。
+
+看到它，直接查 `env` / `envFrom` / `volume` 引用的 ConfigMap 和 Secret 名稱、key 是否正確。
+
+## 根據 Pod STATUS 選診斷工具
+
+| STATUS | 工具 |
+|--------|------|
+| `Pending` | `k describe pod` 看 Events（scheduling、PVC） |
+| `ImagePullBackOff` | `k describe pod` 看 image 名稱拼寫 |
+| `CreateContainerConfigError` | `k describe pod` 看 ConfigMap/Secret 引用 |
+| `CrashLoopBackOff` | `k describe pod` + `k logs` 看應用層錯誤 |
+
+## 修 Deployment 引用錯誤用 k edit deploy
+
+ConfigMap/Secret 名稱寫錯時，`k edit deploy xxx` 改完存檔，Deployment 自動觸發新 Pod。
+
+比 delete Pod 再等重建快，也不用導出 YAML。
