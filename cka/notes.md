@@ -552,3 +552,43 @@ k get <resource>  # 確認狀態符合預期再走
 ```
 
 KillerCoda 有 Check，考試沒有——做完看起來對不代表真的對。
+
+## port-forward 卡住 → 查 endpoints
+
+```bash
+k get endpoints nginx-service
+```
+
+| Endpoints 狀態 | 問題所在 |
+|----------------|----------|
+| `<none>` | selector 沒對上 Pod label |
+| 有 IP | port / targetPort 沒對上 |
+
+port-forward 卡住 = 流量根本沒到 Pod。
+
+## label 屬於 metadata，隨時可改
+
+Pod 不可變的是 `spec`（運行規格），`metadata`（labels / annotations）隨時可改。
+
+labels 是給外部系統（Service、ReplicaSet）做篩選用的「標籤」，改標籤不影響 Pod 本身的運行規格。
+
+## selector 是 live query
+
+Service / ReplicaSet 的 selector 是**持續監聽**的，不是建立時的一次性綁定。
+
+label 一改，關係立刻生效——不需要重建 Service、不需要重啟任何東西。
+
+應用：改 Pod label 可以把它從 ReplicaSet 管轄中「摘出來」單獨 debug。
+
+## label CRUD 都用指令
+
+```bash
+# 新增 / 覆蓋
+k label pod nginx-pod app=nginx
+k label pod nginx-pod app=nginx-v2 --overwrite
+
+# 刪除（key 後加減號）
+k label pod nginx-pod app-
+```
+
+適用所有資源類型（Pod、Node、Namespace...）。只有「建立時順便帶」才寫在 YAML。
