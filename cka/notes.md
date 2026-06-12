@@ -378,3 +378,111 @@ preferredDuringSchedulingIgnoredDuringExecution:
 ConfigMap/Secret 名稱寫錯時，`k edit deploy xxx` 改完存檔，Deployment 自動觸發新 Pod。
 
 比 delete Pod 再等重建快，也不用導出 YAML。
+
+## Probe 三種類型的核心欄位
+
+| Probe 類型 | 核心欄位 |
+|------------|----------|
+| `exec` | `command`（字串列表） |
+| `tcpSocket` | `port`（整數或 port name） |
+| `httpGet` | `path` + `port` |
+
+欄位名混用就 `unknown field`，例如 `tcpSocket.command` 不存在。
+
+## k explain 基本用法
+
+```bash
+k explain pod.spec.containers.livenessProbe.tcpSocket
+```
+
+考試中即時查欄位，不需開瀏覽器。任何 YAML 路徑都能查。
+
+## k explain --recursive
+
+```bash
+k explain pod.spec.containers.livenessProbe --recursive
+```
+
+輸出純欄位樹，沒說明文字，快速找欄位名。找到後去掉 `--recursive` 看該欄位細節。
+
+## k explain 支援資源縮寫
+
+```bash
+k explain po.spec.containers
+k explain deploy.spec.strategy
+k explain svc.spec.ports
+k explain pvc.spec
+```
+
+縮寫同 `k api-resources` 的 shortname。
+
+## 常用 explain 起點
+
+| 起點 | 用途 |
+|------|------|
+| `pod.spec.containers` | image、command、env、ports、probes、resources |
+| `pod.spec.volumes` | emptyDir、configMap、secret、pvc |
+| `pod.spec.affinity` | 親和性規則 |
+| `pod.spec.tolerations` | 容忍 taint |
+| `deployment.spec.strategy` | 滾動更新策略 |
+| `service.spec.ports` | Service port 映射 |
+| `pv.spec` / `pvc.spec` | 儲存設定 |
+| `ingress.spec.rules` | Ingress 路由 |
+| `networkpolicy.spec` | 網路策略 |
+| `role.rules` | RBAC 權限 |
+
+## unknown field 錯誤解讀
+
+`strict decoding error: unknown field "xxx"` = 欄位名不存在於該層級 schema。
+
+常見原因：欄位名拼錯（`cmd` vs `command`）或放錯位置（`tcpSocket` 下寫 `command`）。
+
+API server 一次列出所有錯誤位置，可一次修完。
+
+## 錯誤路徑轉 explain 路徑
+
+錯誤訊息：`spec.containers[0].livenessProbe.tcpSocket.command`
+
+轉換方式：去掉 `[0]`，前面加 `pod.`
+
+```bash
+k explain pod.spec.containers.livenessProbe.tcpSocket
+```
+
+從報錯到查解一條龍。
+
+## YAML 骨架三種來源
+
+| 方式 | 適用場景 |
+|------|----------|
+| `--dry-run=client -o yaml` | 能用 kubectl create/run 生的資源 |
+| 文件找範例 | 整塊結構都不確定時 |
+| `k explain` | 知道路徑，只忘了欄位名 |
+
+## Pod apiVersion 是 v1
+
+Pod 屬於 core API group，用 `v1`。
+
+`apps/v1` 是給 Deployment、StatefulSet、DaemonSet、ReplicaSet 這類控制器。
+
+## k explain 最強場景
+
+「知道路徑，只忘了欄位名」——路徑短、打錯機率低。
+
+整塊結構都不確定時，文件範例更快（可直接複製貼上）。
+
+## 刷題 vs k explain 定位
+
+刷題練速度：常見題型靠肌肉記憶秒殺。
+
+k explain 守正確率：冷門欄位、邊緣語法的保險。
+
+兩條路並行，不互斥。
+
+## 確認資源縮寫
+
+```bash
+k api-resources | grep ingress
+```
+
+不確定縮寫能不能用時，用這指令確認 shortname。
