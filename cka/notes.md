@@ -835,3 +835,45 @@ crictl logs <container-id>          # 看容器 log
 3. **依賴組件** — apiserver 依賴 etcd，controller-manager/scheduler 依賴 apiserver
 
 一條線交叉比對：manifest 對但 log 有錯 → 查依賴組件；依賴組件正常 → 回頭細看 manifest。
+
+## rollout status 說 success 不代表正常
+
+```bash
+k rollout status deploy xxx
+# "successfully rolled out" — 但可能 replicas=0
+```
+
+`rollout status` 只檢查「現有 Pod 是否都符合最新 spec」，0 個 Pod 當然全部符合。
+
+健康檢查永遠用 `k get deploy` 看實際數字，不要只信 rollout status。
+
+## UP-TO-DATE = 0 的兩種原因
+
+| 情況 | DESIRED | 代表什麼 | 怎麼修 |
+|------|---------|----------|--------|
+| scale 問題 | 0 | 根本沒東西要更新 | `k scale deploy --replicas=N` |
+| rollout 卡住 | >0 | 有東西但更新不動 | 查 RS / Pod 為什麼起不來 |
+
+`k get deploy` 一看 DESIRED 就知道走哪條路。
+
+## Deployment troubleshooting 分流
+
+```bash
+k get deploy xxx
+```
+
+先看 DESIRED 欄位：
+- DESIRED = 0 → scale 問題，直接 `k scale`
+- DESIRED > 0 但 UP-TO-DATE = 0 → rollout 問題，往下查 `k describe deploy` → `k get rs` → `k describe pod`
+
+先分流，再深挖。
+
+## describe deploy 看 Replicas 行
+
+```
+Replicas: 0 desired | 0 updated | 0 total | 0 available | 0 unavailable
+```
+
+這一行直接告訴你是 scale 問題——desired=0，沒有 Pod 該被建立。
+
+不用再查 rollout、RS、Pod，直接 `k scale` 就完事。
