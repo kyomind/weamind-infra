@@ -639,6 +639,21 @@ journalctl -u kubelet -e
 
 `systemctl status kubelet` 的 `Drop-In` 行會顯示實際 drop-in 路徑，有些環境是 `/usr/lib/...`。
 
+## config.yaml vs kubelet.conf
+
+`/var/lib/kubelet/config.yaml` 管 kubelet 本身怎麼跑（cgroupDriver、staticPodPath、port、認證授權設定）。
+
+`/etc/kubernetes/kubelet.conf` 是 kubeconfig，管 kubelet 怎麼連 API server（server URL、client cert、CA）。
+
+簡記：`config.yaml` 管運行，`kubelet.conf` 管連線。
+
+**CKA 常見錯誤：**
+
+- `config.yaml`：`staticPodPath` 被改錯（control plane Pod 起不來）、憑證路徑打錯字
+- `kubelet.conf`：CA 路徑錯、server URL 錯
+
+**修法：** `journalctl -u kubelet` 會直接報哪個路徑/欄位有問題，`cat` 打開檔案找到那行改回正確值，`systemctl restart kubelet`。
+
 ## 改 systemd drop-in 後要 daemon-reload
 
 改了 `/etc/systemd/system/kubelet.service.d/` 下的檔案後：
@@ -659,3 +674,70 @@ CKA 的 kubelet troubleshooting 題通常就一個點壞，不會太複雜：
 - drop-in 裡 flag 被改壞 → 改回來
 
 `journalctl` 的錯誤訊息本身就是導航，會直接告訴你哪個檔案、哪個欄位出了問題。
+
+## journalctl log level 前綴
+
+| 前綴 | 意義 | 要看嗎 |
+|------|------|--------|
+| `E` | Error | 必看 |
+| `W` | Warning | 次要 |
+| `I` | Info | 通常忽略 |
+| `Flag ... deprecated` | 廢棄警告 | 完全忽略 |
+
+kubelet 日誌裡只需要關注 `E` 開頭的行。
+
+## grep "E0" 找 kubelet 錯誤
+
+```bash
+journalctl -u kubelet --no-pager | grep "E0"
+```
+
+`-p err` 只過濾 systemd priority，kubelet 自己的 `E`/`W`/`I` 是應用層 log level，要用 grep 撈。
+
+## journalctl --no-pager 防截斷
+
+終端機太窄時，長行會被 `>` 截斷看不到關鍵資訊。
+
+加 `--no-pager` 直接輸出完整內容，不進 pager 模式。
+
+## PKI 檔名慣例
+
+| 模式 | 意義 |
+|------|------|
+| `ca.crt` / `ca.key` | 叢集根 CA |
+| `apiserver.crt` | API server 自己的憑證 |
+| `X-Y-client.crt` | X 連 Y 用的客戶端憑證 |
+| `.crt` | 公鑰憑證 |
+| `.key` | 私鑰 |
+
+例：`apiserver-kubelet-client.crt` = API server 連 kubelet 用的客戶端憑證。
+
+## ls 看實際檔名比背檔名可靠
+
+路徑錯誤題不用硬記正確檔名，直接：
+
+```bash
+ls /etc/kubernetes/pki/
+```
+
+看實際有什麼，比對日誌裡的錯誤路徑，改成正確的就好。
+
+## API server 預設 port = 6443
+
+看到 `64433333` 或其他奇怪數字就是被改壞了。
+
+正確值：`https://<IP>:6443`
+
+## 日誌 + grep 定位問題
+
+1. `journalctl -u kubelet --no-pager | grep "E0"` — 日誌告訴你「什麼壞了」
+2. `grep "錯誤關鍵字" /var/lib/kubelet/config.yaml /etc/kubernetes/kubelet.conf` — grep 告訴你「壞在哪個檔案」
+3. 打開那個檔案改正確值，restart
+
+不用猜，讓工具告訴你答案。
+
+## kubelet 壞了但 kubectl 還能用
+
+這不矛盾。API server 是獨立 process，kubelet 掛了它不會馬上死（只是沒人管它了）。
+
+所以題目可以讓你在 controlplane kubelet 壞掉的情況下用 `kubectl get node` 看到 NotReady，然後再去修 kubelet。
