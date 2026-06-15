@@ -741,3 +741,40 @@ ls /etc/kubernetes/pki/
 這不矛盾。API server 是獨立 process，kubelet 掛了它不會馬上死（只是沒人管它了）。
 
 所以題目可以讓你在 controlplane kubelet 壞掉的情況下用 `kubectl get node` 看到 NotReady，然後再去修 kubelet。
+
+## kubeconfig 問題分四層
+
+| 層級 | 常見問題 | 錯誤訊息關鍵字 |
+|------|----------|----------------|
+| 連線層 | port 錯、IP 錯 | `invalid port`、`connection refused`、`no route to host` |
+| TLS 層 | CA cert 路徑錯、cert 被換 | `certificate signed by unknown authority`、`x509` |
+| 認證層 | client cert/key 路徑錯 | `unauthorized`、`403 Forbidden` |
+| Context 層 | current-context 指向錯的 cluster | 能連但操作的是錯的 cluster |
+
+除錯順序：連得上嗎 → 信得過嗎 → 認得出嗎。
+
+## kubectl 錯誤訊息本身就是答案
+
+`kubectl` 連不上時，錯誤訊息會直接告訴你問題在哪：
+
+- `invalid port` → port 被改壞
+- `connection refused` → API server 沒跑或 port 錯
+- `x509` / `certificate` → cert 路徑或內容不對
+- `unauthorized` → client 認證資訊有問題
+
+不用猜，照訊息查對應的 kubeconfig 欄位。
+
+## API server manifest 也可能被改壞
+
+kubeconfig 沒問題但 API server 連不上時，檢查 static pod manifest：
+
+```bash
+cat /etc/kubernetes/manifests/kube-apiserver.yaml
+```
+
+常見被改壞的地方：
+- `--secure-port` 被改成奇怪數字
+- `--etcd-servers` URL 錯
+- cert flag 路徑被改
+
+改完後 kubelet 會自動重建 API server Pod，不用手動 restart。
