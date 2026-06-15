@@ -592,3 +592,70 @@ k label pod nginx-pod app-
 ```
 
 適用所有資源類型（Pod、Node、Namespace...）。只有「建立時順便帶」才寫在 YAML。
+
+## kubelet 故障診斷流程
+
+1. `systemctl status kubelet` — 沒跑就 start
+2. 跑了又掛 → `journalctl -u kubelet -e` — 錯誤訊息指向哪個檔案/欄位就改哪裡
+3. 改完 restart（改 systemd 檔要先 daemon-reload）
+
+不需要背壞法，journalctl 會直接告訴你答案。
+
+## Node NotReady → kubelet 診斷起手式
+
+1. `systemctl status kubelet`（看是沒啟動還是反覆 crash）
+2. `journalctl -u kubelet`（看錯誤訊息定位 root cause）
+3. 改設定
+4. `systemctl restart kubelet`（改了 systemd 檔要先 daemon-reload）
+5. `k get node` 確認 Ready
+
+## journalctl -u 參數
+
+`-u` = `--unit`，指定只看某個 systemd unit 的日誌。
+
+```bash
+journalctl -u kubelet  # 只看 kubelet.service 的 log
+```
+
+不加 `-u` 會輸出整台機器所有服務的日誌，根本找不到東西。
+
+## journalctl -e 跳到最新
+
+```bash
+journalctl -u kubelet -e
+```
+
+`-e` = 直接跳到日誌最底部（最新），然後可以往上捲看上下文。
+
+考試時比 `tail` 更實用，因為跳到底之後還能往回看歷史。
+
+## kubelet 設定檔常見位置
+
+| 檔案 | 用途 |
+|------|------|
+| `/var/lib/kubelet/config.yaml` | kubelet 主設定（憑證路徑、staticPodPath、cgroupDriver 等）|
+| `/etc/kubernetes/kubelet.conf` | kubeconfig（CA、server URL）|
+| `/etc/systemd/system/kubelet.service.d/10-kubeadm.conf` | systemd drop-in（啟動參數）|
+
+`systemctl status kubelet` 的 `Drop-In` 行會顯示實際 drop-in 路徑，有些環境是 `/usr/lib/...`。
+
+## 改 systemd drop-in 後要 daemon-reload
+
+改了 `/etc/systemd/system/kubelet.service.d/` 下的檔案後：
+
+```bash
+systemctl daemon-reload   # 讓 systemd 重讀設定
+systemctl restart kubelet # 重啟服務
+```
+
+少了 `daemon-reload`，systemd 讀的還是記憶體中的舊設定，改了等於白改。
+
+## CKA kubelet 題 = 單點故障
+
+CKA 的 kubelet troubleshooting 題通常就一個點壞，不會太複雜：
+
+- 沒啟動 → start
+- 路徑被改錯一個字 → 改回來
+- drop-in 裡 flag 被改壞 → 改回來
+
+`journalctl` 的錯誤訊息本身就是導航，會直接告訴你哪個檔案、哪個欄位出了問題。
