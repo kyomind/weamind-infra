@@ -778,3 +778,60 @@ cat /etc/kubernetes/manifests/kube-apiserver.yaml
 - cert flag 路徑被改
 
 改完後 kubelet 會自動重建 API server Pod，不用手動 restart。
+
+## static pod manifest 路徑
+
+```
+/etc/kubernetes/manifests/
+```
+
+kubeadm 叢集的控制平面組件（apiserver、controller-manager、scheduler、etcd）全部是 static pod，manifest 都放這裡。
+
+kubelet watch 這個目錄，manifest 一改就自動重建對應 pod——不用 `kubectl apply`，不用 restart。
+
+## etcd 三個 port
+
+| Port | 用途 | 誰連 |
+|------|------|------|
+| 2379 | client | apiserver 連這個 |
+| 2380 | peer | etcd 節點間通訊 |
+| 2381 | metrics / health probe | kubelet probe 用 |
+
+考試常改 2379（client port），改錯了 apiserver 就連不上 etcd。
+
+## API server 間歇性掛 → 查 etcd
+
+apiserver log 看到 `dial tcp 127.0.0.1:2379: connection refused` 或類似 etcd 連線錯誤，問題不在 apiserver 本身。
+
+往下游查 etcd：
+1. `crictl ps -a | grep etcd` — 看 etcd 容器狀態
+2. `cat /etc/kubernetes/manifests/etcd.yaml` — 看 manifest 有沒有被改壞
+3. `ss -tlnp | grep 2379` — 確認 2379 有沒有人在聽
+
+## kubectl 斷斷續續 vs 完全不能用
+
+| 現象 | 代表什麼 |
+|------|----------|
+| 斷斷續續（等幾秒能用，再等又斷）| 依賴組件在 crash loop，短暫可用窗口 |
+| 完全不能用（持續 connection refused）| 依賴組件根本起不來 |
+
+前者用 `kubectl` 還有機會看 log；後者只能靠 `crictl`。
+
+## crictl 是 kubectl 備案
+
+API server 掛了時 `kubectl` 沒用，改用 container runtime 層工具：
+
+```bash
+crictl ps -a | grep kube-apiserver  # 看容器狀態
+crictl logs <container-id>          # 看容器 log
+```
+
+`crictl` 直接跟 containerd 溝通，不經過 API server。
+
+## 控制平面 troubleshooting 套路
+
+1. **manifest** — `/etc/kubernetes/manifests/` 裡的 YAML 有沒有被改壞
+2. **log** — `kubectl logs` 或 `crictl logs` 看錯誤訊息
+3. **依賴組件** — apiserver 依賴 etcd，controller-manager/scheduler 依賴 apiserver
+
+一條線交叉比對：manifest 對但 log 有錯 → 查依賴組件；依賴組件正常 → 回頭細看 manifest。
