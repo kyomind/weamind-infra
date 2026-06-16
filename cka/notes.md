@@ -926,3 +926,62 @@ API server 接受了 spec 變更（scale 成功、apply 成功），但沒有任
 定位方式：`k describe pod -n kube-system` 看 Events，錯誤訊息會直接告訴你「哪個指令找不到」或「executable not found」——不是用眼睛掃 manifest，而是讓錯誤訊息帶你去。
 
 改完後 kubelet 會自動重建 Pod，不用手動 restart。
+
+## CronJob 結構
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "* * * * *"  # cron 語法
+  jobTemplate:
+    spec:                # Job spec
+      template:
+        spec:            # Pod spec
+          containers:
+          - name: hello
+            image: busybox:1.28
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure  # Job 只能 OnFailure 或 Never
+```
+
+三層巢狀：`CronJob.spec.jobTemplate.spec.template.spec` 才是 Pod spec。
+
+## Job spec 常見欄位
+
+```yaml
+spec:
+  backoffLimit: 4             # 失敗重試次數（預設 6）
+  completions: 3              # 需要成功幾次才算完成（預設 1）
+  parallelism: 2              # 同時跑幾個 Pod（預設 1）
+  activeDeadlineSeconds: 120  # 超時秒數
+  ttlSecondsAfterFinished: 60 # 完成後多久自動刪除
+  template:
+    spec:
+      ...
+```
+
+| 欄位 | 預設值 | 用途 |
+|------|--------|------|
+| `backoffLimit` | 6 | 失敗重試次數 |
+| `completions` | 1 | 需要成功幾次才算完成 |
+| `parallelism` | 1 | 同時跑幾個 Pod |
+| `activeDeadlineSeconds` | 無 | 超時秒數 |
+| `ttlSecondsAfterFinished` | 無 | 完成後多久自動刪除 |
+
+## Job parallelism 使用場景
+
+批次處理大量獨立任務時會用：
+- 處理 queue 裡的 N 個訊息，開多個 worker 並行消化
+- 處理 N 個檔案/圖片/影片轉檔
+- 平行跑測試套件的不同部分
+
+重點是「任務可以拆成獨立單位」——每個 Pod 拿一份來做，互不干擾。
+
+`completions=10` + `parallelism=3` = 總共要成功 10 次，同時最多跑 3 個 Pod。
