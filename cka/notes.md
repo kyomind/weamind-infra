@@ -985,3 +985,81 @@ spec:
 重點是「任務可以拆成獨立單位」——每個 Pod 拿一份來做，互不干擾。
 
 `completions=10` + `parallelism=3` = 總共要成功 10 次，同時最多跑 3 個 Pod。
+
+## CronJob 排錯三層
+
+| 層級 | 職責 | 出問題的徵兆 |
+|------|------|--------------|
+| CronJob | 按 schedule 產生 Job | 沒有 Job 被建立 |
+| Job | 產生 Pod、管理重試 | Job 卡在某種狀態但沒有 Pod |
+| Pod | 實際執行工作 | Pod 狀態 Error / CrashLoopBackOff |
+
+Pod 有產生就看 Pod——錯誤永遠從執行層的末端追。
+
+## CronJob 裡目標永遠用 Service name
+
+Pod name 不進 DNS，只有 Service name 可解析。
+
+`curl cka-pod` ✗ → `curl cka-service` ✓
+
+## 控制器能 edit，Pod 要重建
+
+| 方式 | 適用情境 |
+|------|----------|
+| `k edit` | 資源的目標本體是 mutable（Deployment、CronJob、Service…）|
+| export → delete → apply | 資源幾乎不可變（Pod）|
+
+CronJob 跟 Deployment 一樣是控制器層級，設計上就預期你會改設定。
+
+## metadata 永遠可變，spec 看資源類型
+
+| 區塊 | 可變性 | 例子 |
+|------|--------|------|
+| `metadata` | ✓ 可變（所有資源皆如此）| labels、annotations |
+| `spec`（Pod）| ✗ 幾乎不可變 | containers、volumes |
+| `spec`（控制器）| ✓ 大部分可變 | Deployment、CronJob 的 template |
+
+## Completed 是 CronJob Pod 的正常結局
+
+`Completed` = 容器正常退出（exit 0）。CronJob Pod 本來就該跑完就結束，不像長駐服務要維持 `Running`。
+
+正常生命週期：`Pending` → `ContainerCreating` → `Running`（極短暫）→ `Completed`
+
+## Troubleshooting 題預設多層錯誤
+
+修一個就回去驗證，不是一次到位：改 → `k get pod` 看狀態 → 還是錯 → 看 logs → 發現新錯誤 → 往下一層追。
+
+每次修完都要重新驗證到 Pod 正常為止。
+
+## CronJob 完整排錯流程
+
+1. `k get cj,job,pod` 看全貌，判斷問題卡在哪一層
+2. CronJob 有觸發、Job 有產生、Pod 狀態 Error → 問題在 Pod 執行層
+3. `k logs <pod>` 看錯誤訊息 → `Could not resolve host: cka-pod`
+4. 判斷：command 裡用了 Pod name，但 Pod name 不進 DNS → 改成 Service name
+5. `k edit cj xxx` 改 command，存檔
+6. 等下一個 Pod 產生，`k logs <new-pod>` → `Failed to connect to cka-service port 80`
+7. DNS 解析成功但連不上 → 問題從應用層轉到網路層
+8. `k describe svc cka-service` 或 `k get ep` → Endpoints 空
+9. Endpoints 空 = selector 沒對上 Pod labels
+10. `k get pod cka-pod --show-labels` → Pod 沒有 labels
+11. `k label pod cka-pod app=cka-pod` 補上 label
+12. `k get ep cka-service` 確認有 IP 出現
+13. 等下一個 Pod 產生 → `Completed` → 完成
+
+## CronJob 自動清理歷史 Job/Pod
+
+- `successfulJobsHistoryLimit`：預設 3
+- `failedJobsHistoryLimit`：預設 1
+
+舊的失敗 Pod 會逐漸消失，不用手動清。
+
+## 改 CronJob 只影響之後的 Job/Pod
+
+`k edit cj` 改完存檔，已經存在的舊 Job 和 Pod 不會被更新。要等下一次 schedule 觸發才會用新設定。
+
+## KillerCoda validator 是字串比對
+
+功能對但過不了時，重讀題目用字找線索。例如 `* * * * *` 和 `*/1 * * * *` 功能相同，但 validator 可能只認其中一種寫法。
+
+真正 CKA 考試是行為驗證，不會有這種問題。
