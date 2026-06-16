@@ -62,21 +62,39 @@
 
 ### 今日學到什麼
 
-- 待填
+- 今天重新建立了 `Deployment`、`DaemonSet`、`StatefulSet` 的最小 workload 選型模型。
+- 看到一組 Pods 時，不應先問「有幾個 Pod」，而要先問「為什麼這組 Pod 存在」。
+- `Deployment` 回答的是「我要幾個服務副本」，重點是 replicas、自動修復、rolling update 與 rollback。
+- `DaemonSet` 回答的是「每個符合條件的 Node 是否都有一份」，重點是 node coverage，而不是 Pod 總數。
+- `StatefulSet` 回答的是「這些 Pods 是否需要穩定身份」，重點是 identity、穩定名稱、穩定 DNS、資料與副本生命週期邊界。
+- `PVC` 不是 `StatefulSet` 的本體；`Deployment` 也可以掛 PVC。真正要判斷的是 Pod 是否需要固定身份。
+- `volumeClaimTemplates` 的價值是讓 `StatefulSet` 為每個固定身份的 Pod 自動建立對應 PVC，例如 `web-0` 對自己的 data PVC。
+- CKA 解題時不用硬背完整 YAML：`Deployment` 可先用 `kubectl create deployment --dry-run=client -o yaml` 生骨架；`DaemonSet` / `StatefulSet` 通常從官方文件範例複製再改。
 
 ### 已能白話講清楚什麼
 
-- 待填
+- `Deployment`：我要幾個可替換的服務副本，Pod 名稱與身份通常不重要，誰接請求都可以。
+- `DaemonSet`：我要每個符合條件的 Node 都有一份，例如 Node Exporter 或 log agent，因為每台機器都有自己的 CPU、memory、disk、network 或 logs 要收集。
+- `StatefulSet`：我要固定身份的 Pod，例如 `web-0`、`web-1`；Pod 重建後仍保留同一個身份，適合 Prometheus、Redis Cluster、PostgreSQL replication 這類需要身份或資料邊界的元件。
+- `replicas: 3` 只保證總共有 3 個 Pods，不保證 3 個 Nodes 各有 1 個 Pod，所以它不能取代 `DaemonSet` 的 node coverage。
+- 有 PVC 不等於一定要用 `StatefulSet`；Identity 才是 `StatefulSet` 的核心。
+- `selector.matchLabels` 必須對上 `template.metadata.labels`，否則 controller 找不到自己管理的 Pods，`Deployment`、`DaemonSet`、`StatefulSet` 都適用這個基本規則。
 
 ### 目前還卡住什麼
 
-- 待填
+- `StatefulSet`、headless Service、`serviceName`、stable DNS 與 peer discovery 之間的完整關係還沒有深入展開。
+- 例如 `web-0.nginx.default.svc.cluster.local` 這類穩定 DNS 名稱如何產生，以及為什麼分散式系統會依賴它，之後可以再補一輪。
+- 目前已經有 workload 選型骨架，但還沒有回到 WeaMind repo 對照實際 `kube-prometheus-stack` 與資料層取捨。
 
 ### 今日最重要的觀念
 
-- 待填
+- 不要問有幾個 Pods，要問為什麼有這些 Pods。
+- `Deployment` 管服務副本。
+- `DaemonSet` 管 node coverage。
+- `StatefulSet` 管 identity。
+- 有 PVC 不等於 `StatefulSet`；Identity 才是 `StatefulSet` 的核心。
 
 ### 帶回 repo 內對照的問題
 
-1.
-2.
+1. 在 `kube-prometheus-stack` 中，Node Exporter 為什麼是 `DaemonSet`，Prometheus 為什麼是 `StatefulSet`，Grafana 為什麼通常是 `Deployment`？請用 replica purpose、node coverage、identity 三個角度回答。
+2. WeaMind 目前把 PostgreSQL 與 Redis 留在 VM，而不是搬進 Kubernetes。如果未來要搬進 Kubernetes，需要補上哪些 `StatefulSet`、PVC、StorageClass、backup 與 disaster recovery 能力？
