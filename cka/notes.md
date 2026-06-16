@@ -877,3 +877,52 @@ Replicas: 0 desired | 0 updated | 0 total | 0 available | 0 unavailable
 這一行直接告訴你是 scale 問題——desired=0，沒有 Pod 該被建立。
 
 不用再查 rollout、RS、Pod，直接 `k scale` 就完事。
+
+## Controller Manager = 內建 control loop 集合
+
+Controller = 持續監聯 apiserver，把 current state 推向 desired state 的迴圈。
+
+Controller manager 是單一 daemon process，裡面用 goroutine 跑多個 controller。每個 controller 只管一種資源，但全部住在同一個 process 裡共享 API server 連線。
+
+內建例子：replication controller、endpoints controller、namespace controller、serviceaccounts controller。
+
+## status: {} + Events 空 = controller 沒在跑
+
+API server 接受了 spec 變更（scale 成功、apply 成功），但沒有任何下游動作發生。
+
+核心概念：寫 spec 是 API server 的事，執行 spec 是 controller 的事。
+
+## 判斷 controller-manager 沒跑的線索
+
+| 檢查項目 | 現象 | 意義 |
+|----------|------|------|
+| `k get deploy` | 0 updated / 0 total | 根本沒嘗試建 |
+| `describe deploy` | Events: `<none>` | controller 沒發出任何事件 |
+| YAML `status: {}` | 完全空白 | 沒有 controller 在觀察這個資源 |
+| `rollout status` | "Waiting for spec update to be observed" | 沒有 controller 回報 `observedGeneration` |
+
+## Deployment 沒動作的鑑別診斷
+
+| 現象 | 問題在哪 |
+|------|----------|
+| Pod CrashLoopBackOff | controller 有在跑，問題在容器本身 |
+| Pod 卡在 Pending | controller 有建 Pod，問題在 scheduler 或資源 |
+| ReplicaSet 存在但 Pod 數不對 | ReplicaSet controller |
+| 連 ReplicaSet 都沒建 | Deployment controller 沒跑 → controller-manager |
+
+## CrashLoopBackOff 選 logs 還是 describe
+
+| 情境 | 優先用 | 原因 |
+|------|--------|------|
+| StartError | `describe` | 容器沒跑過，沒 log |
+| 其他 crash | `logs` | 程式層錯誤，log 資訊更多 |
+
+實務：兩個都跑一遍，別糾結順序。
+
+## Static pod command typo 是 CKA 經典考法
+
+常見手法是把 `/etc/kubernetes/manifests/` 裡的 command 或路徑改成 typo。
+
+定位方式：`k describe pod -n kube-system` 看 Events，錯誤訊息會直接告訴你「哪個指令找不到」或「executable not found」——不是用眼睛掃 manifest，而是讓錯誤訊息帶你去。
+
+改完後 kubelet 會自動重建 Pod，不用手動 restart。
