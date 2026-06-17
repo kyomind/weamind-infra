@@ -110,3 +110,7 @@ Node 問題看 Conditions（心跳消失會自動變 Unknown）；Pod 問題看 
 
 KillerCoda 有 checker 但真考試沒有。養成習慣：做完 → 驗證 → 下一題。沒驗證的答案不算完成。
 
+## NetworkPolicy ingress.from 是 OR 關係
+
+每一條 `- podSelector` 都是獨立放行規則，彼此是 OR。要縮減存取就砍條目，不是改條件。
+
