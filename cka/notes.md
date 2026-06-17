@@ -64,3 +64,49 @@ kubectl taint nodes node1 key1=value1:NoSchedule
 kubectl taint nodes node1 key1=value1:NoSchedule-
 ```
 
+## etcdctl 輸出走 stderr
+
+要用 `&>` 才能捕捉完整輸出，單用 `>` 只抓 stdout 會是空的。
+
+```bash
+etcdctl snapshot save /opt/backup.db &> backup.txt
+```
+
+## Node NotReady + NodeStatusUnknown = kubelet
+
+`describe node`，Conditions 全顯示 `Kubelet stopped posting node status` 時，直接：
+
+```bash
+systemctl restart kubelet
+```
+
+## Conditions vs Events 使用時機
+
+| 面向 | Conditions | Events |
+|------|------------|--------|
+| 本質 | 持續性的狀態快照 | 一次性的事件紀錄 |
+| 回答問題 | 「現在怎麼了？」 | 「剛才發生什麼？」 |
+| 適用層級 | Node | Pod |
+| 典型內容 | Ready、MemoryPressure | Scheduled、Pulling、FailedMount |
+
+Node 問題看 Conditions（心跳消失會自動變 Unknown）；Pod 問題看 Events（動作失敗才有紀錄）。
+
+## etcd 沒帶 TLS 會 hang 不報錯
+
+超過 2 秒沒回應就是缺證書參數，直接 `Ctrl+C` 檢查 `--cacert`、`--cert`、`--key` 有沒有帶齊。
+
+## &> 是覆寫模式
+
+忘記導向不用刪檔，重跑加 `&>` 就會覆蓋。`&>>` 才是追加。
+
+## etcd backup 流程口訣
+
+1. 修 kubelet（如果 Node NotReady）
+2. 確認 etcd pod 活著
+3. `grep -- "--"` 從 etcd pod yaml 拿 TLS 路徑
+4. `snapshot save` + `&>` 一次搞定備份和輸出存檔
+
+## 每題做完要自己驗證
+
+KillerCoda 有 checker 但真考試沒有。養成習慣：做完 → 驗證 → 下一題。沒驗證的答案不算完成。
+
