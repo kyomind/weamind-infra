@@ -114,3 +114,54 @@ KillerCoda 有 checker 但真考試沒有。養成習慣：做完 → 驗證 →
 
 每一條 `- podSelector` 都是獨立放行規則，彼此是 OR。要縮減存取就砍條目，不是改條件。
 
+## PVC Pending 診斷與 immutable 限制
+
+診斷三要素：`storageClassName` 對不對、`accessModes` 符不符、capacity 夠不夠。
+
+PVC spec 幾乎全部 immutable：
+
+| 欄位 | 能否 edit | 備註 |
+|------|-----------|------|
+| `accessModes` | ✗ | immutable |
+| `resources.requests.storage` | ⚠️ 只能擴 | 唯一可變欄位，但只能往上不能縮 |
+
+改 accessModes 或縮容 → delete 重建。
+
+## RBAC 排查順序
+
+Role 內容 → RoleBinding 接線 → Namespace 一致。
+
+SA 驗證包含在 RoleBinding 的 subjects 裡，不用獨立查。
+
+## 為什麼先查 Role
+
+Role 出錯面最大：`apiGroups`、`resources`、`verbs` 三個欄位都可能寫錯或漏寫。RoleBinding 只是接線，SA 更簡單。
+
+## YAML 多值要一行一個 - item
+
+逗號分隔是字串不是陣列，Kubernetes 會找不到資源。
+
+```yaml
+# ✓ 正確
+resources:
+- pods
+- services
+
+# ✗ 錯誤（這是一個字串 "pods, services"）
+resources:
+- pods, services
+```
+
+## RBAC 驗證指令
+
+```bash
+# 單一權限檢查
+k auth can-i <verb> <resource> --as=system:serviceaccount:<ns>:<name>
+
+# 範例
+k auth can-i create pods --as=system:serviceaccount:default:dev-sa
+
+# 列出全部權限
+k auth can-i --list --as=system:serviceaccount:default:dev-sa
+```
+
