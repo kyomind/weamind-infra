@@ -137,6 +137,10 @@ SA 驗證包含在 RoleBinding 的 subjects 裡，不用獨立查。
 
 Role 出錯面最大：`apiGroups`、`resources`、`verbs` 三個欄位都可能寫錯或漏寫。RoleBinding 只是接線，SA 更簡單。
 
+## Role 可以直接 k edit
+
+Role 是 mutable 的，`k edit role <name>` 改完即生效，不用 delete 重建。跟 PVC 不一樣。
+
 ## YAML 多值要一行一個 - item
 
 逗號分隔是字串不是陣列，Kubernetes 會找不到資源。
