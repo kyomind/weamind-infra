@@ -120,7 +120,7 @@ kubectl run app-pod --image=httpd:latest --port=80 --dry-run=client -o yaml > po
   - 必須指定目標，全部加用 `--all`，即 `kubectl label pod --all app=app-lab`
 - 宣告式：改 YAML 的 `metadata.labels` 再 apply，多一步
 
-最佳做法：`kubectl run` 時直接帶 `--labels`，一次到位：
+⭐️最佳做法：`kubectl run` 時直接帶 `--labels`，一次到位：
 
 ```bash
 kubectl run app-pod --image=httpd:latest --labels="app=app-lab"
@@ -130,7 +130,7 @@ kubectl run app-pod --image=httpd:latest --labels="app=app-lab"
 
 ## --show-labels 是複數
 
-`kubectl get pod --show-labels`，不是 `--show-label`。
+`kubectl get pod --show-labels`
 
 ## kubectl expose 建 Service
 

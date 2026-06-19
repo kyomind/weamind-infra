@@ -32,6 +32,8 @@ description: "Enter CKA review mode: answer questions about existing notes, upda
 
 - `cka/rules.md`
 - `cka/notes.md`
+- `cka/notes-01.md`
+- `cka/cka-sachin.md` — 練習題目時的即時筆記，記錄卡點、題目連結、驗證器問題
 
 ## 寫入原則
 
@@ -40,6 +42,15 @@ description: "Enter CKA review mode: answer questions about existing notes, upda
 補充或修改後，簡短告知：
 
 > 已更新 `cka/notes.md`。
+
+## cka-sachin.md 排版規則
+
+這是練習題目時的即時筆記，格式如下：
+
+- 每題用 `---` 分隔
+- 題目連結後接「用時：X」，超過 10 分鐘寫「10+」表示需要重做
+- code block 標明語言（`bash` 或 `yaml`）
+- YAML 片段的 indent 對齊到最前面，即使只是部分結構
 
 ## 回覆方式
 
