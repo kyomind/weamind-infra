@@ -169,3 +169,73 @@ k auth can-i create pods --as=system:serviceaccount:default:dev-sa
 k auth can-i --list --as=system:serviceaccount:default:dev-sa
 ```
 
+## kubectl explain 不用記完整路徑
+
+從記得的層級開始往下查，一層一層看：
+
+```bash
+k explain pod.spec.containers.env
+```
+
+會列出 `name`、`value`、`valueFrom`，看到名字就想起來了。
+
+## Pod immutable ≠ Deployment template immutable
+
+| 操作 | 能否 edit | 原因 |
+|------|-----------|------|
+| `k edit pod xxx` 改 env | ✗ 被擋 | 正在跑的 Pod，spec 幾乎不可改 |
+| `k edit deploy xxx` 改 template 裡的 env | ✓ 可改 | 這是藍圖，改完重建新 Pod |
+
+同一段 YAML 結構，放在不同資源層級，可變性完全不同。
+
+## k exec 變數展開陷阱
+
+```bash
+# ✗ 錯誤：$VAR 被本機 shell 展開，本機沒這變數就是空的
+k exec pod-name -- echo $APPLICATION
+
+# ✓ 正確：讓容器內的 shell 展開
+k exec pod-name -- sh -c 'echo $APPLICATION'
+```
+
+或直接 `k exec -it pod-name -- sh` 進去再 `echo`。
+
+## envFrom vs valueFrom.configMapKeyRef
+
+| 寫法 | 用途 | 層級深度 |
+|------|------|----------|
+| `envFrom` + `configMapRef` | 把 ConfigMap 所有 key 一次灌進來當環境變數 | 淺（一層） |
+| `env[].valueFrom.configMapKeyRef` | 只取 ConfigMap 的某一個 key，可自訂環境變數名稱 | 深（兩層） |
+
+```yaml
+# envFrom（全灌）
+envFrom:
+- configMapRef:
+    name: webapp-deployment-config-map
+
+# valueFrom（挑單一 key）
+env:
+- name: APPLICATION
+  valueFrom:
+    configMapKeyRef:
+      name: webapp-deployment-config-map
+      key: APPLICATION
+```
+
+## ConfigMap 名稱對不上 → CreateContainerConfigError
+
+`configMapKeyRef.name` 要跟實際 ConfigMap 名稱完全一致，差一個字就找不到，Pod 會卡在 `CreateContainerConfigError`。
+
+## k exec -i -t 作用
+
+| flag | 作用 | 沒加的話 |
+|------|------|----------|
+| `-i` | 保持 stdin 開啟 | 無法輸入，shell 立刻結束 |
+| `-t` | 分配 TTY 終端 | 沒有提示符，某些功能壞掉 |
+
+進入互動 shell → 兩個都要加 `-it`。單條命令直接 `-- command` 就好。
+
+## 題目說「改用 ConfigMap」時看原本結構
+
+原本是 `env` + `value` 就改成 `valueFrom`，保持同樣的 `env` 結構。不要跳到 `envFrom`，那是換了一整套寫法。
+
