@@ -5,19 +5,26 @@
 ## kubectl run 不需要寫 type
 
 `kubectl run <pod-name> --image=<image>` 直接產 Pod，不用指定 type。
-寫 `kubectl run pod mc-pod` 會讓 `pod` 變成 Pod 名稱。
 
 對比 `kubectl create <type> <name>` 需要明確指定資源類型。
+
+`kubectl create` **沒有** `pod` 子命令，建 Pod 只能用 `run` 或 apply YAML。
 
 ## kubectl flag 語法：多值與等號
 
 多個 env 用重複 flag：`--env=A=a --env=B=b`，不是逗號分隔。
+
+但 `--labels` 可以逗號分隔：`--labels="app=web,env=prod"`。
+
+規律：label/selector 類支援逗號，env 類不行（value 本身可能含逗號）。
 
 長 flag 的 `=` 可省略：`--image=nginx` 和 `--image nginx` 都行。
 
 例外：`--dry-run=client` 必須用 `=`，否則 `client` 會被當成下一個參數。
 
 注意：`--env A=a` 可以，但 `--env A a` 不行。flag 和 value 之間可用空格，value 內的 `KEY=VALUE` 不能拆。
+
+以上規則是 kubectl 通用，不限於 `run`。
 
 ## Pod YAML 最小結構
 
@@ -36,7 +43,9 @@ spec:
     - containerPort: 80
 ```
 
-必填：`apiVersion`、`kind`、`metadata.name`、`spec.containers[].name`、`spec.containers[].image`。`ports` 可省略。
+必填：`apiVersion`、`kind`、`metadata.name`、`spec.containers[].name`、`spec.containers[].image`。
+
+`ports` 可省略，沒有預設值。省略 = 不宣告任何 port，`containerPort` 只是**文件性質**，省略不影響容器實際監聽。
 
 ## Service YAML 最小結構
 
@@ -49,7 +58,7 @@ spec:
   selector:
     app.kubernetes.io/name: MyApp
   ports:
-    - protocol: TCP
+    - protocol: TCP  # 預設值，可省略
       port: 80
       targetPort: 9376
 ```
