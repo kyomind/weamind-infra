@@ -175,13 +175,13 @@ kubernetes   ClusterIP   10.43.0.1    <none>        443/TCP   174d
 ```bash
 kubectl port-forward pod/app-pod 8080:80
 ```
-🐱：注意，不是 `port-forward pod app-pod`！
+🐱：注意，不是 `port-forward pod app-pod`！這裡**只能**使用這種寫法。反正主要也就兩種：pod、svc
 
-把本機 `8080` 轉到 Pod 的 `80`，用 `curl localhost:8080` 測試。
+把本機 `8080` 轉到 Pod 的 `80`，可用 `curl localhost:8080` 測試。
 
 注意：終端會被佔住，要另開 terminal 測。
 
-也可以 forward svc 或 deploy，省得查 Pod name：
+也可以 forward svc 或 deploy：
 - `kubectl port-forward svc/app-svc 8080:80`
 - `kubectl port-forward deploy/app-deploy 8080:80`
 
@@ -212,15 +212,6 @@ kubectl edit pod app-pod
 開啟預設編輯器（通常是 vi），直接改 YAML，存檔退出即生效。
 
 vi 速查：`/keyword` 搜尋、`dd` 刪整行、`i` 進入編輯、`Esc` 退出編輯、`:wq` 存檔離開、`:q!` 不存檔離開。
-
-## kubectl edit vs vi 本地檔案
-
-- `kubectl edit svc app-svc`：改 cluster 裡的 live 物件，存檔即生效，不動本地檔案
-- `vi svc.yaml` + `kubectl apply -f`：改本地檔案，apply 後才生效
-
-坑：用 `kubectl edit` 改完後，本地 YAML 檔還是舊的。如果之後又 `kubectl apply -f svc.yaml`，會把改動蓋回去。
-
-選一條路走：要嘛全用 edit，要嘛全用本地檔案 + apply。
 
 ## port-forward 只能用 type/name 語法
 
@@ -260,25 +251,25 @@ metadata:
   labels:
     app: nginx
 spec:
-  replicas: 3
+  replicas: 3  # 預設 1，可省略
   selector:
-    matchLabels:
+    matchLabels:  # 重要
       app: nginx
   template:
     metadata:
-      labels:
+      labels:  # 必須與 matchLabels 一致
         app: nginx
     spec:
       containers:
-      - name: nginx
-        image: nginx:1.14.2
+      - name: nginx  # 必要欄位
+        image: nginx:1.14.2  # 必要欄位
         ports:
         - containerPort: 80
 ```
 
 必填：`apiVersion: apps/v1`、`kind`、`metadata.name`、`spec.selector.matchLabels`、`spec.template`（整個 Pod spec）。
 
-注意：`selector.matchLabels` 必須和 `template.metadata.labels` 對上，否則 apply 會報錯。`replicas` 預設 1 可省略，`ports` 可省略。
+注意：`selector.matchLabels` 必須和 `template.metadata.labels` 對上，否則 apply 會報錯。`replicas` **預設 1** 可省略，`ports` 可省略。
 
 ## 判斷要不要產 YAML
 
