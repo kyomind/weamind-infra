@@ -97,7 +97,7 @@ kubectl config use-context <題目給的 context 名稱>
 
 ## context 名稱格式
 
-context 名稱只是字串，沒有固定格式。
+context 名稱只是字串，**沒有固定格式**。
 
 - `kubernetes-admin@kubernetes`：kubeadm 預設慣例，`user@cluster`
 - `k8s-c1-H`：考試環境自訂名稱
@@ -115,7 +115,7 @@ kubectl run app-pod --image=httpd:latest --port=80 --dry-run=client -o yaml
 - `spec.containers[].image`（`--image`）
 - `spec.containers[].ports[].containerPort`（`--port`）
 
-無法指定：
+**無法指定**：
 - `spec.containers[].name`：預設 = Pod name，題目要求不同名時要導 YAML 改
 
 ```bash
@@ -123,30 +123,22 @@ kubectl run app-pod --image=httpd:latest --port=80 --dry-run=client -o yaml > po
 # 改 containers[].name 後 apply
 ```
 
-## 何時需要 dry-run
-
-問題：直接 apply 不就好了？錯了會報錯。
-
-- 單一資源（Pod、Service）：直接 apply，錯了刪掉重來很快
-- 多資源 YAML（`---` 分隔）：先 `--dry-run=server`，避免前面建了、後面才報錯，造成半成品要清理
-
-清理半成品：`kubectl delete -f pod.yaml`，不存在的資源會跳過（NotFound 不影響）。
-
 ## 加 label 的兩種方式
 
 問題：命令式 vs 宣告式哪個好？
 
 - 命令式：`kubectl label pod app-pod app=app-lab`，Pod 已存在時最快
-  - 必須指定目標，全部加用 `--all`，即 `kubectl label pod --all app=app-lab`
+  - 必須指定目標
+  - 全部加用 `--all`，即 `kubectl label pod --all app=app-lab`
 - 宣告式：改 YAML 的 `metadata.labels` 再 apply，多一步
 
 ⭐️最佳做法：`kubectl run` 時直接帶 `--labels`，一次到位：
 
 ```bash
-kubectl run app-pod --image=httpd:latest --labels="app=app-lab"
+kubectl run app-pod --image=httpd:latest --labels="app=app-lab"  # 留意寫法
 ```
 
-好處：後續 `kubectl expose` 的 selector 會自動對上。
+⭐️好處：後續 `kubectl expose` 的 selector 會**自動對上**。
 
 ## --show-labels 是複數
 
@@ -158,19 +150,25 @@ kubectl run app-pod --image=httpd:latest --labels="app=app-lab"
 kubectl expose pod app-pod --name=app-svc --port=80 --target-port=80 --type=ClusterIP
 ```
 
-- `pod app-pod`：對哪個 Pod 建 Service
+- `pod app-pod`：對哪個資源建 Service（也可用於 `deployment`、`replicaset`）
 - `--name`：Service 名稱
 - `--port`：Service 對外埠
 - `--target-port`：轉進 Pod 的埠
 - `--type`：ClusterIP（預設）、NodePort、LoadBalancer
 
-selector 會自動從 Pod 的**所有** label 抓。例如 Pod 有 `run=app-pod` 和 `app=app-lab`，expose 產出的 selector 會包含兩者。
+⭐️selector 會自動從 Pod 的**所有** label 抓。例如 Pod 有 `run=app-pod` 和 `app=app-lab`，expose 產出的 selector 會包含兩者。
 
 坑：題目可能只要求特定 label 當 selector，但 expose 會塞全部。骨架生完第一件事檢查 selector，多的刪掉。
 
 ## kubernetes Service 是預設的
 
-`kubectl get svc` 會看到 `kubernetes` 這個 Service，是叢集自帶的，指向 API Server。不用管它。
+`kubectl get svc` 會看到 `kubernetes` 這個 Service，是叢集自帶的，**指向 API Server**。不用管它。
+
+```bash
+❯ kubectl get svc
+NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+kubernetes   ClusterIP   10.43.0.1    <none>        443/TCP   174d
+```
 
 ## kubectl port-forward
 
