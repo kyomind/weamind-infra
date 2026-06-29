@@ -294,7 +294,7 @@ kubectl create deployment <name> --image=<image> --replicas=<n> --port=<port>
 
 - `--image`：container image（必填）
 - `--replicas`：副本數，預設 1
-- `--port`：containerPort
+- `--port`：**containerPort**，與 run pod 時的 `--port` 參數類似
 
 這三個最常用，能覆蓋大部分簡單 Deployment 題目。
 
@@ -307,17 +307,17 @@ kubectl create deployment --name nginx-app --image=nginx   # ✗ unknown flag: -
 
 `kubectl run`、`kubectl create deployment`、`kubectl create configmap` 等，名稱都是緊跟在資源類型後面的位置參數。
 
-對比 `kubectl expose` 用 `--name` 指定 Service 名稱，因為它已經有位置參數指定來源（如 `expose pod app-pod`）。
+對比 `kubectl expose` 用 `--name` 指定 Service 名稱，因為它已經有位置參數用於**指定來源**（如 `expose pod app-pod`）。
 
 ## kubectl create configmap --from-literal
 
 ```bash
-kubectl create configmap webapp-config --from-literal=APPLICATION=web-app
+kubectl create configmap webapp-config --from-literal APPLICATION=web-app
 ```
 
-ConfigMap 也能一行 create，不用寫 YAML。多個 key-value 就重複 `--from-literal`。
+ConfigMap 也能一行 create，不用寫 YAML。**多個** key-value 就**重複** `--from-literal`。
 
-## kubectl set env 注入 ConfigMap
+## ⭐️kubectl set env 注入 ConfigMap
 
 ```bash
 kubectl set env deployment/webapp-deployment --from=configmap/webapp-config
@@ -326,6 +326,8 @@ kubectl set env deployment/webapp-deployment --from=configmap/webapp-config
 `--from=configmap/...` 的 `=` 同樣可用空格代替。
 
 一行把 ConfigMap 所有 key-value 注入現有 Deployment 的環境變數，連 `edit` 都不用開。
+
+注意：這會改 Pod template，觸發 rolling update。
 
 ## YAML 冒號後一定要空格
 
@@ -337,13 +339,13 @@ APPLICATION:web-app
 APPLICATION: web-app
 ```
 
-沒空格會被當成一整個字串，不是 key-value。
+沒空格會被當成**一整個字串**，不是 key-value。
 
 ## --from-literal 用 =，YAML 用 :
 
-`--from-literal=APPLICATION=web-app` 裡用 `=`，但生出來的 YAML 是 `APPLICATION: web-app`。
+`--from-literal=APPLICATION=web-app` 裡，`APPLICATION=web-app` 用 `=`，但生出來的 YAML 是 `APPLICATION: web-app`。
 
-注意這裡有兩個 `=`：第一個是 flag 語法（可用空格代替），第二個是 key-value 分隔（不能省）。
+注意這裡有兩個 `=`：第一個是 flag 語法（**可用空格代替**），第二個是 key-value 分隔（不能省）。
 
 ```bash
 --from-literal=APPLICATION=web-app   # ✓
@@ -382,6 +384,10 @@ Secret 同理，換成 `secretKeyRef`。
 
 ## Pod resource requests 與 limits
 
+位置：`spec.containers[].resources`，與 `name`、`image`、`env` 同層。
+
+每個 container 各自設定。
+
 ```yaml
 resources:
   requests:
@@ -401,13 +407,18 @@ resources:
 
 CPU 換算：小數和 millicores 可互換，`0.4` = `400m`，`0.5` = `500m`，`1` = `1000m`。YAML 裡兩種寫法都合法。
 
-位置在 `spec.containers[].resources`，每個 container 各自設定。
+## resources 是 per-container
+
+`resources` 設定的是單一 container 的資源，不是整個 Pod 或 Deployment。
+
+- 3 replicas = 3 個 Pod，總資源消耗是 3 倍
+- 1 個 Pod 有多個 container，Pod 總資源 = 所有 container 加總
 
 ## Pod immutable 欄位
 
 Pod 一旦建立，大部分欄位不能改。可變欄位白名單：
 
-- `spec.containers[*].image`
+- `spec.containers[*].image`（改了不會立刻生效，要等容器重啟，實務上很少直接改裸 Pod 的 image，都是透過 Deployment，讓 rolling update 處理）
 - `spec.initContainers[*].image`
 - `spec.activeDeadlineSeconds`
 - `spec.tolerations`（只能加，不能刪）
@@ -425,20 +436,6 @@ kubectl apply -f my-pod.yaml
 ```
 
 順序不能反。Pod 還活著時 `apply` 等於「更新」，一樣會被擋。
-
-## kubectl replace --force（參考）
-
-```bash
-kubectl get pod my-pod -o yaml | sed 's/100Mi/50Mi/' | kubectl replace --force -f -
-```
-
-一行搞定刪除重建。熟 sed 的話最快，不熟就走四步流。
-
-## vim 搜尋跳轉
-
-在 vim 裡按 `/keyword` 然後 Enter，直接跳到該關鍵字。
-
-例：`/100Mi` 可以快速定位到要改的那行。大檔案必備。
 
 ## Secret 掛載為 Volume
 
