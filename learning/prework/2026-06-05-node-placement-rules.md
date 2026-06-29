@@ -57,21 +57,45 @@
 
 ### 今日學到什麼
 
-- 待填
+- 今天最大的收穫不是記住各種 YAML 寫法，而是建立「Scheduler 如何思考 Node Placement」的心智模型。
+- Scheduler 不是直接挑一台 Node，而是先 Filter 出符合條件的 Candidate Nodes，再對候選 Node 做 Score，最後才 Binding 到實際 Node。
+- `nodeSelector` 是最簡單的硬性 Node label 篩選器。Pod 會宣告自己只接受符合特定 `key=value` label 的 Node；如果沒有 Node 符合，Pod 就會維持 Pending。
+- `nodeSelector` 的限制是只能表達簡單的 `key=value` 與 AND 條件，不能表達 OR、NOT、Exists、In、NotIn 等更彈性的規則。
+- Node Affinity 可以視為 `nodeSelector` 的進階版，可以用 `In`、`NotIn`、`Exists`、`DoesNotExist` 等條件描述 Node 選擇。
+- Node Affinity 中最重要的差別是 `required` 和 `preferred`。`requiredDuringSchedulingIgnoredDuringExecution` 是硬性要求，不符合就不能排；`preferredDuringSchedulingIgnoredDuringExecution` 是軟性偏好，Scheduler 會盡量滿足，但不保證。
+- 今天也釐清了 Taint / Toleration 和 `nodeSelector` / Node Affinity 不是同一種東西。`nodeSelector` / Node Affinity 是 Pod 在說「我要去哪裡」；Taint 是 Node 在說「我不要誰進來」。
+- Toleration 不是指定目的地，而是讓 Pod 有資格進入帶有對應 taint 的 Node。它像門禁卡，不像導航。
+- GPU Node 情境最能說明這組工具的分工：Label 描述 Node 身分，Taint 保護 GPU Node 不被一般 Pod 誤用，Toleration 讓 AI Pod 有資格進 GPU Node，而 `nodeSelector` 或 Node Affinity 才真正指定 AI Pod 要去 GPU Node。
+- 回到 WeaMind，目前 line-bot Pod 只是要固定跑在 worker node，沒有 GPU、spot node、high-memory node 或特殊資源保護需求，所以使用 `nodeSelector` 是簡單且合理的選擇。沒有必要為了 Kubernetes 有更多功能，就加入 Node Affinity 或 Taint / Toleration。
 
 ### 已能白話講清楚什麼
 
-- 待填
+- Scheduler 的排程可以先用「先 Filter，再 Score」理解。不是一開始就直接挑 Node，而是先排除不合格的 Node，再從剩下的候選 Node 裡挑最適合的一台。
+- `nodeSelector` 是 Pod 主動指定自己要去哪類 Node，語意是硬性條件；如果沒有 Node 符合，Pod 會 Pending。
+- Node Affinity 比 `nodeSelector` 更有彈性，可以表達更複雜的條件，而且分成硬性要求 `required` 和軟性偏好 `preferred`。
+- `required` 是一定要遵守；沒有符合的 Node 就不排。`preferred` 是最好符合，但不是一定要符合。
+- Taint 是 Node 保護自己，表示「沒有對應資格的 Pod 不要進來」。
+- Toleration 是 Pod 宣告自己可以容忍某個 taint，因此有資格進入那類 Node；但有資格進入不等於一定會被排到那台 Node。
+- 真正指定 Pod 去哪裡的是 `nodeSelector` 或 Node Affinity，不是 Toleration。
+- GPU Node 的完整設計通常不是只靠一個機制，而是 Label、Taint、Toleration、`nodeSelector` / Node Affinity 各自負責不同角色。
+- WeaMind 現在使用 `nodeSelector: nodepool=worker`，本質上就是在描述「line-bot Pod 要去 worker」，這和今天學到的 Pod 指定目的地模型一致。
 
 ### 目前還卡住什麼
 
-- 待填
+- 概念已經建立起來，但還需要把今天的判斷轉換成實際 YAML 閱讀能力，尤其是 `nodeSelector`、Node Affinity、Toleration 在 manifest 裡的實際位置與結構。
+- Node Affinity 的 YAML 結構比 `nodeSelector` 複雜很多。目前已理解 `required` 和 `preferred` 的語意，但還需要熟悉 `nodeSelectorTerms`、`matchExpressions`、`operator`、`values` 這些欄位。
+- 未來學 Pod Affinity / Anti-Affinity 時，需要另外建立一套「Pod 與 Pod 之間關係」的思考方式，避免和今天的 Pod-to-Node placement 混在一起。
 
 ### 今日最重要的觀念
 
-- 待填
+- Scheduler 先 Filter，再 Score；Node placement 的第一個問題是哪些 Node 可以成為 Candidate。
+- `nodeSelector` 是最簡單的硬性 Node label 篩選；沒有符合的 Node，Pod 就會 Pending。
+- Node Affinity 是 `nodeSelector` 的進階版，其中 `required` 和 `preferred` 的差異比單純記 `In` / `Exists` 更重要。
+- Taint 保護 Node，Toleration 給 Pod 進入資格；它們不是指定目的地。
+- 真正指定 Pod 去哪裡的是 `nodeSelector` 或 Node Affinity。
+- GPU Node 常見完整設計是：GPU Node 有 Label 和 Taint；AI Pod 有 Toleration 加上 `nodeSelector` 或 Node Affinity。這樣才能同時避免一般 Pod 誤用 GPU，並確保 AI workload 真的排到 GPU Node。
 
 ### 帶回 repo 內對照的問題
 
-1.
-2.
+1. 目前 WeaMind 的 Deployment 中使用 `nodeSelector: nodepool=worker`，這是否正是在描述「Pod 指定目的地」？如果拿掉它，在 control-plane 可排程的前提下，line-bot Pod 是否可能被 Scheduler 排到 control-plane？
+2. 如果未來 WeaMind 新增 AI 推論服務，應該如何設計 GPU worker label、GPU node taint、AI Pod toleration，以及 `nodeSelector` 或 Node Affinity，才能同時讓一般 line-bot 不誤用 GPU、AI 推論一定使用 GPU，並讓 YAML 維持容易維護？
