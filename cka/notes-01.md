@@ -8,7 +8,17 @@
 
 對比 `kubectl create <type> <name>` 需要明確指定資源類型。
 
-`kubectl create` **沒有** `pod` 子命令，建 Pod 只能用 `run` 或 apply YAML。
+`kubectl create` **沒有** `pod` 子命令，建 Pod **只能**用 `run` 或 apply YAML。
+
+`kubectl create` 支援的常見資源類型：
+
+- `clusterrole`、`clusterrolebinding`、`role`、`rolebinding`
+- `configmap`、`secret`
+- `deployment`、`job`、`cronjob`
+- `service`（含 `clusterip`、`nodeport`）
+- `serviceaccount`
+- `ingress`
+- `namespace`
 
 ## kubectl flag 語法：多值與等號
 
@@ -37,8 +47,8 @@ metadata:
   name: nginx
 spec:
   containers:
-  - name: nginx
-    image: nginx:1.14.2
+  - name: nginx  # 必填欄位
+    image: nginx:1.14.2  # 必填欄位
     ports:
     - containerPort: 80
 ```
@@ -64,6 +74,16 @@ spec:
 ```
 
 `selector` 對應 Pod label，`port` 是 Service 對外埠，`targetPort` 是 Pod 實際埠。`protocol` 預設 TCP 可省略。
+
+## Service selector 多 label 是 AND
+
+```yaml
+selector:
+  app: myapp
+  tier: frontend
+```
+
+選中**同時**有 `app: myapp` 和 `tier: frontend` 的 Pod。對比 NetworkPolicy `ingress.from` 每條是 OR。
 
 ## 每題第一步：切 context
 
