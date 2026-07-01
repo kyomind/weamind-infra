@@ -439,6 +439,8 @@ kubectl apply -f my-pod.yaml
 
 ## Secret 掛載為 Volume
 
+🐱：這個掛載方式比較沒那麼直觀、好理解
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -463,7 +465,7 @@ spec:
         - ls
         - "-l"
         - "/etc/secret-volume"
-      volumeMounts:  # container 層級掛載 volume
+      volumeMounts:
         - name: secret-volume  # 對應上面 volumes[].name
           readOnly: true
           mountPath: "/etc/secret-volume"  # container 內的路徑
@@ -472,7 +474,7 @@ spec:
 - Secret 的 `data` 值是 base64 編碼
 - `spec.volumes[]`：定義 volume，用 `secret.secretName` 指定來源
 - `volumeMounts`：掛進 container，`mountPath` 決定路徑
-- 結果：Secret 每個 key 變成一個檔案，value 是內容（自動 base64 decode）
+- ⭐️結果：Secret **每個 key 變成一個檔案**，檔名就是 key，value 是內容（自動 base64 decode）
 
 ConfigMap 同理，把 `secret` 換成 `configMap`，`secretName` 換成 `name`。
 
@@ -502,7 +504,7 @@ metadata:
 
 `---` 是 YAML 標準的文件分隔符，一個檔案放多個資源就這樣隔開。
 
-`kubectl apply -f` 會依序建立全部資源。
+`kubectl apply -f` 會**依序建立**全部資源。
 
 ## Secret type
 
@@ -519,7 +521,7 @@ data:
 | type | 用途 |
 |------|------|
 | `Opaque` | 通用，任意 key-value（預設）|
-| `kubernetes.io/tls` | TLS 憑證，必須有 `tls.crt` 和 `tls.key` |
+| `kubernetes.io/tls` | TLS 憑證，必須有 `tls.crt` 和 `tls.key` 這兩個欄位（即 `tls.crt` 和 `tls.key` 兩個 key） |
 | `kubernetes.io/dockerconfigjson` | Docker registry 認證 |
 | `kubernetes.io/service-account-token` | ServiceAccount token |
 | `kubernetes.io/basic-auth` | 帳密認證，`username` + `password` |
