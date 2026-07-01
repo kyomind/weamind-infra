@@ -550,7 +550,7 @@ kubectl create secret db-secret ...          # ✗ unknown flag
 
 ## env 優先於 envFrom
 
-`env` 會覆蓋 `envFrom` 的同名變數。用 `envFrom` 整包灌時，記得刪掉原本硬編碼的 `env`。
+`env` 會**覆蓋** `envFrom` 的同名變數。用 `envFrom` 整包灌時，記得刪掉原本硬編碼的 `env`。
 
 ## envFrom 是 array
 
@@ -564,7 +564,31 @@ envFrom:
 envFrom:
 - secretRef:
     name: db-secret
+
+# 多來源
+envFrom:
+- secretRef:
+    name: db-secret
+- configMapRef:
+    name: app-config
 ```
+
+多個來源的 key 若重複，後面的會覆蓋前面的。
+
+## YAML 冒號結尾 = 下一行要縮排
+
+冒號結尾代表「值在下一行」，下一行必須縮排。也可以冒號後直接接值不換行：
+
+```yaml
+# 換行寫法
+configMapRef:
+  name: app-config
+
+# 行內寫法（flow style）
+configMapRef: { name: app-config }
+```
+
+K8s YAML 幾乎都用換行寫法。
 
 ## secretRef 是 camelCase
 
@@ -581,9 +605,9 @@ envFrom:
 
 ## Deployment 的 template 可以改
 
-`kubectl edit deployment` 改 `spec.template`，存檔即生效，自動觸發 rolling update。
+`kubectl edit deployment` 改 `spec.template`，存檔即生效，**自動觸發 rolling update**。
 
-這是改 Deployment 資源本身，不是直接改 Pod。Deployment controller 會建新 Pod、砍舊 Pod。
+這是改 Deployment 資源本身，不是直接改 Pod。Deployment controller 會**建新 Pod、砍舊 Pod**。
 
 對比：直接 `kubectl edit pod` 改 immutable 欄位會被擋。
 
@@ -601,7 +625,7 @@ kubectl scale deployment redis-deploy -n redis-ns --replicas=3
 
 ## 非 default namespace 的 Tab 補全
 
-要先把 `-n <ns>` 寫在前面，才能 Tab 補全後面的資源名稱。
+要先把 `-n <ns>` 寫在前面，才能 Tab 自動補全後面的資源名稱。
 
 ```bash
 kubectl scale -n redis-ns deployment <Tab>  # 這樣才補得到
@@ -625,7 +649,9 @@ Tab 補全多一層即時驗證：補不出來 = 資源不存在、namespace 錯
 
 ## 題目說 label 沒指定位置，三個全改
 
-`metadata.labels`、`selector.matchLabels`、`template.metadata.labels` 全改最保險。閱卷用 `kubectl get deployment --show-labels` 看的是頂層 label。
+`metadata.labels`、`selector.matchLabels`、`template.metadata.labels` 全改最保險。
+
+`kubectl get deployment --show-labels` 看的是頂層 label。即 `metadata.labels`。
 
 ## kubectl explain --recursive 查結構
 
@@ -645,7 +671,7 @@ kubectl explain deployment.spec.strategy --recursive
 
 ## maxSurge/maxUnavailable 是 camelCase
 
-大小寫錯會靜默忽略，不報錯。`MaxUnavailable` ✗，`maxUnavailable` ✓。
+大小寫錯會靜默忽略，不報錯。`maxUnavailable` ✓。
 
 ## Vim undo/redo
 
@@ -663,7 +689,11 @@ Vim 內直接執行 shell 命令看結果，按 Enter 回到編輯，不用切 t
 kubectl set image deployment/cache-deployment redis=redis:7.2.1
 ```
 
-格式是 `容器名=新image`。用在有 Pod template 的控制器（Deployment、DaemonSet、StatefulSet），裸 Pod 不適用。
+格式是 `容器名=新image`。用在有 Pod template 的**控制器**（Deployment、DaemonSet、StatefulSet），裸 Pod 不適用。
+
+⭐️改 Deployment 的 `spec.template` 任何欄位都會**自動觸發** rolling update，`set image` 也不例外。
+
+因此指令改完會 rolling update，可用 `kubectl rollout status deploy/<name>` 追蹤進度。
 
 ## kubectl rollout history 看版本歷史
 
@@ -693,8 +723,9 @@ kubectl rollout history deploy/video-app --revision=3
 |----------|----------------|--------|
 | requests > limits | ✅ 會 | apply 直接噴錯 |
 | YAML 語法錯誤 | ✅ 會 | apply 直接噴錯 |
+| Deployment selector ≠ template labels | ✅ 會 | apply 直接噴錯 |
 | image 名稱拼錯 | ❌ 不會 | Pod 變 `ImagePullBackOff` |
-| label selector 不匹配 | ❌ 不會 | Pod 可能不被管理 |
+| Service selector 和 Pod label 不匹配 | ❌ 不會 | Service 建成但選不到 Pod |
 
 完整驗證流程：`apply` → `get pods` → `describe pod`。
 
@@ -703,7 +734,7 @@ kubectl rollout history deploy/video-app --revision=3
 Pod 卡 Pending 時，`kubectl describe pod` 看 Events：
 
 - `Insufficient cpu/memory`：node 資源不夠，降 requests 或清理其他 Pod
-- `had untolerated taint(s)`：目標 node 有 taint，Pod 沒 toleration
+- ⭐️`had untolerated taint(s)`：目標 node 有 taint，Pod 沒 toleration
 
 Events 的 Message 會直接告訴你是哪個原因。
 
