@@ -756,13 +756,28 @@ memory     110Mi (6%)  2024Mi (112%)
 
 排程問題不要猜數字，算完再改 requests。
 
+## Capacity vs Allocatable
+
+kubelet 啟動時偵測節點硬體（CPU、memory），這是 **Capacity**。
+
+Allocatable = Capacity − 系統預留，預留包含：
+- `kube-reserved`：給 kubelet、container runtime
+- `system-reserved`：給 OS 核心服務
+- `eviction-threshold`：記憶體低於這值時驅逐 Pod
+
+```bash
+kubectl describe node <node> | grep -A6 Allocatable
+```
+
+排程器看 Allocatable 不是 Capacity，所以 4Gi node 實際能排給 Pod 的可能只有 ~3.5Gi。
+
 ## Rolling update 資源死鎖
 
-改 Deployment 後 apply 觸發 rolling update，新舊 Pod 共存會暫時多佔資源。
+改 Deployment 後 apply 觸發 rolling update，新舊 Pod **共存**會暫時多佔資源。
 
-死鎖情境：新 Pod 因資源不足 Pending → 舊 Pod 不會被砍（要等新 Pod Ready）→ 卡住。
+**死鎖**情境：新 Pod 因資源不足 Pending → 舊 Pod 不會被砍（要等新 Pod Ready）→ 卡住。
 
-解法：手動刪舊 Pod 釋放資源。
+解法：**手動刪除**舊 Pod 以釋放資源。
 
 ```bash
 kubectl delete pod <舊-pod-name>
@@ -774,7 +789,7 @@ kubectl delete pod <舊-pod-name>
 kubectl rollout undo deploy/redis-deployment
 ```
 
-回滾到前一版，不用指定 revision。回滾到特定版本用 `--to-revision=N`：
+回滾到**前一版**，不用指定 revision。回滾到特定版本用 `--to-revision=N`：
 
 ```bash
 kubectl rollout undo deploy/redis-deployment --to-revision=2
@@ -782,7 +797,7 @@ kubectl rollout undo deploy/redis-deployment --to-revision=2
 
 ## 工具型 image 需要 sleep infinity
 
-`ubuntu`、`busybox`、`alpine` 這類工具型 image 沒有前景進程，預設 entrypoint 跑完就退出，Pod 會不斷重啟進入 CrashLoopBackOff。
+`ubuntu`、`busybox`、`alpine` 這類工具型 image 沒有前景進程，**預設 entrypoint 跑完就退出**，Pod 會不斷重啟進入 CrashLoopBackOff。
 
 ```bash
 kubectl run ubuntu-pod --image=ubuntu --labels=app=os --command -- sleep infinity
@@ -794,9 +809,9 @@ kubectl run ubuntu-pod --image=ubuntu --labels=app=os --command -- sleep infinit
 
 `--` 是 CLI 標準慣例，意思是「選項結束，後面全是位置參數」。
 
-`--command` 只是 boolean flag，告訴 kubectl 要覆蓋 entrypoint。`--` 告訴 parser 停止解析 flag，後面的內容原封不動傳給 container。
+⭐️`--command` 只是 **boolean flag**，告訴 kubectl 要**覆蓋 entrypoint**。`--` 告訴 parser **停止解析** flag，後面的內容原封不動傳給 container。
 
-`-- <command>` 必須放最後，否則後面的 kubectl flag 會被當成容器命令的一部分：
+`-- <command>` 必須放**最後**，否則後面的 kubectl flag 會被當成容器命令的一部分：
 
 ```bash
 kubectl run pod --command -- sleep infinity --labels=app=os  # ✗ --labels 被當成 sleep 的參數
@@ -805,13 +820,13 @@ kubectl run pod --labels=app=os --command -- sleep infinity  # ✓
 
 ## metadata 可以 edit
 
-labels 和 annotations 屬於 metadata，不在 Pod immutable 範圍內。Pod 建完後可以 `kubectl edit pod` 改，或用 `kubectl label` 加。
+**labels 和 annotations 屬於 metadata**，不在 Pod immutable 範圍內。Pod 建完後可以 `kubectl edit pod` 改，或用 `kubectl label` 加。
 
 但能一步到位就不要兩步：`kubectl run --labels=key=value` 直接帶。
 
 ## Service port 不檢查後端
 
-Service 只是路由規則，設定 `port: 8080` 不代表後端 container 真的有在 8080 listen。題目怎麼說就怎麼設，不要因為「感覺不合理」就自己加戲。
+Service 只是**路由規則**，設定 `port: 8080` 不代表後端 container 真的有在 8080 listen。題目怎麼說就怎麼設，不要因為「感覺不合理」就自己加戲。
 
 ## expose 報 port 錯就補 --port
 
@@ -819,7 +834,7 @@ Service 只是路由規則，設定 `port: 8080` 不代表後端 container 真�
 kubectl expose pod nginx-pod --name nginx-svc --port 80
 ```
 
-`kubectl expose` 需要知道 port。它會嘗試從 Pod spec 的 `containerPort` 自動偵測，沒有就報錯。手動加 `--port` 解決。
+`kubectl expose` 需要知道 port。它會嘗試從 Pod spec 的 `containerPort` **自動偵測**，spec 沒有就會報錯。此時要手動加 `--port` 解決。
 
 nginx 預設 listen 80，所以常用 `--port 80`。
 
@@ -832,7 +847,9 @@ nginx 預設 listen 80，所以常用 `--port 80`。
 
 單用 `--port` 時兩者相等，要分開設就加 `--target-port`。
 
-注意：`--port` 是必填，單用 `--target-port` 會報錯。`--target-port` 依附於 `--port` 存在。
+注意：對兩者而言，`--port` 是**必填**，單用 `--target-port` 會報錯。
+
+`--target-port` 依附於 `--port` 存在。
 
 ## kubectl run --restart=Never 跑一次性指令
 
@@ -883,11 +900,11 @@ kubectl logs test > out.txt
 
 ## containerPort 是文件性質
 
-`containerPort` 欄位不開 port，純粹是宣告，告訴讀 YAML 的人「這個容器用哪個 port」。
+`containerPort` 欄位不開 port，純粹是**宣告**，屬於**文件性質**，告訴讀 YAML 的人「這個容器用哪個 port」。
 
-真正讓 port 打開的是容器裡的程式本身（如 nginx 啟動時 bind 80）。
+真正讓 port 打開的是**容器裡的程式本身**（如 nginx 啟動時 bind 80）。
 
-`containerPort` 沒寫只影響一件事：`kubectl expose` 的自動偵測失敗。
+⭐️`containerPort` 沒寫**只影響**一件事：`kubectl expose` 的**自動偵測**失敗。
 
 ## Dockerfile EXPOSE vs containerPort
 
@@ -897,17 +914,17 @@ kubectl logs test > out.txt
 | 實際效果 | 不開 port，純宣告 | 不開 port，純宣告 |
 | 給誰看 | docker inspect | kubectl expose 自動偵測 |
 
-兩者都是 metadata，真正開 port 的是程式本身。
+**兩者都是 metadata**，真正開 port 的是**程式本身**。
 
 ## Service targetPort 才控制流量
 
 | 層級 | 說明 |
 |------|------|
-| Container 實際監聽 | 程式啟動時 bind 的 port |
+| Container 實際監聽 | **程式啟動時 bind 的 port** |
 | containerPort | 文件性質宣告，不影響網路 |
 | Service targetPort | 決定流量送到 Pod 的哪個 port，這才控制路由 |
 
-Service 的 `targetPort` 設對，不管 Pod spec 有沒有 `containerPort` 都能通。
+⭐️Service 的 `targetPort` 設對，不管 Pod spec 有沒有 `containerPort` 都能通。
 
 ## 叢集內 DNS 格式
 
@@ -920,6 +937,18 @@ Service 的 `targetPort` 設對，不管 Pod spec 有沒有 `containerPort` 都�
 在叢集內可以直接用 Service 名稱（如 `nginx-service-cka`）解析到 ClusterIP，不用打完整 FQDN。
 
 驗證 DNS：起一個臨時 Pod 跑 `nslookup <service-name>`。
+
+## Service DNS 短名解析規則
+
+同 namespace 內，短名（如 `nginx-svc`）和 FQDN 等價，都能解析到 ClusterIP。
+
+跨 namespace 至少要帶 namespace：`nginx-svc.other-ns`。
+
+| 寫法 | 適用情境 |
+|------|----------|
+| `nginx-svc` | 同 namespace |
+| `nginx-svc.other-ns` | 跨 namespace |
+| `nginx-svc.other-ns.svc.cluster.local` | 完整 FQDN，永遠能用 |
 
 ## -it 輸出和 logs 可能有微妙差異
 
