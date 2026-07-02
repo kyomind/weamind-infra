@@ -35,7 +35,7 @@ spec:
 - deployment 名稱（位置參數）
 
 不能設，必須進 YAML 改：
-- container name
+- **container name**
 - command
 
 ## kubectl exec 忘 namespace
@@ -51,7 +51,7 @@ kubectl exec pod-name -n some-ns -- nslookup kubernetes.default  # ✓
 
 ## kubectl exec 的 -- 分隔符
 
-`--` 左邊是 kubectl 參數，右邊是容器內指令。新版 kubectl 強制要求。
+`--` 左邊是 kubectl 參數，右邊是容器內指令。**新版 kubectl 強制要求**。
 
 ```bash
 kubectl exec pod-name -n ns -- nslookup kubernetes.default  # ✓
@@ -90,6 +90,8 @@ kubectl run -h       # 忘記 run 怎麼帶 command
 
 `-h` 給簡短說明 + 範例，`--help` 給完整參數列表，考試用 `-h` 就夠。
 
+注意：這是 kubectl 特殊設計。一般 CLI（如 `git`、`docker`）兩者等價，但 kubectl 故意區分——`-h` 有範例可直接複製改。
+
 ## 什麼時候用什麼查資料
 
 | 情境 | 用什麼 |
@@ -102,7 +104,7 @@ kubectl run -h       # 忘記 run 怎麼帶 command
 
 ## expose 預設 Service 名稱
 
-不加 `--name` 會用來源資源同名：
+不加 `--name`，**預設與來源資源同名**：
 
 ```bash
 kubectl expose deployment nginx-app    # Service 名稱 = nginx-app
@@ -111,7 +113,7 @@ kubectl expose deployment nginx-app --name my-svc  # Service 名稱 = my-svc
 
 ## metadata.name 不可變
 
-Kubernetes 資源的 `metadata.name` 建出來就不能改。改名 = 刪掉重建。
+Kubernetes 資源的 `metadata.name` 建出來就**不能改**。改名 = 刪掉重建。
 
 ```bash
 kubectl delete svc old-name -n ns

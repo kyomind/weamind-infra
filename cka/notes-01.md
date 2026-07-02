@@ -1,6 +1,6 @@
 # CKA Practice Notes
 
-整理日期：2026-05-26
+整理日期：2026-05-26 → 2026-07-02
 
 ## kubectl run 不需要寫 type
 
