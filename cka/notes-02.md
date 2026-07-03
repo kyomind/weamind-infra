@@ -696,7 +696,7 @@ hostPath 更危險：題目要求綁 node 你漏寫，K8s 不會報錯提醒，P
 
 ## 資料綁 node → local 概念 → nodeAffinity
 
-心智模型：hostPath / local 的資料只存在特定 node 的磁碟上，天生跟那台 node 綁死。nodeAffinity 是把這個物理事實告訴 K8s，讓 scheduler 不會把 Pod 排到拿不到資料的 node。
+心智模型：hostPath / local 的資料只存在特定 node 的磁碟上，**天生跟那台 node 綁死**。nodeAffinity 是把這個物理事實告訴 K8s，**讓 scheduler 不會把 Pod 排到拿不到資料的 node**。
 
 題目出現「hostPath + 指定 node」→ 自動連結到 nodeAffinity。
 
@@ -707,11 +707,6 @@ hostPath 更危險：題目要求綁 node 你漏寫，K8s 不會報錯提醒，P
 ## labels 是 map 不是 array
 
 ```yaml
-# ✗ 錯誤（寫成 matchExpressions 格式）
-labels:
-- key: tier
-  value: white
-
 # ✓ 正確
 labels:
   tier: white
