@@ -17,7 +17,7 @@ spec:
         nodepool: worker # 只在 worker 節點上排程，避免佔用 control-plane
       containers:
         - name: app
-          image: ghcr.io/kyomind/weamind:1.2.2
+          image: ghcr.io/kyomind/weamind:1.2.3
           imagePullPolicy: Always # 每次部署都重新拉取 image，確保使用最新版本
           command: # 明確指定啟動指令（覆蓋 Dockerfile 的 CMD/ENTRYPOINT）
             - uvicorn
