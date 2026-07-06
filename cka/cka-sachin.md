@@ -56,7 +56,29 @@ env:
 
 ---
 
-4
+4⭐️⭐️⭐️24
 https://killercoda.com/sachin/course/CKA/deployment-rollout
 好長的題目
+
+create deploy 沒有 --labels！
+並且注意三個label都要一致，還好k8s會幫你生欄位，改值就好了，大幸！但注意要用":"而不是"="
+
+這題還考了`Configure the MaxUnavailable field to 30% and the MaxSurge field to 45% .`
+yaml寫法要查文件，在https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment
+成品，複製更快！
+```yaml
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 30%
+    maxSurge: 45%
+```
+
+在此又犯了一個錯，`strategy`與`template`是同一層，小`spec`一層！
+導致api server報錯
+
+rollout好久xd
+
+---
+
 

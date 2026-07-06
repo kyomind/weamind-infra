@@ -33,7 +33,6 @@ description: "Enter CKA review mode: answer questions about existing notes, upda
 - `cka/rules.md`
 - `cka/notes.md`
 - `cka/notes-01.md`
-- `cka/cka-sachin.md` — 練習題目時的即時筆記，記錄卡點、題目連結、驗證器問題
 
 ## 寫入原則
 
