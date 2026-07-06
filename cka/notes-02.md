@@ -731,6 +731,17 @@ spec:
 
 題目說「from PV `xxx` using matchLabels」容易誤解成用名字 match，但 matchLabels 永遠是比對 label。
 
+## PV/PVC 綁定：必要條件 vs 額外篩選
+
+| 條件 | 性質 |
+|------|------|
+| `storageClassName` 一致 | 必要 |
+| `accessModes` 一致 | 必要 |
+| PVC request ≤ PV capacity | 必要 |
+| `selector.matchLabels` | 額外篩選，PVC 有寫才檢查 |
+
+PVC 沒寫 `selector` 時只看前三個條件。寫了就變成「前三個都符合，且 label 也對得上」才會綁。
+
 ## matchLabels 是篩選不是指定
 
 `selector.matchLabels` 縮小候選範圍，過濾完可能剩一個，也可能剩多個。
@@ -742,11 +753,11 @@ spec:
 
 `claimRef` 才是真正的指名綁定。
 
-多個候選時，K8s 選**容量最小但足夠**的（smallest fitting），避免小 PVC 綁到大 PV 浪費空間。
+多個候選時，K8s 用 **best fit** 策略：選容量最小但足夠的 PV，避免小 PVC 綁到大 PV 浪費空間。
 
 ## WaitForFirstConsumer 導致 PVC Pending
 
-PVC 卡在 Pending + Events 顯示 `WaitForFirstConsumer` ≠ 錯誤。
+PVC 卡在 Pending + Events 顯示 `WaitForFirstConsumer` **≠ 錯誤**。
 
 這是 StorageClass 的 `volumeBindingMode` 設定，要等 Pod 使用這個 PVC 時才觸發綁定。題目只要求建 PV/PVC，這樣就算完成。
 
@@ -760,13 +771,9 @@ PVC 卡在 Pending + Events 顯示 `WaitForFirstConsumer` ≠ 錯誤。
 
 考試省事：`vi pv` → `k apply -f pv`。
 
-## vim A 跳到行末並進 insert mode
-
-`$` 跳到行末（停在 normal mode），`A` 跳到行末並直接進 insert mode。考試時 `A` 更實用，到了就能直接打字。
-
 ## apply 順序：先 PV 後 PVC
 
-PVC 要找 PV 來綁，PV 得先存在。
+PVC 要找 PV 來綁，PV 得**先存在**。
 
 ```bash
 k apply -f pv
@@ -786,12 +793,12 @@ k get pv,pvc
 | 方式 | 流程 | 實務常見度 |
 |------|------|-----------|
 | Static | 管理員手動建 PV → 開發者建 PVC 綁定 | 少 |
-| Dynamic | 定義 StorageClass → 開發者建 PVC → 自動建 PV | 主流 |
+| Dynamic | 定義 StorageClass → 開發者建 PVC → 自動建 PV | **主流** |
 
 Dynamic 主流原因：
 - 開發者自助服務，不用等管理員
 - 按需分配，不用事先猜容量
-- 雲原生（AWS EBS、GCP PD）原生支援
+- 雲原生（AWS EBS、GCP PD）**原生支援**
 - GitOps 友善，PVC manifest 進 repo 就完成
 
 Static 場景：特定硬體（local SSD）、需要精確控制綁定、沒有 dynamic provisioner。
@@ -806,7 +813,7 @@ kind: StorageClass
 metadata:
   name: low-latency
   annotations:
-    storageclass.kubernetes.io/is-default-class: "false"
+    storageclass.kubernetes.io/is-default-class: "false"  # 沒寫預設就是 false，所以寫出來其實是多餘，教學用，實務上通常省略
 provisioner: csi-driver.example-vendor.example
 reclaimPolicy: Retain  # 預設是 Delete
 allowVolumeExpansion: true
@@ -825,9 +832,19 @@ parameters:
 - `parameters`：傳給 provisioner 的參數，各家不同
 - `storageclass.kubernetes.io/is-default-class: "true"`：標記為 default StorageClass，沒指定 StorageClass 的 PVC 會用這個
 
+## reclaimPolicy 預設 Delete 的原因
+
+Dynamic provisioning 的設計哲學：PV 是為了這個 PVC 自動生出來的，PVC 消失了，PV 沒理由留著。
+
+實務考量：
+- 雲環境存儲按量計費，PVC 刪了但 PV 還在 = 持續扣錢
+- 避免孤兒資源累積
+
+`Retain` 適合資料重要、需人工確認才能刪的場景，或 static provisioning 預先規劃好的 PV。
+
 ## Storage 三件套都沒有 kubectl create
 
-SC、PV、PVC 全部沒有 `kubectl create` 捷徑，都要從官方文件複製或手寫。
+SC、PV、PVC 全部**沒有** `kubectl create` 捷徑，都要從官方文件複製或手寫。
 
 ## Apply 順序：SC → PV → PVC → Pod
 
@@ -835,7 +852,7 @@ SC、PV、PVC 全部沒有 `kubectl create` 捷徑，都要從官方文件複製
 
 ## PVC 綁定特定 PV 用 volumeName
 
-題目出現「should be bound to 某 PV」→ 用 `volumeName` 直接指定：
+題目出現「should be bound to 某 PV」→ 用 `volumeName` **直接指定**：
 
 ```yaml
 spec:
@@ -848,15 +865,15 @@ spec:
       storage: 50Mi
 ```
 
-`volumeName` 是一對一指定，`selector.matchLabels` 是篩選（可能多個）。
+`volumeName` 是**一對一指定**，`selector.matchLabels` 是篩選（可能多個）。
 
 ## volumeName 跳過 WaitForFirstConsumer
 
-`volumeName` 是強制指定，Kubernetes 直接綁定，不管 StorageClass 的 `volumeBindingMode` 設成什麼。
+`volumeName` 是強制指定，Kubernetes 直接綁定，**不管** StorageClass 的 `volumeBindingMode` 設成什麼。
 
 ## storageClassName 是配對條件
 
-即使用了 `volumeName` 指定 PV，PVC 和 PV 的 `storageClassName` 也必須一致才能綁定。
+即使用了 `volumeName` 指定 PV，PVC 和 PV 的 `storageClassName` **也必須一致**才能綁定。
 
 可以想成：`storageClassName` 驗票，`volumeName` 選座位。票不對，指定座位也沒用。
 
@@ -866,7 +883,7 @@ spec:
 
 ## StorageClass 的 provisioner 是必填
 
-`provisioner` 是 SC 唯一的必填欄位，告訴 K8s 用什麼 driver 建 volume。
+`provisioner` 是 SC **唯一的必填欄位**，告訴 K8s 用什麼 driver 建 volume。
 
 常見值：
 - `kubernetes.io/no-provisioner`：static provisioning，不自動建 PV
@@ -876,11 +893,33 @@ spec:
 
 - `capacity`
 - `accessModes`
-- volume type（如 `hostPath`、`local`）
+- **volume type**（如 `hostPath`、`local`）
 
 ## accessModes 題目沒給就用 ReadWriteOnce
 
 `ReadWriteOnce` 是最常見的選擇，單節點讀寫。題目沒特別指定時用這個。
+
+## RWO 的「單節點」限制
+
+`ReadWriteOnce` 限制的是 **volume 只能 attach 到一個節點**，不是限制 Pod 數量。
+
+- 同節點多個 Pod 掛同一個 RWO PVC → 可以
+- 不同節點的 Pod 想掛同一個 RWO PVC → 第二個卡住，報 `Multi-Attach error`
+
+卡住後沒有自動後續，Pod 停在 `ContainerCreating`。處理方式：等第一個 Pod 結束、手動刪 Pod 重調度、加 `podAffinity` 強制同節點、或換 RWX 存儲。
+
+## ⭐️RWO volume 綁哪個節點：取決於 binding mode
+
+Pod 調度前**不知道**自己會去哪個節點，volume 落點由 StorageClass 的 `volumeBindingMode` 決定：
+
+| 模式 | 行為 |
+|------|------|
+| `WaitForFirstConsumer` | 等第一個 Pod 調度，scheduler 決定節點後才 provision/bind PV |
+| `Immediate`（預設） | PVC 建立時就綁定，不管 Pod 在哪 |
+
+`Immediate` 的風險：PV 先綁到 node-A，但 Pod 因其他約束被調度到 node-B → `Multi-Attach error`。
+
+local/hostPath 類存儲通常搭配 `WaitForFirstConsumer`，讓第一個 Pod 的調度結果決定 volume 落點。
 
 ## hostPath PV 基本範例
 
@@ -897,13 +936,13 @@ spec:
     storage: 10Gi
   accessModes:  # 必填
     - ReadWriteOnce
-  hostPath:  # 必填（volume type）
+  hostPath:  # ⭐️必填（volume type）
     path: "/mnt/data"
 ```
 
-最簡單的 PV 形式，沒有 nodeAffinity。注意 hostPath 不強制要 nodeAffinity，但資料只存在特定節點，實務上應該要加。
+最簡單的 PV 形式，沒有 nodeAffinity。注意 hostPath 不強制要 nodeAffinity，但資料只存在特定節點，**實務上應該要加**。
 
-## Pod 使用 PVC 範例
+## ⭐️Pod 使用 PVC 範例
 
 ```yaml
 apiVersion: v1
@@ -928,6 +967,19 @@ spec:
 
 `volumes[].name` 和 `volumeMounts[].name` 必須對應。
 
+## mountPath 可以是檔案路徑
+
+通常 `mountPath` 是目錄，但配合 `subPath` 可以掛到單一檔案：
+
+```yaml
+volumeMounts:
+- name: config-volume
+  mountPath: /etc/nginx/nginx.conf  # 檔案路徑
+  subPath: nginx.conf               # 只掛 volume 裡的這個檔案
+```
+
+沒用 `subPath` 時，mountPath 是目錄，整個 volume 內容出現在那個目錄下。
+
 ## Pod 的 containers 是不可變欄位
 
 不能用 `k edit pod` 加新 container，必須走 export → delete → apply：
@@ -939,6 +991,29 @@ k delete pod my-pod
 k apply -f pod.yaml
 ```
 
+## readOnly 是 volumeMounts 層級
+
+```yaml
+volumeMounts:
+- mountPath: /var/www/shared
+  name: shared-storage
+  readOnly: true  # 跟 mountPath、name 同層，預設 false
+```
+
+不是寫在 `volumes` 那邊。
+
+## container 必填欄位：name、image
+
+每個 container 都**必須**有 `name` 和 `image`，缺一不可。
+
+## k get pod -o yaml 導出有系統欄位
+
+`status`、`metadata.uid`、`metadata.resourceVersion` 等是系統自動產生的。apply 時通常會自動忽略，考試不用特別清理。
+
+## tail -f /dev/null 讓容器保持運行
+
+sidecar 常用技巧。沒有持續運行的指令，container 跑完就退出，Pod 會變成 CrashLoopBackOff。
+
 ## /dev/null 是絕對路徑
 
 ```yaml
@@ -949,30 +1024,9 @@ command: ["tail", "-f", "dev/null"]
 command: ["tail", "-f", "/dev/null"]
 ```
 
-少了 `/` 變相對路徑，container 找不到檔案會 CrashLoopBackOff。
+少了 `/` 變相對路徑，container 找不到檔案會 `CrashLoopBackOff`。
 
-## readOnly 是 volumeMounts 層級
-
-```yaml
-volumeMounts:
-- mountPath: /var/www/shared
-  name: shared-storage
-  readOnly: true  # 跟 mountPath、name 同層
-```
-
-不是寫在 `volumes` 那邊。
-
-## container 必填欄位：name、image
-
-每個 container 都必須有 `name` 和 `image`，缺一不可。
-
-## k get pod -o yaml 導出有系統欄位
-
-`status`、`metadata.uid`、`metadata.resourceVersion` 等是系統自動產生的。apply 時通常會自動忽略，考試不用特別清理。
-
-## tail -f /dev/null 讓容器保持運行
-
-sidecar 常用技巧。沒有持續運行的指令，container 跑完就退出，Pod 會變成 CrashLoopBackOff。
+`/dev/null` 是 Linux 的特殊設備檔案，必須用絕對路徑，否則會找不到導致容器啟動失敗。
 
 ## Pod 掛 PVC 範例在 Claims As Volumes
 
@@ -989,7 +1043,7 @@ https://kubernetes.io/docs/concepts/storage/persistent-volumes/#claims-as-volume
 2. `accessModes` 一致
 3. PVC request ≤ PV capacity
 
-三個都符合才會 Bound。多個 PV 符合時選容量最小但足夠的。
+三個都符合才會 Bound。多個 PV 符合時選**容量最小但足夠**的。
 
 ## volumeBindingMode 是 SC 的事
 
@@ -1002,7 +1056,7 @@ https://kubernetes.io/docs/concepts/storage/persistent-volumes/#claims-as-volume
 
 沒設或 SC 不存在 = `Immediate`。
 
-## tolerations 位置在 spec 底下
+## ⭐️tolerations 位置在 spec 底下
 
 跟 `containers` 同層，不是在 container 裡面：
 
@@ -1015,7 +1069,7 @@ spec:
   containers:
   - name: nginx
     image: nginx
-  tolerations:  # 跟 containers 同層
+  tolerations:  # 跟 containers 同層，因為這是 pod 的屬性（attribute）
   - key: "example-key"
     operator: "Exists"
     effect: "NoSchedule"
@@ -1031,6 +1085,27 @@ spec:
 | `effect` | 對應 taint 的 effect：`NoSchedule`、`PreferNoSchedule`、`NoExecute` |
 
 `operator: Exists` + 不寫 `value` 是最常見的寫法。
+
+## toleration 的 effect 必須對應
+
+Toleration 的 `effect` 要和 taint 的 `effect` 完全一致才能容忍。
+
+例外：**不寫 `effect`** = 匹配該 key 的**所有** effect：
+
+```yaml
+# 只容忍 NoSchedule
+tolerations:
+- key: "node-role.kubernetes.io/control-plane"
+  operator: Exists
+  effect: NoSchedule
+
+# 容忍這個 key 的所有 effect（不寫 effect）
+tolerations:
+- key: "node-role.kubernetes.io/control-plane"
+  operator: Exists
+```
+
+題目沒特別指定 effect 時可以不寫，比較保險。
 
 ## taint effect 三種差別
 
@@ -1050,6 +1125,15 @@ spec:
 | 官方文件搜尋 `tolerations` | 找完整範例直接複製改 |
 
 `explain` 查結構，文件抄範例，看情況選。
+
+## explain vs -h 使用時機
+
+| 工具 | 查什麼 | 場景 |
+|------|--------|------|
+| `kubectl explain` | YAML 結構：欄位名、層級、類型 | 寫 YAML 時不確定欄位叫什麼、放哪層 |
+| `kubectl -h` | 命令參數：flag 怎麼拼、有哪些選項 | 打指令時不確定 flag 名稱或用法 |
+
+簡單記：**寫 YAML 用 explain，打指令用 -h**。
 
 ## Taint vs Toleration 方向
 
@@ -1081,7 +1165,7 @@ kubectl edit sc my-sc            # 加 allowVolumeExpansion
 
 ## 哪些欄位能 edit 要先判斷
 
-不是所有欄位都能改。Pod 很多欄位是 immutable，只能刪除重建：
+不是所有欄位都能改。**Pod 很多欄位是 immutable**，只能刪除重建：
 
 ```bash
 kubectl get pod xxx -o yaml > pod.yaml
