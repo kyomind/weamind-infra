@@ -239,3 +239,37 @@ env:
 
 原本是 `env` + `value` 就改成 `valueFrom`，保持同樣的 `env` 結構。不要跳到 `envFrom`，那是換了一整套寫法。
 
+## kubectl create deployment 沒有 --labels
+
+很多資源有 `--labels`（namespace、configmap），但 deployment 沒有。要加 label 只能產 YAML 再改，或建完後 `kubectl label`。
+
+## Deployment 三處 label 要一致
+
+```yaml
+metadata:
+  labels:
+    app: cache  # Deployment 自己的 label
+
+spec:
+  selector:
+    matchLabels:
+      app: cache  # 用來選 Pod
+
+  template:
+    metadata:
+      labels:
+        app: cache  # Pod 實際會帶的 label
+```
+
+`kubectl label deployment xxx app=cache` 只改 metadata.labels，Pod 不會有這個 label。
+
+## 需要自訂 label 的 Deployment 用 dry-run
+
+```bash
+kubectl create deployment xxx --image=yyy --dry-run=client -o yaml > deploy.yaml
+# 編輯三處 label
+kubectl apply -f deploy.yaml
+```
+
+這是 CKA 最穩的做法，不會漏 selector 或 template.labels。
+

@@ -25,6 +25,7 @@ https://killercoda.com/sachin/course/CKA/configmap-deploy，這題也是無法�
 ```bash
 kubectl create configmap my-config --from-literal=key1=config1 --from-literal=key2=config2
 ```
+
 卡點：要改成吃cm檔
 ```yaml
 - env:
@@ -52,3 +53,10 @@ env:
 ```
 不能用envFrom
 但兩種都要會！
+
+---
+
+4
+https://killercoda.com/sachin/course/CKA/deployment-rollout
+好長的題目
+
