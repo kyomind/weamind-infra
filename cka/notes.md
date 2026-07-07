@@ -325,3 +325,43 @@ k create deploy xxx --image=yyy -- sleep 3600
 
 `-it` 是給互動式 shell 用的，單次執行指令裸 `k exec <pod> -- <cmd>` 就夠。
 
+## annotations 值必須是字串
+
+`"false"`、`"true"`、`"123"` 要加引號，不加會被 YAML 解析成 bool/number，API 收到報 `json: cannot unmarshal`。Labels 同理。
+
+## Ingress 一條龍指令
+
+```bash
+k create ingress name --rule="/path=svc:port" --annotation="key=value"
+```
+
+⭐️`--rule` 格式很單純，常見變體就這幾種：
+| 場景 | `--rule` 寫法 |
+|------|---------------|
+| host + path | `--rule="example.com/shop=svc:80"` |
+| 只有 path | `--rule="/shop=svc:80"` |
+| 只有 host | `--rule="example.com/=svc:80"` |
+
+pathType 預設 Prefix，annotation 在指令裡不用自己加引號。比建空殼再改 YAML 快很多。
+
+## Service 類型是層層疊加
+
+| 類型 | 組成 |
+|------|------|
+| ClusterIP | 集群內部 IP |
+| NodePort | ClusterIP + 每個 node 開一個 port |
+| LoadBalancer | ClusterIP + NodePort + 外部 LB |
+
+NodePort 不是取代 ClusterIP，而是在上面多開入口。唯一沒有 ClusterIP 的是 ExternalName 和 Headless。
+
+改 Service 類型時只改 `type` 欄位，不用刪 `clusterIP` 或 `port`，原本的設定會繼續用。
+
+如果你手動把 `clusterIP` 欄位刪掉，Kubernetes 也只會自動重新分配一個新的 ClusterIP 給你——它不會變成「沒有 ClusterIP」。
+
+## Ingress 實戰範例
+
+```bash
+k create ingress nginx-ingress-resource \
+  --rule="/shop=nginx-service:80" \
+  --annotation="nginx.ingress.kubernetes.io/ssl-redirect=false"
+```

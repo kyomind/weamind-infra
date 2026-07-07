@@ -298,3 +298,67 @@ k port-forward svc/nginx-service 80:80
 
 ---
 
+5⭐️20
+https://killercoda.com/sachin/course/CKA/ingress
+這題要建立ingress進行內部導流！有點難
+
+我的做法，先查文件
+https://kubernetes.io/docs/concepts/services-networking/ingress/#the-ingress-resource
+然後再用指令
+`k create ingress nginx-ingress-resource -h`看一下參數
+我覺得自己寫`--rule`可能有點難，考慮create一個空的然參考文件寫法就好
+結果不行！至少要指令一個`default-backend`
+```bash
+root@controlplane:~$ k create ingress nginx-ingress-resource
+error: not enough information provided: every ingress has to either specify a default-backend (which catches all traffic) or a list of rules (which catch specific paths)
+```
+這就是重要線索了！
+
+`-h`的說明：
+```bash
+    --default-backend='':
+        Default service for backend, in format of svcname:port
+```
+結果
+```bash
+root@controlplane:~$ k create ingress nginx-ingress-resource --default-backend nginx-service:80
+ingress.networking.k8s.io/nginx-ingress-resource created
+```
+好，重點是我自己建立後，再去文件複製，我覺得那個default svc應該要刪除
+```yaml
+spec:
+  defaultBackend:  # 指令建立，我覺得應該不是這個，要刪→結果是不需要刪除，只是不會用到而已！
+    service:
+      name: nginx-service
+      port:
+        number: 80
+  rules:  # 以下是從文件複製來並客製化
+  - http:
+      paths:
+      - path: /shop
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-service
+            port:
+              number: 80
+```
+
+驗證不過，因為沒有寫「ssl-redirect should be configured as false .」部分
+但我不會寫，必須再查文件！
+重點是，這個文件也沒有哪一個有。有耶，我全站搜尋都是論壇，這到時候查得到嗎？我不禁懷疑
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  creationTimestamp: "2026-07-07T07:38:08Z"
+  (略)
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+```
+然後布林值要有雙引號！
+
+結論：必須學習`--rule`寫法，會加速很多。下次要3分鐘寫完
+
+---
+
