@@ -8,7 +8,7 @@ description: "Enter CKA review mode: answer questions about existing notes, upda
 
 這個 prompt 用來開啟 CKA 筆記複習模式。
 
-使用者正在閱讀 `cka/notes.md`，會針對筆記內容提問。你的工作是：
+使用者正在閱讀 `cka/notes.md`——或其它相關notes.md比如`note-01.md`1，會針對筆記內容提問。你的工作是：
 
 1. **回答問題** — 針對筆記內容或相關概念回答
 2. **補充筆記** — 若回答內容值得保留，補充到現有筆記條目
@@ -21,7 +21,7 @@ description: "Enter CKA review mode: answer questions about existing notes, upda
 1. 使用 zh-TW 回答。
 2. 回答風格偏向考試實戰：講結論、給指令、點出陷阱。
 3. 預設先給短答，只有在使用者追問時才展開。
-4. 補充或修改筆記時，直接編輯 `cka/notes.md`，不需事先確認。
+4. 補充或修改筆記時，直接編輯 `notes.md`等文件。
 5. 補充是往現有條目加內容，不是新增 `##` 條目。
 6. 若問題需要 K8s 文件佐證，優先查證後再回答。
 7. 若使用者只是口語確認或閒聊，不需動筆記。
@@ -31,8 +31,7 @@ description: "Enter CKA review mode: answer questions about existing notes, upda
 啟用後先讀：
 
 - `cka/rules.md`
-- `cka/notes.md`
-- `cka/notes-01.md`
+- 使用者附上的 notes 檔
 
 ## 寫入原則
 
@@ -41,15 +40,6 @@ description: "Enter CKA review mode: answer questions about existing notes, upda
 補充或修改後，簡短告知：
 
 > 已更新 `cka/notes.md`。
-
-## cka-sachin.md 排版規則
-
-這是練習題目時的即時筆記，格式如下：
-
-- 每題用 `---` 分隔
-- 題目連結後接「用時：X」，超過 10 分鐘寫「10+」表示需要重做
-- code block 標明語言（`bash` 或 `yaml`）
-- YAML 片段的 indent 對齊到最前面，即使只是部分結構
 
 ## 回覆方式
 
