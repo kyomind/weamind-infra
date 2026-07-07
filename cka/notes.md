@@ -273,3 +273,55 @@ kubectl apply -f deploy.yaml
 
 這是 CKA 最穩的做法，不會漏 selector 或 template.labels。
 
+## -it + 一次性指令必須配 --restart=Never
+
+沒加的話終端會卡住：容器跑完 exit → kubelet 重啟 → 又 exit → 無限循環，你的終端永遠等不到 Pod「結束」。
+
+加了 `--restart=Never`，容器 exit 後 Pod 狀態變 `Completed`，`-it` 偵測到進程結束就釋放終端。
+
+## CKA DNS 驗證公式
+
+```bash
+# 即時看結果
+k run test --image=busybox:1.28 --restart=Never -it --rm -- nslookup <svc-name>
+
+# 不用 -it，事後看 logs
+k run test --image=busybox:1.28 --restart=Never -- nslookup <svc-name>
+k logs test
+```
+
+busybox:1.28 內建 nslookup，用 Service 名稱查 DNS 是標準驗證手法。
+
+## kubectl create deploy 設 command 用 --
+
+```bash
+k create deploy xxx --image=yyy -- sleep 3600
+```
+
+`--` 是 shell 慣例，代表「後面都不是 flag」。kubectl 把 `--` 後的內容塞進 `spec.containers[].command`。沒有 `--command` 這個 flag。
+
+## dry-run vs k edit 選擇
+
+| 情況 | 做法 |
+|------|------|
+| 只差一兩個小欄位（如 container name） | 直接 create → `k edit` |
+| 要加整段結構（volumes、probes、env） | `--dry-run -o yaml` → 改檔 → apply |
+
+改越少，越適合 `k edit`。
+
+## cluster 內部 DNS 只在 Pod 內生效
+
+`kubernetes.default`、`<svc>.<ns>.svc.cluster.local` 這些名稱是 CoreDNS 解析的，只有 Pod 內的 `/etc/resolv.conf` 指向 CoreDNS。
+
+在 node 上跑 `nslookup kubernetes.default` 會走 node 的 DNS（如 8.8.8.8），查不到。題目說「from the pod」就要 `k exec`。
+
+## k exec 單次指令不需要 -it
+
+| 場景 | 需要 -it | 原因 |
+|------|----------|------|
+| `k exec <pod> -- nslookup xxx` | ✗ | 單次指令，拿輸出就走 |
+| `k exec <pod> -- cat /etc/resolv.conf` | ✗ | 同上 |
+| `k exec -it <pod> -- sh` | ✓ | 要開互動式 shell |
+
+`-it` 是給互動式 shell 用的，單次執行指令裸 `k exec <pod> -- <cmd>` 就夠。
+

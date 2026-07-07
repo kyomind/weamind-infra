@@ -199,3 +199,55 @@ NAME             ENDPOINTS           AGE
 kubernetes       172.30.1.2:6443     16d
 ubuntu-service   192.168.1.42:8080   18s
 ```
+
+## Services & Networking
+
+1⭐️20
+https://killercoda.com/sachin/course/CKA/nslookup
+重點是這句`Verify your ability to perform DNS lookups(use name: test-nslookup ) for the service name from within the cluster using the busybox:1.28 image.`，要開測試pod
+
+先做好前置環境
+```bash
+root@controlplane:~$ k run nginx-pod-cka --image nginx
+pod/nginx-pod-cka created
+root@controlplane:~$ k expose pod nginx-pod-cka --name nginx-service-cka --port 80
+service/nginx-service-cka exposed
+```
+測試pod才是重頭戲，我們只是為了它可以執行工具指令
+```bash
+root@controlplane:~$ k run test2 --restart Never --image busybox:1.28 -- nslo
+okup nginx-service-cka
+pod/test2 created
+```
+這個沒有`-it`，用`k logs test2`可以獲得結果，再重導向即可
+有`-it`就會直接輸出
+然後建議加`--rm`，不然一直換名字好煩
+`--restart Never`絕對必要，不然會卡前景，參見筆記
+
+這題的驗證器太機車，放棄
+
+---
+
+2⭐️20
+https://killercoda.com/sachin/course/CKA/coredns-1
+兩大重點，筆記也有
+一是deploy的command只要直接接在`--`後即可，沒有`--command`參數！建立後直接就是容器的command了
+二是這裡直接create deploy再k edit更快，因為只改一個欄位值
+
+三則是在pod中跑指令，使用k exec
+四是，這題要先建ns啊！
+```bash
+root@controlplane:~$ k create deployment dns-deploy-cka --replicas 2 --image registry.k8s.io/e2e-test-images/jessie-dnsutils:1.3 -n dns-ns -- sleep 3600
+error: failed to create deployment: namespaces "dns-ns" not found
+root@controlplane:~$ k create ns dns-ns
+namespace/dns-ns created
+```
+
+這裡可以「沒有」`-it`參數，照樣能運作
+```bash
+k exec dns-deploy-cka-cc6b4ddcf-l5xgm -n dns-ns  -- nslookup kubernetes.default
+```
+
+最後又檔案問題，不管了！
+
+---
