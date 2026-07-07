@@ -251,3 +251,50 @@ k exec dns-deploy-cka-cc6b4ddcf-l5xgm -n dns-ns  -- nslookup kubernetes.default
 最後又檔案問題，不管了！
 
 ---
+
+3⭐️5
+https://killercoda.com/sachin/course/CKA/nodeport
+主要是這兩個要查文件：
+- protocol TCP
+- node port 31000
+
+文件範例，`nodePort`是加在：
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  type: NodePort  # 留意
+  selector:
+    app.kubernetes.io/name: MyApp
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30007  # 這裡
+```
+而且大小寫和`type`的值還不同
+
+還有一個重點，我指令沒有寫`--type=NodePort`
+結果是，`k edit`要改一下`type`，但不需要刪除既有的ClusterIP相關欄位
+因為NodePort也有ClusterIP
+```bash
+root@controlplane:~$ k get -n nginx-app-space svc app-service-cka
+NAME              TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+app-service-cka   NodePort   10.98.179.213   <none>        80:31000/TCP   4m3s
+root@controlplane:~$
+```
+
+---
+
+4○3
+https://killercoda.com/sachin/course/CKA/svc
+
+小重點，`port-forward`只能寫這樣：
+```bash
+k port-forward svc/nginx-service 80:80
+```
+寫 svc 然後空一格後，在那邊 tab 是沒用的！
+
+---
+
