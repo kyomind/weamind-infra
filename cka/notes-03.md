@@ -36,12 +36,14 @@ k create secret generic my-secret --from-file=data.txt
 
 ## --from-file vs --from-env-file
 
-`--from-file=data.txt`：整個檔案塞進一個 key，key 名是檔名
+`--from-file=data.txt`：整個檔案塞進一個 key，預設的 key 名即是檔名
 
 ```yaml
 data:
   data.txt: <整個檔案內容的 base64>
 ```
+
+想要指定 key 的話：`--from-file=mykey=data.txt`
 
 `--from-env-file=data.txt`：檔案裡每行 `KEY=value` 變成獨立的 key
 
@@ -51,9 +53,7 @@ data:
   DB_Password: <value2 的 base64>
 ```
 
-要指定 key：`--from-file=mykey=data.txt`
-
-## kubectl run 的 -- 和 --command 差異
+## ⭐️kubectl run 的 -- 和 --command 差異
 
 ```bash
 k run x --image=nginx -- sleep 5         # 進 args（Docker CMD）
@@ -62,14 +62,14 @@ k run x --image=nginx --command -- sleep 5  # 進 command（Docker ENTRYPOINT）
 
 題目說「用 command」就要加 `--command`。沒有 `--args` flag，因為 `--` 後面預設就是 args。
 
-## jsonpath 必須指定資源名稱
+## jsonpath 應指定資源名稱
 
 ```bash
 k get svc -o jsonpath='{.spec.ports[0].targetPort}'       # 錯：沒指定名稱，查全部 svc
 k get svc redis-service -o jsonpath='{.spec.ports[0].targetPort}'  # 對
 ```
 
-不指定名稱時結果是 list，路徑變成 `.items[*].spec...`，原本的 `.spec...` 對不上。
+不指定名稱時，結果是 list，路徑要改成 `.items[*].spec...`，不然跟原本的 `.spec...` 對不上。結果是找不到任何東西
 
 ## jsonpath 一律用單引號
 
@@ -92,8 +92,6 @@ kubectl get pods -o jsonpath="{.items[*].metadata.name}"
 | `.spec.field` | 取單一欄位 | `.spec.clusterIP` |
 | `.items[*]` | 遍歷陣列 | `.items[*].metadata.name` |
 | `.items[0]` | 取特定索引 | `.spec.ports[0].targetPort` |
-| `?(@.key==val)` | 條件過濾 | `.items[?(@.metadata.name=="redis")]` |
-| `{"\n"}` | 換行輸出 | 多筆結果時好讀 |
 
 實戰：先 `-o yaml` 看結構，再把層級翻譯成 jsonpath。
 
@@ -110,13 +108,15 @@ kubectl get pods --sort-by='.status.containerStatuses[0].restartCount'
 Boolean flag 出現即是 true，不需要帶值。空格後的字會被當成下一個參數。
 
 ```bash
-k logs pod --all-containers true   # 錯：true 被當成 container name
+k logs pod --all-containers true   # ❌錯：true 被當成 container name
 k logs pod --all-containers        # 對：出現即 true
 k logs pod --all-containers=true   # 對：明確寫法
 k logs pod --all-containers=false  # 要關掉才需要 =false
 ```
 
-所有 boolean flag 同理：`--watch`、`--dry-run`、`--force` 等。
+所有 boolean flag 同理：`--watch`、`--force`、`--previous` 等。
+
+`--dry-run` 不是 boolean，必須帶值（`=client` 或 `=server`）。
 
 ## 已知 pod name，找它在哪個 namespace
 
@@ -125,7 +125,20 @@ k get pod -A | grep <pod-name>
 k get pod --all-namespaces | grep <pod-name>
 ```
 
-`-A` 是 `--all-namespaces` 的簡寫。
+`-A` 是 `--all-namespaces` 的簡寫。它也是 boolean flag。
+
+## flag shorthand
+
+Shorthand 是 flag 的單字母簡寫，單橫線 + 一個字母，功能與全名完全相同：
+
+| shorthand | 全名 |
+|-----------|------|
+| `-A` | `--all-namespaces` |
+| `-n` | `--namespace` |
+| `-o` | `--output` |
+| `-c` | `--container` |
+| ⭐️`-l` | `--selector` |
+| `-f` | `--filename` |
 
 ## kubectl logs 記得加 --all-containers
 
@@ -144,21 +157,21 @@ k top node --sort-by memory
 k top node --sort-by cpu
 ```
 
+```bash
+❯ k top node --sort-by memory
+NAME          CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)
+weamind-001   193m         9%       1984Mi          51%
+weamind-002   116m         5%       1807Mi          47%
+weamind-003   88m          4%       1415Mi          37%
+```
+
 此時 `--sort-by` 只接受 `cpu` 或 `memory` 兩個值。
 
-## tab completion 不補 flag 的值
+## k top --sort-by 沒有 tab completion
 
-Tab 補齊範圍：子命令、flag 名稱、資源類型、資源名稱。
+`k top node --sort-by` 的 `cpu`/`memory` 不會自動補齊，要自己打。
 
-Flag 的可選值（如 `--sort-by` 的 `cpu`/`memory`）不在補齊範圍，要自己打完整字串。
-
-## CKA 改卷看結果不看過程
-
-能用眼睛看出答案就直接手寫，不需要硬湊 pipeline。省下的時間拿去做下一題。
-
-```bash
-echo "$(k config current-context),controlplane" > high_memory_node.txt
-```
+大部分 flag 值有補（如 `-o` 會補 `json`、`yaml`、`wide`），這個是例外。
 
 ## k config current-context
 
@@ -168,13 +181,13 @@ echo "$(k config current-context),controlplane" > high_memory_node.txt
 k config current-context
 ```
 
-## CKA 常用兩層子命令
+## ⭐️CKA 常用兩層子命令
 
 不用背，`-h` 看一眼就知道有哪些子命令。
 
 | 命令群組 | 常用子命令 | CKA 用途 |
 |----------|------------|----------|
-| `config` | `current-context`, `get-contexts`, `use-context`, `set-context` | context 切換、查詢 |
+| `config` | `current-context`, `get-contexts`, `⭐️use-context`, `set-context` | context 切換、查詢 |
 | `rollout` | `status`, `history`, `undo`, `restart` | Deployment 滾動更新 |
 | `certificate` | `approve`, `deny` | CSR 簽發 |
 | `auth` | `can-i` | RBAC 權限檢查 |
@@ -227,7 +240,7 @@ args:
   - "tail -f /config/log.txt"
 ```
 
-`-c` 只看第一個 arg，後面的變成 shell 的位置參數。
+`-c` **只看第一個 arg**，後面的變成 shell 的位置參數。
 
 分開寫時，shell 只執行 `tail`（**沒參數**），`-f` 和路徑變成 shell 的 `$0`、`$1`，**根本沒傳給** `tail`。
 
@@ -236,18 +249,18 @@ args:
 看到 `/bin/sh` + 命令字串的組合，要自己知道補 `-c`：
 
 ```yaml
-command: ["/bin/sh", "-c"]
+command: ["/bin/sh", "-c"]⭐️
 args: ["tail -f /config/log.txt"]
 ```
 
-沒有 `-c` 時，shell 會把後面的字串當檔案路徑去找，兩種寫法都報錯但原因不同：
+沒有 `-c`（`--command`）時，shell 會把後面的字串當**檔案路徑**來解讀，而不是當作**命令**來執行，兩種寫法都報錯但原因不同：
 
 - `args: ["tail", "-f", "/config/log.txt"]` → 找一個叫 `tail` 的腳本檔案，`-f` 和路徑變成腳本的 `$0`、`$1`
 - `args: ["tail -f /config/log.txt"]` → 找一個檔名含空格的檔案
 
 實際錯誤訊息：`/bin/sh: can't open 'tail -f /config/log.txt': No such file or directory`
 
-## command 和 args 是拼接關係
+## ⭐️command 和 args 是拼接關係
 
 K8s 執行時把 command + args 串起來：
 
@@ -260,7 +273,7 @@ K8s 執行時把 command + args 串起來：
 
 ## kubectl run 的 container name = pod name
 
-`kubectl run` 生成的 container name 預設等於 pod name，沒有 flag 可改。要不同名只能編輯 YAML：
+`kubectl run` 生成的 container name **預設等於 pod name**，沒有 flag 可改。要不同名只能編輯 YAML：
 
 ```yaml
 containers:
@@ -278,9 +291,33 @@ tail -f /config/log.txt
 
 ## ConfigMap volume 範例位置
 
-官方文件：`kubernetes.io/docs/concepts/storage/volumes/#configmap`
+官方文件：
+https://kubernetes.io/docs/concepts/storage/volumes/#configmap
 
-考試直接抄，改三個值：volume `name`、`configMap.name`、`mountPath`。
+考試直接抄，改三個值：volume `name`（共兩處）、`configMap.name`、`mountPath`。
+
+官方文件內容：
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: configmap-pod
+spec:
+  containers:
+    - name: test
+      image: busybox:1.28
+      command: ['sh', '-c', 'echo "The app is running!" && tail -f /dev/null']
+      volumeMounts:
+        - name: config-vol  # 這裡
+          mountPath: /etc/config  # 這裡
+  volumes:
+    - name: config-vol  # 這裡
+      configMap:
+        name: log-config  # 這裡
+        items:
+          - key: log_level
+            path: log_level.conf
+```
 
 ## YAML 的 - 代表新物件
 
