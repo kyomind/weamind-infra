@@ -179,3 +179,23 @@ my-app-deployment-5cc5fd65f-d8mjh   1/1     Running   0          56s
 
 ---
 
+10○3
+https://killercoda.com/sachin/course/CKA/rollback
+沒啥特別，就是要驗證
+
+---
+
+11⭐️7
+https://killercoda.com/sachin/course/CKA/pod-svc-1
+這題看似是建pod與expose，結果坑是要讓ubuntu容器持續run，要給指令
+通常 ubuntu 容器預設跑完就結束，要加 `-- /bin/sh -c "sleep infinity"` 或 `-- tail -f /dev/null` 讓 pod 持續運行。
+
+這題另一個錯是我沒錯意到svc要自定義名稱！天啊
+請檢查endpoints
+```bash
+root@controlplane:~$ k get endpoints
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME             ENDPOINTS           AGE
+kubernetes       172.30.1.2:6443     16d
+ubuntu-service   192.168.1.42:8080   18s
+```
