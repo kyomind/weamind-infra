@@ -362,3 +362,61 @@ metadata:
 
 ---
 
+6○4
+https://killercoda.com/sachin/course/CKA/clusterip
+沒什麼，只要要記得 `k endpoint` 顯示的是 pod 們的ip！
+
+```bash
+root@controlplane:~$ k get endpoints
+NAME            ENDPOINTS                                           AGE
+kubernetes      172.30.1.2:6443                                     17d
+nginx-service   192.168.1.145:80,192.168.1.226:80,192.168.1.53:80   20s
+```
+這3個是pod ip
+
+---
+
+7⭐️24
+https://killercoda.com/sachin/course/CKA/network-policy
+
+第一個思考點是，np可以直接create嗎？**不行！**
+⭐️**那就要查文件、看yaml了**
+https://kubernetes.io/docs/concepts/services-networking/network-policies/#networkpolicy-resource
+複製該yaml來改！
+
+這題的第一個坑是，killercoda就真的要兩條規則：
+- Allow incoming traffic only from pods.
+- Allow incoming traffic from a specific pod with the label app=trusted
+儘管它們有明顯的集合關係，但就要這樣寫才行
+```yaml
+  - from:
+    - podSelector: {}
+    - podSelector:
+        matchLabels:
+          app: trusted
+```
+結果它要兩條獨立的`from`才肯罷休！😂
+
+第二個是真正重點，那就是"保護的pod"的選擇，不是整個ns，要去deploy找label
+```yaml
+spec:
+  podSelector:  # 不是 {} 就好了，要指定要保護的 pod
+    matchLabels:
+      app: my-app
+```
+
+---
+
+8⭐️5
+https://killercoda.com/sachin/course/CKA/nodeport-1
+這題讓我對NodePort更加了解了
+> 沒錯，這就是考試的高效操作。--type NodePort 讓骨架自帶 nodePort 欄位，你只需要改一個數字，比從 ClusterIP 改起來少動好幾行。
+只要題目是NodePort，一定要在指令用`--type NodePort`，edit時只要改port號很方便
+
+第二個重點是，建立expose，**--port是必填的**(只能自行選擇)，如果能去deploy、pod找到相關於訊息的容器port，那也只是少一步
+
+> 考試時的安全做法：expose 完一定 k get svc 看一眼，確認三個 port 都是你要的值。
+
+---
+
+

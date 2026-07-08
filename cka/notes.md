@@ -365,3 +365,33 @@ k create ingress nginx-ingress-resource \
   --rule="/shop=nginx-service:80" \
   --annotation="nginx.ingress.kubernetes.io/ssl-redirect=false"
 ```
+
+## expose --port 設兩個值
+
+`--port` 同時設定 Service 的 `port` 和 `targetPort`（未指定 `--target-port` 時）。
+
+流量路徑：`Node:nodePort` → `Service:port` → `Pod:targetPort`
+
+## NodePort 骨架省時技巧
+
+`expose --type NodePort` 骨架自帶三個 port 欄位（port / targetPort / nodePort），只需 `k edit` 改 nodePort 值。比從 ClusterIP 改省好幾行。
+
+## targetPort 自動抓 containerPort
+
+| 情況 | targetPort 行為 |
+|------|-----------------|
+| Deployment 有 `containerPort` | 自動抓過來 |
+| Deployment 沒寫 | 預設 = `--port` |
+| 手動 `--target-port` | 以你指定為準 |
+
+## --port 永遠自己填
+
+Service 對外 port 沒有自動填入機制，`kubectl expose` 時是必填參數。
+
+## expose 完驗證三 port
+
+```bash
+k get svc <name>
+```
+
+確認 PORT(S) 欄位的 port/targetPort/nodePort 都是預期值。
