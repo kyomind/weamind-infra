@@ -32,7 +32,7 @@ echo c2VjcmV0 | base64 -d > decoded.txt
 k create secret generic my-secret --from-file=data.txt
 ```
 
-`secret` 後面必須接類型，不能直接接名稱。三種：`generic`、`docker-registry`、`tls`，CKA 幾乎都用 `generic`。
+`secret` 後面必須接類型，不能直接接名稱。三種：`generic`、`docker-registry`、`tls`，⭐️CKA 幾乎都用 `generic`。
 
 ## --from-file vs --from-env-file
 
@@ -53,7 +53,7 @@ data:
   DB_Password: <value2 的 base64>
 ```
 
-## ⭐️kubectl run 的 -- 和 --command 差異
+## ⭐️⭐️kubectl run 的 -- 和 --command 差異
 
 ```bash
 k run x --image=nginx -- sleep 5         # 進 args（Docker CMD）
@@ -71,7 +71,7 @@ k get svc redis-service -o jsonpath='{.spec.ports[0].targetPort}'  # 對
 
 不指定名稱時，結果是 list，路徑要改成 `.items[*].spec...`，不然跟原本的 `.spec...` 對不上。結果是找不到任何東西
 
-## jsonpath 一律用單引號
+## jsonpath 一律用「單」引號
 
 ```bash
 # 安全
@@ -105,7 +105,7 @@ kubectl get pods --sort-by='.status.containerStatuses[0].restartCount'
 
 ## boolean flag 不能空格接值
 
-Boolean flag 出現即是 true，不需要帶值。空格後的字會被當成下一個參數。
+⭐️Boolean flag 出現即是 true，不需要帶值。空格後的字會被當成下一個參數。
 
 ```bash
 k logs pod --all-containers true   # ❌錯：true 被當成 container name
@@ -188,7 +188,7 @@ k config current-context
 | 命令群組 | 常用子命令 | CKA 用途 |
 |----------|------------|----------|
 | `config` | `current-context`, `get-contexts`, `⭐️use-context`, `set-context` | context 切換、查詢 |
-| `rollout` | `status`, `history`, `undo`, `restart` | Deployment 滾動更新 |
+| `⭐️rollout` | `status`, `history`, `undo`, `restart` | Deployment 滾動更新 |
 | `certificate` | `approve`, `deny` | CSR 簽發 |
 | `auth` | `can-i` | RBAC 權限檢查 |
 | `top` | `node`, `pod` | 資源用量查詢 |
@@ -213,10 +213,11 @@ k config current-context
 |------|------|
 | `grep "ERROR"` | 只看含 ERROR 的行 |
 | `grep -i "error"` | 不分大小寫 |
-| `grep -c "ERROR"` | 算有幾行符合 |
-| `grep -v "INFO"` | 反向——排除含 INFO 的行 |
+| `grep -A 3 "ERROR"` | 匹配行 + 後三行（看 context） |
 
-速記：`grep "關鍵字"` = 只留匹配行，`-v` = 反向排除
+速記：`grep "關鍵字"` = 只留匹配行。
+
+前後文 flag：`-A`（After，後 N 行）、`-B`（Before，前 N 行）、`-C`（Context，前後各 N 行）。`-A3` 和 `-A 3` 都可以，空格可省略。
 
 ## CKA log 題套路
 
@@ -228,8 +229,10 @@ k logs <pod> | grep "ERROR" > errors.txt
 
 ## /bin/sh -c 後面是一整個字串
 
+🐱：注意這是 args，前面已經有 commmand 了，所以整個 args 就是參數(內容是指令)
+
 ```yaml
-# 錯：拆成多個元素，-f 和路徑變成 $0、$1
+# ❌錯：拆成多個元素，-f 和路徑變成 $0、$1
 args:
   - tail
   - -f
@@ -253,7 +256,9 @@ command: ["/bin/sh", "-c"]⭐️
 args: ["tail -f /config/log.txt"]
 ```
 
-沒有 `-c`（`--command`）時，shell 會把後面的字串當**檔案路徑**來解讀，而不是當作**命令**來執行，兩種寫法都報錯但原因不同：
+⭐️沒有 `-c`（`--command`）時，shell 會把後面的字串當**檔案路徑**來解讀，而不是當作**命令**來執行
+
+沒有 `-c`，兩種寫法都報錯，但原因不同：
 
 - `args: ["tail", "-f", "/config/log.txt"]` → 找一個叫 `tail` 的腳本檔案，`-f` 和路徑變成腳本的 `$0`、`$1`
 - `args: ["tail -f /config/log.txt"]` → 找一個檔名含空格的檔案
@@ -319,6 +324,23 @@ spec:
             path: log_level.conf
 ```
 
+## ConfigMap volume 的 items 欄位
+
+`items` 用來挑選 ConfigMap 裡的特定 key 掛載，並可重新命名檔案：
+
+```yaml
+configMap:
+  name: my-config
+  items:
+    - key: log_level      # ConfigMap 裡的 key 名
+      path: log_level.conf  # 掛進容器後的檔名
+```
+
+- 有 `items`：只掛指定的 key，檔名由 `path` 決定
+- 沒 `items`：ConfigMap 所有 key 都掛進去，檔名 = key 名
+
+有 `items` 時的最終路徑 = `mountPath` + `path`，如 `/etc/config` + `log_level.conf` = `/etc/config/log_level.conf`。
+
 ## YAML 的 - 代表新物件
 
 同一個 container 內只有開頭有 `-`，其他欄位縮排對齊不加 `-`：
@@ -338,7 +360,7 @@ containers:
 
 ## Debug SOP: describe + logs
 
-```
+```bash
 Status Error / CrashLoopBackOff
         ↓
 k describe pod  → 看 State、Exit Code、Events
@@ -354,7 +376,7 @@ describe 告訴你「死了」，logs 告訴你「怎麼死的」。Exit Code 2 
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  namespace: default  # Role 是 namespace-scoped
+  namespace: default  # Role 是 namespace-scoped，不寫則用當前 context 的預設 ns
   name: pod-reader
 rules:
 - apiGroups: [""]  # "" = core API group（pods, services, configmaps 等）
@@ -363,6 +385,34 @@ rules:
 ```
 
 `apiGroups` 其他常見值：`apps`（Deployment）、`batch`（Job, CronJob）、`rbac.authorization.k8s.io`（Role, RoleBinding）。
+
+`resources` 常見值：`pods`、`services`、`configmaps`、`secrets`、`deployments`、`persistentvolumeclaims`。Subresource 寫在一起：`pods/log`、`pods/exec`、`deployments/scale`。
+
+`verbs` 常見值：`get`、`list`、`watch`（讀）、`create`、`update`、`patch`、`delete`（寫）、`*`（全部）。
+
+## Context 與 Namespace 的關係
+
+Context = **cluster + user + 預設 namespace 的組合設定**。Namespace 是 cluster 內的資源。
+
+- 不同 context 指向**不同 cluster** → 各 cluster 有自己的 ns，同名 ns 是完全獨立的東西
+- 不同 context 指向**同一 cluster** → 看的是同一批 ns，只是預設用哪個不同
+
+YAML 不寫 `namespace` 時，用當前 context 的預設 namespace（沒設就是 `default`）。CKA 每題切 context 後，該 context 可能已綁好對應 ns。
+
+## Context 裡的 User 是什麼
+
+User = 連線憑證（client cert、token 等）。`k config view` 會看到 `users:` 區塊。
+
+沒感覺是因為 kubeconfig 已經設好了，kubectl 每次自動帶憑證跟 API server 驗證。kubeadm 建的叢集通常是 `kubernetes-admin`，對應 `/etc/kubernetes/admin.conf` 裡的 cert。
+
+## 同一 Cluster 可以有多個 Context
+
+不同 context **可以指向同一個 cluster**，差別在 user 或預設 namespace：
+
+- `admin-context`：admin user，預設 `kube-system`
+- `dev-context`：dev user，預設 `development`
+
+用途：同一叢集、不同權限或不同工作區域，切 context 就切換整套設定。
 
 ## ClusterRole YAML 範例
 
