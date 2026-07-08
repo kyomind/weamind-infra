@@ -123,9 +123,10 @@ PVC spec 幾乎全部 immutable：
 | 欄位 | 能否 edit | 備註 |
 |------|-----------|------|
 | `accessModes` | ✗ | immutable |
+| `selector` | ✗ | immutable，漏寫只能 delete 重建 |
 | `resources.requests.storage` | ⚠️ 只能擴 | 唯一可變欄位，但只能往上不能縮 |
 
-改 accessModes 或縮容 → delete 重建。
+改 accessModes、selector 或縮容 → delete 重建。
 
 ## RBAC 排查順序
 
@@ -395,3 +396,89 @@ k get svc <name>
 ```
 
 確認 PORT(S) 欄位的 port/targetPort/nodePort 都是預期值。
+
+## Endpoints 是 Service 和 Pod 的中繼站
+
+Service 不直接連 Pod，中間有 Endpoints 層。`Endpoints <none>` + Pod Running = selector mismatch。
+
+```bash
+k get endpoints <svc-name>
+k get svc <name> -o jsonpath='{.spec.selector}'
+```
+
+## DNS timeout 診斷流程
+
+從 Pod 的 `/etc/resolv.conf` 開始追：nameserver IP → kube-dns Service → Endpoints → CoreDNS Pod → selector vs labels。
+
+```bash
+k exec <pod> -- cat /etc/resolv.conf
+k get svc -n kube-system kube-dns
+k get endpoints -n kube-system kube-dns
+k get po -n kube-system -l k8s-app=kube-dns --show-labels
+```
+
+## 改 selector 對齊 label 優先改 Service
+
+Pod label 是 controller 用 template 重建時帶的，直接改 Pod label 會被覆蓋回去。改 Service selector 比較安全。
+
+## PV/PVC 沒有 kubectl create 捷徑
+
+只能手寫 YAML，沒有 `kubectl create pv` 或 `kubectl create pvc`。
+
+## hostPath 不強制 nodeAffinity 但必須加
+
+hostPath 用的是節點本機路徑，但 PV 是 cluster-level 資源。不加 nodeAffinity，Pod 可能被排到沒有該目錄的 node，掛載失敗。
+
+| 類型 | nodeAffinity | 不寫會怎樣 |
+|------|--------------|------------|
+| `local` | 強制要求 | API 報錯，建不起來 |
+| `hostPath` | 不強制 | 能建但埋雷，Pod 可能排錯 node |
+
+## 官方文件找 local 範例拿 nodeAffinity 骨架
+
+官方文件 `local` volume type 有完整 nodeAffinity 範例，直接複製後把 `local:` 改成 `hostPath:` 即可。
+
+```yaml
+spec:
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - node01
+  hostPath:
+    path: /opt/xxx
+```
+
+## PVC selector.matchLabels 指定綁定特定 PV
+
+題目要求 PV 加 label + PVC 用 matchLabels = 配套寫法。
+
+```yaml
+# PV
+metadata:
+  labels:
+    tier: white
+
+# PVC
+spec:
+  selector:
+    matchLabels:
+      tier: white
+```
+
+## PV 中的 local 與 hostPath 寫法
+
+```yaml
+# local 寫法（文件範例）
+  local:
+    path: /mnt/disks/ssd1
+
+# hostPath 寫法（題目要求）
+  hostPath:
+    path: /opt/gold-stc-cka
+```
+
+結構位置完全一樣，都在 `spec` 底下，跟 `nodeAffinity` 同層。其餘全部照抄不動。

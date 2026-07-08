@@ -419,4 +419,133 @@ https://killercoda.com/sachin/course/CKA/nodeport-1
 
 ---
 
+9⭐️⭐️⭐️20
+https://killercoda.com/sachin/course/CKA/coredns
+第一次看到要建立rs的題目
+我覺得是這樣環境真的有誤，不然它應該被安排在ts，而且以ts來說，它也太難了
 
+指令不能建rs，ai建議用create deploy然後改yaml
+注意，這必然要先輸出yaml，因為kubectl edit 只能改 spec，不能改 kind，你不可能edit物件讓它從deploy變成rs
+
+```bash
+root@controlplane:~$ k create deployment dns-rs-cka --replicas 2 -n dns-ns --image registry.k8s.io/e2e-test-images/jessie-dnsutils:1.3 --dry-run=client -o yaml  -- sleep 3600 > rs
+```
+重導向一定在最後，哪怕這裡有command
+
+結果dns不通，要troubleshoot！
+最後是kube-system的coredns svc沒有指定正確的pod label，以下是spy
+
+從零開始，你拿到的狀況是：
+
+```bash
+k exec -n dns-ns dns-rs-cka-qmp7m -- nslookup kubernetes.default
+;; connection timed out; no servers could be reached
+```
+
+**第一步：理解錯誤訊息**
+
+「no servers could be reached」→ Pod 連不到 DNS server → 這是叢集 DNS 問題，不是你的 Pod 問題。
+
+**第二步：確認 Pod 的 DNS 設定指向誰**
+
+```bash
+k exec -n dns-ns dns-rs-cka-qmp7m -- cat /etc/resolv.conf
+```
+
+看到 `nameserver 10.96.0.10` → 這是 `kube-dns` Service 的 ClusterIP。所以問題在這個 Service 或它背後的 Pod。
+
+**第三步：從 Service 往下追**
+
+```bash
+k get svc -n kube-system kube-dns
+```
+
+確認 ClusterIP 是 `10.96.0.10` → Service 存在，IP 也對。那問題在 Service 有沒有把流量送到後端。
+
+**第四步：查 Endpoints**
+
+```bash
+k get endpoints -n kube-system kube-dns
+```
+
+`<none>` → Service 找不到任何後端 Pod。兩種可能：
+- CoreDNS Pod 沒在跑
+- selector 對不上
+
+**第五步：確認 CoreDNS Pod 狀態**
+
+```bash
+k get po -n kube-system -l k8s-app=kube-dns
+```
+
+Running → Pod 活著，所以是 selector 問題。
+
+**第六步：比對 selector vs labels**
+
+```bash
+k get svc -n kube-system kube-dns -o jsonpath='{.spec.selector}'
+k get po -n kube-system --show-labels | grep coredns
+```
+
+發現 selector 寫 `core-dns`，Pod label 是 `kube-dns` → 改 Service selector → 修好。
+
+📌 速記：DNS 故障排查 = 從 `resolv.conf` 開始，沿著 `Service → Endpoints → Pod → selector` 一路往下追。
+
+## Storage
+
+1⭐️⭐️⭐️25
+https://killercoda.com/sachin/course/CKA/pv-pvc
+這題有點太殘忍了，難怪weight 8
+
+pv、pvc都**沒有指令**可以生成
+pv遇到`hostpath`也是要小心
+乖乖看文件吧！而且這題還有pv的node親和要求「Ensure that the PV is created on node01 , where the /opt/gold-stc-cka directory already exists.」
+> 要加上 nodeAffinity，指定 nodeSelectorTerms.matchExpressions，key 通常是 `kubernetes.io/hostname`，value 填 node01。
+以上就靠文件了解吧
+
+第一部分是建立pv，而且要有node親和與hostpath兩大要素，重點是，要去哪裡抄？
+答案是：volumes(不是pv，是pv的上層文件)的local！這超級重要
+https://kubernetes.io/docs/concepts/storage/volumes/#local
+有相當完整的demo：
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: example-pv
+spec:
+  capacity:
+    storage: 100Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: local-storage
+  local:
+    path: /mnt/disks/ssd1
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - example-node
+```
+但還沒完，這個demo並不是「hostpath」這部分要改
+
+`--show-lables`能看到 node 關鍵資訊
+```bash
+root@controlplane:~$ k get node --show-labels
+NAME           STATUS   ROLES           AGE   VERSION   LABELS
+(略)
+node01         Ready    <none>          17d   v1.35.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=node01,kubernetes.io/os=linux
+```
+確實有`kubernetes.io/hostname=node01`
+
+第二部分，pvc demo，又要去文件哪裡拿呢？沒錯，是pv底下的pvc
+https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims
+
+忘記加selector了！而且pvc的spec是immutable！
+加了後就成功了，雖然還是pending，因為是 WaitForFirstConsumer
+
+---
