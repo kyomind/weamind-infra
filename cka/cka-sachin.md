@@ -549,3 +549,66 @@ https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolume
 加了後就成功了，雖然還是pending，因為是 WaitForFirstConsumer
 
 ---
+
+2○11
+https://killercoda.com/sachin/course/CKA/sc-pv-pvc
+STEP足足有三個，但沒有特別難點
+
+這題要自建sc，**沒有指令**，顯然也要看文件
+https://kubernetes.io/docs/concepts/storage/storage-classes/
+題目沒講的欄位我都刪了，看樣子都不是必須，請看筆記即可，其實只有`provisioner`是必填，其餘都不是
+
+建pv時，還是要確定一下cp的hostname叫啥，因為要設定node親和
+```bash
+root@controlplane:~$ k get node --show-labels
+NAME           STATUS   ROLES           AGE   VERSION   LABELS
+controlplane   Ready    control-plane   18d   v1.35.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=controlplane,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=,node.kubernetes.io/exclude-from-external-load-balancers=
+```
+確實是`kubernetes.io/hostname=controlplane`
+
+最後的一個小陷阱是，要主動用`volumeName`指定要綁定的pv，因為SC用`WaitForFirstConsumer`，題目又要求要bound
+如果不指定 `volumeName`，PVC 會一直處於 Pending，直到有 Pod 使用它
+
+---
+
+3○3
+https://killercoda.com/sachin/course/CKA/pv
+沒什麼，只是前兩題的一部分，純建pv
+
+雖然用hostPath，但範例還是要去local那個拿最快，再自己改
+apply後，記得k get pv檢驗一下
+
+---
+
+4⭐️20
+https://killercoda.com/sachin/course/CKA/Shared-Volume
+這題又有點多了，而且是shared volume
+
+這題只和 pod 與 pvc 有關，pod 要求新增 sidecar 容器，透過 pvc 共用 volume，sidecar 跟 main container 都要 mount 同一個 pvc 的 volume
+> 記得在 pod spec 的 volumes 與 containers.volumeMounts 都要正確設定，否則無法共用資料。
+
+關於是要去哪裡抄文件，有 pvc 設定的 pod 檔
+答案是！⭐️Claims As Volumes！灰常重要
+https://kubernetes.io/docs/concepts/storage/persistent-volumes/#claims-as-volumes
+一樣在pv頁，和pvc一樣都是透過anchor找到
+
+有了這個demo，這題就簡單了——完美fit
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod
+spec:
+  containers:
+    - name: myfrontend
+      image: nginx
+      volumeMounts:
+      - mountPath: "/var/www/html"
+        name: mypd
+  volumes:
+    - name: mypd
+      persistentVolumeClaim:
+        claimName: myclaim
+```
+
+本題要求新的容器要叫 `sidecar-container`，這完全無法從題意得知，但驗證器會擋！

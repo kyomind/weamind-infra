@@ -482,3 +482,50 @@ spec:
 ```
 
 結構位置完全一樣，都在 `spec` 底下，跟 `nodeAffinity` 同層。其餘全部照抄不動。
+
+## StorageClass 沒有 spec 區塊
+
+關鍵欄位都在頂層，不包在 spec 裡。
+
+唯一必填是 `provisioner`，CKA 常見值是 `kubernetes.io/no-provisioner`（靜態 PV，不自動建 volume）。
+
+其餘選填（`volumeBindingMode` 預設 Immediate、`reclaimPolicy` 預設 Delete）。
+
+## volumeName 繞過 WaitForFirstConsumer
+
+PVC 設了 `volumeName` 會直接綁定指定 PV，不等 Pod 消費。硬指定優先級高於 `volumeBindingMode`。
+
+## YAML 布林值：看 schema 不是看語法
+
+| 欄位類型 | schema | 寫法 |
+|----------|--------|------|
+| annotations / labels | `map[string]string` | `"true"`（必須字串） |
+| readOnly、privileged 等 | `boolean` | `true`（裸寫） |
+
+annotations/labels 的 value 被定義成字串，YAML 裸 `true` 會被解析成布林，API 收到型別不符會報錯。其他布林欄位本來就期望布林，裸寫正確。
+
+## READY 欄位讀法
+
+| 指令 | READY 意義 |
+|------|------------|
+| `k get po` | ready containers / total containers |
+| `k get deploy` | ready replicas / desired replicas |
+
+Pod 層看的是 container，Deployment 層看的是 Pod 副本數。init container 不算在 Pod 的 READY 裡（跑完就消失）。
+
+## readOnly 寫在 volumeMounts 不是 volumes
+
+```yaml
+spec:
+  volumes:
+    - name: mnt
+      hostPath:
+        path: /mnt
+  containers:
+    - volumeMounts:
+        - name: mnt
+          mountPath: /mnt
+          readOnly: true  # 在這裡
+```
+
+`readOnly` 是 container 層級的設定，同一個 volume 可以被不同 container 以不同權限掛載。
