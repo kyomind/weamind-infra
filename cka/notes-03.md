@@ -640,17 +640,24 @@ CLI 用逗號串是可以的，跟 YAML 不同（YAML 要每個元素獨立 `-`�
 
 用 `sh -c` 就用 `$VAR`，用 `args` 就用 `$(VAR)`。
 
-## 有空格的值要雙引號包 $VAR
+## $" vs "$" 位置差很大
 
 ```bash
-# 錯：$ 在引號外面，這是 bash localization 語法
+# ❌錯：$" 連在一起是 bash localization 語法，不是變數展開
 echo $"MY_VAR"
 
 # 對：$ 在引號裡面
 echo "$MY_VAR"
 ```
 
+## 有空格的值要加引號
+
 `Sony Tv Is Good` 有空格，不加引號會被 shell 拆成多個參數。
+
+```bash
+echo "$MY_VAR"   # 對：整個值當一個參數
+echo $MY_VAR     # 危險：Sony Tv Is Good 變成四個參數
+```
 
 ## Pod command/env 不可變，改了要刪掉重建
 
@@ -676,18 +683,13 @@ k run mypod --image=busybox --env="MY_VAR=Sony Tv Is Good" -- sh -c 'echo "$MY_V
 ## env 是 array，每個項目要 -
 
 ```yaml
-# 錯：沒有 -，變成 key 而不是 list 項目
+# 對：每個項目前面有 -
 env:
-  name: MY_VAR
-  value: hello
-
-# 對：有 -
-env:
-- name: MY_VAR
-  value: hello
+- name: DB_HOST
+  value: localhost
+- name: DB_PORT
+  value: "5432"
 ```
-
-跟其他 list（`containers`、`ports`、`volumeMounts`）同理。
 
 ## env YAML 範例（官方文件）
 
@@ -721,13 +723,13 @@ spec:
 echo "kube-apiserver-controlplane,kube-system" > high_cpu_pod.txt
 ```
 
-內容沒有特殊字元時可以不加，但習慣加雙引號零成本防禦，不用每次判斷。
+內容沒有**特殊字元**時可以不加，但習慣加雙引號零成本防禦，不用每次判斷。
 
 ## --sort-by 是字串排序，有坑
 
 `k top pod --sort-by cpu` 是 lexicographic（字串）排序：
 
-- `9m` 會排在 `19m` 前面（因為 `'9' > '1'`）
+- 如果是降序（大的在前），`9m` 會排在 `19m` 前面（因為 `'9' > '1'`），但數值上 19 > 9
 - 數據少時碰巧對，數據多時可能出錯
 
 ## --sort-by 結果要肉眼驗證
