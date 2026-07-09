@@ -581,6 +581,7 @@ apply後，記得k get pv檢驗一下
 ---
 
 4⭐️20
+這題我驗不過
 https://killercoda.com/sachin/course/CKA/Shared-Volume
 這題又有點多了，而且是shared volume
 
@@ -612,3 +613,5 @@ spec:
 ```
 
 本題要求新的容器要叫 `sidecar-container`，這完全無法從題意得知，但驗證器會擋！
+第二次被擋，要求用`command: ["bin/sh", "-c", "tail -f /dev/null"]`寫法，不可以用 `command: ["tail", "-f","/dev/null"]`，但其實兩者結果等價
+結果我改的時候，少了`/`——要是 `"/bin/sh"` 不是 `"bin/sh"`。真的不可不慎

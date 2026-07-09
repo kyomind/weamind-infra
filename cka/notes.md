@@ -529,3 +529,12 @@ spec:
 ```
 
 `readOnly` 是 container 層級的設定，同一個 volume 可以被不同 container 以不同權限掛載。
+
+## command 兩種寫法
+
+| 寫法 | 意義 |
+|------|------|
+| `command: ["tail", "-f", "/dev/null"]` | 直接執行，參數分開傳 |
+| `command: ["/bin/sh", "-c", "tail -f /dev/null"]` | 啟動 shell 解析整句 |
+
+行為一樣，真實考試兩種都會過。KillerCoda 驗證器會硬比對 YAML 結構，題目用引號包整句時偏好 `sh -c` 形式。
