@@ -8,11 +8,11 @@
 [![Grafana](https://img.shields.io/badge/Grafana-444?style=flat&logo=grafana&logoColor=white)](https://grafana.com/)
 [![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-444?style=flat&logo=githubactions&logoColor=white)](https://github.com/features/actions)
 
-> 📖 [中文版](README.md)
+> Kubernetes infrastructure for WeaMind — a complete migration from single-server Docker Compose to a K8s cluster.
 
-Kubernetes infrastructure for [WeaMind](https://github.com/kyomind/weamind) — a complete migration from single-server Docker Compose to a K8s cluster.
-
-> Main application: [WeaMind](https://github.com/kyomind/weamind) — LINE Bot built with FastAPI
+| 📖 中文版 | 🚀 App Repo | 📝 Blog Posts |
+| --- | --- | --- |
+| [README.md](README.md) | [WeaMind](https://github.com/kyomind/WeaMind) | [blogs/](https://github.com/kyomind/WeaMind/blob/main/blogs/README.md) |
 
 ## Architecture
 

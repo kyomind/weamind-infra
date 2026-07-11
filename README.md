@@ -8,11 +8,11 @@
 [![Grafana](https://img.shields.io/badge/Grafana-444?style=flat&logo=grafana&logoColor=white)](https://grafana.com/)
 [![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-444?style=flat&logo=githubactions&logoColor=white)](https://github.com/features/actions)
 
-> 📖 [English Version](README.en.md)
+> WeaMind 的 Kubernetes 基礎設施 — 從單機 Docker 到 K8s 叢集的完整遷移。
 
-WeaMind 的 Kubernetes 基礎設施 — 從單機 Docker 到 K8s 叢集的完整遷移。
-
-> 主應用程式：[WeaMind](https://github.com/kyomind/weamind) - LINE Bot FastAPI application
+| 📖 English | 🚀 App Repo | 📝 系列文章 |
+| --- | --- | --- |
+| [README.en.md](README.en.md) | [WeaMind](https://github.com/kyomind/WeaMind) | [blogs/](https://github.com/kyomind/WeaMind/blob/main/blogs/README.md) |
 
 ## Architecture
 
