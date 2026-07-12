@@ -12,7 +12,7 @@
 
 | 📖 English | 🚀 App Repo | 📝 系列文章 |
 | --- | --- | --- |
-| [README.en.md](README.en.md) | [WeaMind](https://github.com/kyomind/WeaMind) | [blogs/](https://github.com/kyomind/WeaMind/blob/main/blogs/README.md) |
+| [README.en.md](README.en.md) | [WeaMind](https://github.com/kyomind/WeaMind) | [文章清單](https://blog.kyomind.tw/weamind-series/) |
 
 ## Architecture
 

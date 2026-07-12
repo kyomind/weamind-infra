@@ -10,9 +10,9 @@
 
 > Kubernetes infrastructure for WeaMind — a complete migration from single-server Docker Compose to a K8s cluster.
 
-| 📖 中文版 | 🚀 App Repo | 📝 Blog Posts |
+| 📖 中文版 | 🚀 App Repo | 📝 Blog Series |
 | --- | --- | --- |
-| [README.md](README.md) | [WeaMind](https://github.com/kyomind/WeaMind) | [blogs/](https://github.com/kyomind/WeaMind/blob/main/blogs/README.md) |
+| [README.md](README.md) | [WeaMind](https://github.com/kyomind/WeaMind) | [Posts](https://blog.kyomind.tw/weamind-series/) |
 
 ## Architecture
 
