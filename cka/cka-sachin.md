@@ -615,3 +615,69 @@ spec:
 本題要求新的容器要叫 `sidecar-container`，這完全無法從題意得知，但驗證器會擋！
 第二次被擋，要求用`command: ["bin/sh", "-c", "tail -f /dev/null"]`寫法，不可以用 `command: ["tail", "-f","/dev/null"]`，但其實兩者結果等價
 結果我改的時候，少了`/`——要是 `"/bin/sh"` 不是 `"bin/sh"`。真的不可不慎
+
+---
+
+5○15
+https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+weight 10，4個元件都要建立，太狠了
+
+還好第一部分sc的文件很顯眼
+https://kubernetes.io/docs/concepts/storage/storage-classes/
+
+關鍵又在於，使用pvc的pod要去哪複製
+答案是pv頁的claim as volume
+
+輕鬆過關，就是建立4個元件很耗時，而且都要抄文件去改
+
+---
+
+6○5
+略
+跟上一題大同小異，只是建3個元件，重複性100%
+
+只要記得最後 `k get pv,pvc` 檢查 bound 狀態即可
+
+---
+
+7○2
+略
+這題更簡單，因為只有建pvc
+
+---
+
+8○7
+https://killercoda.com/sachin/course/CKA/pvc-pod
+
+一切與上面幾題差不多，唯一的挑戰是要幫pod加上toleration，有點忘記在哪了
+文件搜"toleration"
+基本上就有了 https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+開頭就有寫法，基本上就那4行而已，然後是pod層級，其實也很簡單
+
+---
+
+9○2
+https://killercoda.com/sachin/course/CKA/pvc-resize
+2分 改pvc請求大小，用k edit即可
+
+關鍵是怎麼「Ensure that the PVC successfully resizes to the new size and remains in the Bound state.」
+我也不確定，因為bound後的空間只會顯示pv的總空間，我只確認是否還bound
+不過應該是可以get看一下pvc的yaml格式
+```yaml
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 60Mi
+```
+
+---
+
+10○2
+略
+更簡單，建立sc，都包含在前面的題型了！
+
+## Architecture, Installation & Maintenance
+
+1○
