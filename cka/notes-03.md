@@ -775,7 +775,7 @@ etcdctl snapshot save /opt/backup.db \
 
 題目要存 console output 就加 `&> output.txt`。
 
-## etcd → etcdctl 參數名轉換
+## etcd → etcdctl 參數名轉換對照表
 
 | etcd 啟動參數 | etcdctl 參數 |
 |---------------|--------------|
@@ -789,14 +789,9 @@ etcdctl snapshot save /opt/backup.db \
 ## --endpoints 有 s
 
 ```bash
-# 錯
-etcdctl snapshot save ... --endpoint=https://...
-
 # 對
 etcdctl snapshot save ... --endpoints=https://...
 ```
-
-`--endpoint` 會報 `unknown flag`。
 
 ## etcdctl 沒 tab completion
 
@@ -823,6 +818,8 @@ grep "--"
 grep -- '--'
 ```
 
+`--` 是 Unix 標準的「選項結束標記」，適用於所有命令。常見場景：檔名以 `-` 開頭、要搜的字串以 `-` 開頭。
+
 ## 確認當前節點
 
 ```bash
@@ -834,13 +831,13 @@ etcd 只跑在 control plane，題目說 `ssh controlplane` 就要照做。
 
 ## kubeadm etcd = static pod
 
-kubeadm 建的叢集，etcd 跑的是 static pod，所有設定都在 `command` 參數裡，沒有另外的 config file。
+kubeadm 建的叢集，etcd 跑的是 static pod，⭐️**所有 etcd 的啟動參數**都直接寫在 static pod 的 `command` 欄位，**沒有**另外的 config file。
 
-CKA 固定 pattern：etcd 相關題目，參數一律從 pod 的 `command` 拿。
+CKA 固定 pattern：etcd 相關題目，參數**一律**從 pod 的 `command` 拿。
 
 ## etcdctl 不帶連線參數會卡住
 
-`etcdctl` 預設連 `http://127.0.0.1:2379`，但 etcd 開了 `--client-cert-auth=true`，只接受帶憑證的 HTTPS。
+`etcdctl` 預設連 `http://127.0.0.1:2379`，但 etcd 開了 `--client-cert-auth=true`，**只接受**帶憑證的 HTTPS。
 
 不帶參數 → TLS 握手失敗 → 卡住等 timeout。`Ctrl+C` 中斷後補齊參數。
 
@@ -900,6 +897,8 @@ etcdutl snapshot restore /opt/backup.db --data-dir /root/default.etcd
 
 ## restore 的 --data-dir 必須空或不存在
 
+執行前該 path 不能已經有東西存在
+
 ```bash
 # 報錯：data-dir "/root/default.etcd" not empty or could not be read
 etcdutl snapshot restore ... --data-dir /root/default.etcd
@@ -917,19 +916,7 @@ etcdutl snapshot restore ... --data-dir /root/default.etcd
 | `defrag` (離線) | 維護時整理磁碟、回收空間 |
 | `snapshot status` | 檢查備份檔是否完整 |
 
-平常不碰，災難復原才用。日常的 CRUD、健康檢查、member 管理全走 `etcdctl`。
-
-## 重導向完整寫法對照
-
-| 寫法 | 效果 |
-|------|------|
-| `> file` | 只捕 stdout，stderr 還是印螢幕 |
-| `2>&1 > file` | ❌ 順序錯，stderr 還是跑到螢幕 |
-| `> file 2>&1` | ✓ stdout + stderr 都進檔案 |
-| `&> file` | ✓ 同上，bash 簡寫 |
-| `2>&1 \| tee file` | ✓ 進檔案同時螢幕也看得到 |
-
-不確定就用 `&>`；想邊跑邊看就用 `tee`。
+平常不碰、少用，災難復原才用。日常的 CRUD、健康檢查、member 管理全走 `etcdctl`。
 
 ## kubeadm upgrade 三階段
 
@@ -969,7 +956,7 @@ kubectl uncordon controlplane
 
 K8s apt repo 按 minor version 分開：
 
-```
+```bash
 https://pkgs.k8s.io/core:/stable:/v1.27/deb/  # 1.27.0, 1.27.1, 1.27.2 ...
 https://pkgs.k8s.io/core:/stable:/v1.28/deb/  # 1.28.0, 1.28.1, 1.28.2 ...
 ```
@@ -1023,6 +1010,18 @@ Client Version: v1.35.2      # <- kubectl 版本
 Server Version: v1.35.2      # <- API server 版本
 ```
 
+## kubelet / kubectl / API server 三者差異
+
+| 元件 | 跑在哪 | 做什麼 |
+|------|--------|--------|
+| kube-apiserver | control plane | 叢集大腦，所有元件透過它溝通 |
+| kubelet | 每個 node | 節點 agent，管理該 node 上的 Pod |
+| kubectl | 你的機器 | CLI client，發 request 給 API server |
+
+三者可獨立升級。Version skew policy：kubelet 可比 API server 舊最多 3 個 minor；kubectl 可比 API server 新或舊 1 個 minor。
+
+⭐️升級順序：API server 先 → kubelet 後，這就是 `kubeadm upgrade apply` 要在 `apt install kubelet` 之前的原因。
+
 ## upgrade 驗收三件套
 
 | 檢查項目 | 指令 |
@@ -1031,6 +1030,14 @@ Server Version: v1.35.2      # <- API server 版本
 | cluster (API server) | `k version` → Server Version |
 | kubelet | `k get nodes` → VERSION |
 | kubectl | `k version` → Client Version |
+
+我的現況：
+```bash
+❯ k version
+Client Version: v1.33.9
+Kustomize Version: v5.6.0
+Server Version: v1.34.3+k3s1
+```
 
 ## upgrade 題是文件導航題
 
@@ -1047,6 +1054,8 @@ kubectl uncordon <node>
 ```
 
 漏掉 drain 不會報錯但不符合 best practice；漏掉 uncordon 節點會一直是 SchedulingDisabled。
+
+`--ignore-daemonsets`：DaemonSet Pod 設計上每個 node 都要跑一份，不會被驅逐。不加這個 flag，drain 會因為移不走 DaemonSet Pod 而報錯中止。
 
 ## Pending Pod debug SOP
 
@@ -1072,7 +1081,15 @@ debug SOP 永遠是 `describe` → 讀 Events → 追根源。
 
 CKA 最高頻是前兩個，尤其 PVC 未綁定常跟 storage 題組合出現。
 
-## PVC Pending 常見原因
+## ResourceQuota 是 namespace 層級
+
+ResourceQuota 限制的是單一 namespace 內的資源總量（CPU、memory、Pod 數量、PVC 數量等），不是 cluster 層級。不同 namespace 各自獨立計算。
+
+Cluster 層級的資源限制要看 LimitRange（單一 Pod/Container 的預設值和上限）或節點本身的容量。
+
+## ⭐️PVC Pending 常見原因
+
+🐱：這些都很經典
 
 | PVC Pending 原因 | 怎麼查 |
 |------------------|--------|
@@ -1106,9 +1123,9 @@ accessModes 不匹配時，改 PVC 去適應 PV（基礎設施層不動）。
 | `selector` | ✗ immutable | |
 | `resources.requests.storage` | ⚠️ 只能變大 | 需要 StorageClass 的 `allowVolumeExpansion: true` |
 
-PVC 建立之後 spec 幾乎全部鎖死，要改就 delete → recreate。
+⭐️PVC 建立之後 spec 幾乎全部鎖死，要改就 delete → recreate。
 
-## --dry-run 只給寫的指令用
+## --dry-run 只給寫(非 read)的指令用
 
 | 支援 `--dry-run` | 不支援 `--dry-run` |
 |------------------|---------------------|
@@ -1140,7 +1157,7 @@ k apply -f xxx.yaml
 Deployment → Pod → describe pod → logs
 ```
 
-Deployment 只是「責成單位」，Pod 才是「實際執行」。Deployment apply 成功只代表 API server 接受了 spec，不代表 Pod 跑得起來。
+Deployment 只是「責成單位」，Pod 才是「實際執行」。Deployment apply 成功只代表 API server 接受了 spec，**不代表 Pod 跑得起來**。
 
 ## CreateContainerConfigError
 
