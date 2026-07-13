@@ -1,6 +1,6 @@
 # CKA Practice Notes
 
-整理日期：2026-06-10
+整理日期：2026-06-10、2026-07-13
 
 ## jsonpath 取 Secret 單一 key
 
@@ -1182,10 +1182,10 @@ Deployment 只是「責成單位」，Pod 才是「實際執行」。Deployment 
 
 | 資源 | `k apply` 能直接更新？ | 原因 |
 |------|------------------------|------|
-| Deployment | ✓ | spec 幾乎全 mutable，改了自動 rollout |
+| Deployment | ✓ | spec **幾乎全 mutable，改了自動 rollout** |
 | Service | ✓ | 大部分欄位可改（`clusterIP` 除外） |
 | PVC | ⚠️ 部分 | `accessModes`、`storageClassName` 不可改 |
-| bare Pod | ✗ 大部分不行 | 核心欄位 immutable，要刪除重建 |
+| bare Pod | **✗ 大部分不行** | 核心欄位 immutable，要刪除重建 |
 
 Controller 資源（Deployment / Service）直接 `apply` 蓋上去；bare Pod 幾乎都要刪了重建。
 
@@ -1219,7 +1219,7 @@ Deployment 引用 Secret/ConfigMap 時，兩層都要對：
 k get secret <name> -o yaml
 ```
 
-名稱對了 key 也要對，兩個都是 typo 高發區。
+Secret 名稱對了 key 也要對，兩個都是 typo 高發區。
 
 ## Troubleshooting 三層流程
 
@@ -1282,7 +1282,7 @@ command:
 | 選項 | 可不可以 | 為什麼 |
 |------|----------|--------|
 | `/bin/sh` | ✓ 首選 | POSIX 標準，幾乎所有 image 都有 |
-| `sh` | ✓ 也行 | 會透過 `$PATH` 找到 |
+| `sh` | ✓ 也行 | ⭐️會透過 `$PATH` 找到 |
 | `/bin/bash` | ⚠️ 不一定 | 不是所有 image 都有（Alpine 沒有）|
 | `shell` | ✗ | 不存在這個程式 |
 
