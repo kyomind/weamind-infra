@@ -9,6 +9,31 @@
 
 ---
 
+## 為什麼 GitOps：push vs pull 的核心差異
+
+### 現狀（push-based）
+
+```
+merge → make deploy → kubectl apply → 結束
+```
+
+`kubectl apply` 是一次性動作，做完就沒了。如果之後有人手動改 cluster（`kubectl edit`、`kubectl set image`），偏離就發生了，而且**沒有人會發現、也沒有人會修正**。這個偏離叫做 **drift**。
+
+### GitOps（pull-based）
+
+```
+merge → Argo CD 偵測 Git 變化 → 自動 sync → 持續對齊
+```
+
+Argo CD 每 3 分鐘做一次 reconcile：把 Git 裡的期望狀態和 cluster 實際狀態做比對。
+
+- **drift detection**：一比對發現 Git 說 `replica=2` 但 cluster 跑 `5` → UI 紅字標示 `OutOfSync`，一眼就知道偏離了
+- **selfHeal**（`selfHeal: true`）：不只告訴你偏離，還自動把 cluster 修回 Git 宣告的狀態（`replica=2`）
+
+所以 push 是一次性部署，pull 是**持續對齊**。Git 是 source of truth，cluster 永遠被拉回 Git 的宣告。
+
+---
+
 ## Task 1：安裝 Argo CD
 
 ### 1-1 Helm 安裝
