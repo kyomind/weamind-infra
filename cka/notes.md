@@ -538,3 +538,16 @@ spec:
 | `command: ["/bin/sh", "-c", "tail -f /dev/null"]` | 啟動 shell 解析整句 |
 
 行為一樣，真實考試兩種都會過。KillerCoda 驗證器會硬比對 YAML 結構，題目用引號包整句時偏好 `sh -c` 形式。
+
+## 忘記 jsonpath 語法先 -o json 看結構
+
+先把完整 JSON 印出來，照層級拼路徑。起點固定是 `{.`，不確定 array index 用 `[*]`。
+
+```bash
+k get svc redis-service -o json
+k get svc redis-service -o jsonpath='{.spec.ports[0].targetPort}'
+```
+
+## jsonpath 報 unclosed action = 字串被斷行
+
+引號內混進換行就會報 `unclosed action`。vim 游標移到斷行處按 `J` 合併回一行。

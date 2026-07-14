@@ -680,4 +680,136 @@ https://killercoda.com/sachin/course/CKA/pvc-resize
 
 ## Architecture, Installation & Maintenance
 
-1○
+1○5
+https://killercoda.com/sachin/course/CKA/sa-cr-crb
+rbac三元素都有了，要求更新role的權限，算很基本
+
+想說奇怪怎麼沒有自動完成，結果是把clusterrole搞錯成role，那物件當然不存在
+
+可以edit：
+```bash
+root@controlplane:~$ k edit clusterrole group1-role-cka
+clusterrole.rbac.authorization.k8s.io/group1-role-cka edited
+```
+
+---
+
+2○4
+https://killercoda.com/sachin/course/CKA/log-reader
+log reader，顯然是多容器pod問題
+
+題目就只有一行，我卻無從下手：
+`log-reader-pod` pod is running, save All pod logs in `podalllogs.txt`
+
+好 懂了，只是要把pod中的logs輸出而已！
+所以要`root@controlplane:~$ k logs log-reader-pod > podalllogs.txt`
+就這麼簡單！
+
+---
+
+3○10
+https://killercoda.com/sachin/course/CKA/service-filter
+這題完全就是考怎麼寫kube指令的jsonpath參數！
+
+好，是這樣的，我忘記要大括號了！
+所以標準是這樣
+`k get svc redis-service -o jsonpath='{.spec.xxx...}'`
+有array的話需要`[x]`，x是index數字，通常不會是全列出來，全列就是`[*]`
+有了！
+```bash
+root@controlplane:~$ k get svc redis-service -o jsonpath='{.spec.ports[0].targ
+etPort}'
+6379root@controlplane:~$
+```
+實際輸出入犯的錯：
+- 沒有大括號
+- 竟然用`*`.spec開頭，其實不需要*字號！
+- ports打成port
+不過打錯就不會有結果，所以應該不難debug
+
+問題二，指令放入shell腳本中，無法執行！
+結果原來是，我複製的時候，連換行都被複製了
+這…
+
+---
+
+4○13
+https://killercoda.com/sachin/course/CKA/etcd-restore
+etcd restore，我記得restore應該比save簡單，畢竟參數比較少
+
+關鍵一：先確認自己是在cp上！
+可以查，也可以直接ssh cp(題目有給指令)
+```bash
+root@controlplane:~$ k get no
+NAME           STATUS   ROLES           AGE   VERSION
+controlplane   Ready    control-plane   24d   v1.35.1
+node01         Ready    <none>          24d   v1.35.1
+root@controlplane:~$ hostname
+controlplane
+root@controlplane:~$
+```
+注意，get no是無法確認自己在哪個node的，只能知道cluster有哪些node
+
+咦，restore不是utl嗎？
+```bash
+root@controlplane:~$ etcdutl restore /opt/cluster_backup.db --data-dir /root/default.etcd
+Error: unknown command "restore" for "etcdutl"
+Run 'etcdutl --help' for usage.
+```
+
+好，問題不大，少了子命令 `snapshot`！！
+```bash
+# ✓ 正確
+etcdutl snapshot restore /opt/cluster_backup.db --data-dir /root/default.etcd
+```
+
+好，忘記輸出了到文字檔了，要砍掉這個data-dir才行
+
+然後輸出記得用`&>`
+
+好，題目只要求要 restore，沒有明確要求說要重啟 Static Pod。我也沒有重啟，但是通過了。可是我覺得這種不明確感真是討厭
+ai認為：
+>📌 速記：restore 後要不要改 manifest，看題目有沒有要求「讓 cluster 使用還原的資料」——沒講就不動。
+
+---
+
+5○4
+https://killercoda.com/sachin/course/CKA/node-resource
+很簡單的 k top題，對象是node，看memory
+
+基本上，直接`k top node`肉眼看就好
+如果真的很多，就加上`--sort-by memory`
+其中`memory`無法自動完成
+而且是字串排序，可能會坑人
+我寧可肉眼慢慢看！
+
+這題還要看`current_context`
+指令我記得是…
+```bash
+root@controlplane:~$ k config current-context
+kubernetes-admin@kubernetes
+```
+
+---
+
+6○
+https://killercoda.com/sachin/course/CKA/secret-1
+decode secret
+
+可以用jsonpath抓值，但我覺得沒必要！
+```yaml
+root@controlplane:~$ k get secrets -o yaml -n database-ns
+apiVersion: v1
+items:
+- apiVersion: v1
+  data:
+    DB_PASSWORD: c2VjcmV0
+```
+注意，最後的輸出結果是整個鍵值，也就是data的內容
+但只有`c2VjcmV0`被base64，所以要針對它處理
+`base64 -d <<< "c2VjcmV0"`
+再把鍵值對塞入
+
+---
+
+7○
