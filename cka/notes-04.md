@@ -17,7 +17,7 @@
 
 | 概念 | 層級 | 用途 |
 |------|------|------|
-| `resourceVersion` | **所有** K8s 資源 | API server 的樂觀鎖，每次修改就遞增 |
+| `resourceVersion` | **所有** K8s 資源 | API server 的**樂觀鎖**，每次修改就遞增 |
 | Revision (`rollout history`) | Deployment 專屬 | 記錄 Pod template 變更歷史，用於 rollback |
 
 兩者無關。任何資源都可能遇到 `resourceVersion` 衝突，不是 Deployment 特有的。
@@ -26,7 +26,7 @@
 
 ```yaml
 metadata:
-  resourceVersion: "12345"  # 必刪，版本衝突的元兇
+  resourceVersion: "12345"  # ⭐️必刪，版本衝突的元兇
   uid: "xxx"                # 選刪，留著會被忽略
   creationTimestamp: "..."  # 選刪，留著會被忽略
   generation: 1             # 選刪，留著會被覆蓋
@@ -70,6 +70,8 @@ get → describe → fix → get → ...
 
 ## Init container 狀態速查
 
+這些狀態出現在 `k get pods` 的 STATUS 欄位。
+
 | STATUS | 意思 |
 |--------|------|
 | `Init:0/1` | 卡在 init container 階段（還沒跑完或跑不起來）|
@@ -95,6 +97,14 @@ k set image pod/nginx-pod nginx-container=nginx:latest
 
 或用 `k edit pod/nginx-pod` 改 image 欄位，存檔後立即生效。
 
+## 改 image 立刻生效，不需另外 apply
+
+`k edit` 或 `k set image` 本身就是寫入 API server。存檔瞬間 kubelet 會停掉舊 container、拉新 image、用新 image **啟動新 container**。
+
+Pod 層級不變（IP、volume mount 維持），但 container 是重建的。
+
+**為什麼 image 可變？** 換 image 是常見的輕量更新（patch、rollback），省掉 delete-recreate 整個 Pod 的成本。其他欄位（command、resources、ports）改了可能影響排程或資源分配，所以鎖死。
+
 ## Pod 可變欄位清單
 
 | 可變欄位 | 說明 |
@@ -102,7 +112,7 @@ k set image pod/nginx-pod nginx-container=nginx:latest
 | `spec.containers[*].image` | 最常用 |
 | `spec.activeDeadlineSeconds` | 少見 |
 | `metadata.labels` / `annotations` | metadata 層，不影響 spec |
-| `spec.tolerations` | 只能加，不能改已有的 |
+| `spec.tolerations` | 只能**加**，不能改已有的 |
 
 其他 spec（`command`、`args`、`resources`、`ports`、`volumeMounts`、`env`）全部不可變，改了 API server 會拒絕。
 
@@ -116,11 +126,31 @@ k set image pod/nginx-pod nginx-container=nginx:latest
 
 能 `set image` 就不 `edit`，能 `edit` 就不 delete-recreate——考試省秒數。
 
-## Pod spec 預設不可變，image 是例外
+## 多 container Pod 的 set image 語法
 
-心智模型：把 Pod spec 當「幾乎凍結」，只有 `image` 是那個重要的例外。
+```bash
+# 改單一 container（指定 container name）
+k set image pod/my-pod nginx=nginx:1.25
 
-遇到要改 Pod 時，先判斷欄位可不可變，再決定用哪種方式。
+# 一次改多個 container
+k set image pod/my-pod nginx=nginx:1.25 sidecar=fluent-bit:2.0
+```
+
+container name 是 `spec.containers[].name` 的值，不管 Pod 有幾個 container 都要指定。不確定時先 `k get pod xxx -o yaml | grep -A2 containers` 查。
+
+## set image 適用於所有有 Pod template 的資源
+
+```bash
+k set image deployment/nginx nginx=nginx:1.25
+k set image daemonset/fluentd fluentd=fluent/fluentd:v1.16
+k set image statefulset/mysql mysql=mysql:8.0
+```
+
+Deployment、DaemonSet、StatefulSet、Job、CronJob 都能用。**考試最常遇到 Deployment**；直接改 Pod 反而少見，因為大部分 Pod 都由控制器管理。
+
+`TYPE/NAME` 和 `TYPE NAME` 等價（`deployment/nginx` = `deployment nginx`），kubectl 通用語法。
+
+例外：`port-forward` 只能用 slash 格式，因為 `port-forward` 後面直接接 port mapping，空格格式會造成**解析歧義**。
 
 ## Troubleshooting 起手式
 
@@ -132,7 +162,7 @@ k set image pod/nginx-pod nginx-container=nginx:latest
 | Node | `get node` → `describe node` |
 | 通用 | `k get events --sort-by='.lastTimestamp'` |
 
-Deployment 問題通常是底層 Pod 或 RS 的問題，往下追。Service 不通先看 endpoints。
+Deployment 問題通常是底層 Pod 或 RS 的問題，往下追。Service 不通先看 endpoints（`ep`）；新版 EndpointSlice 縮寫是 `eps`。
 
 ## apply 報 NotFound 先看缺什麼資源
 
@@ -151,6 +181,8 @@ k create ns nginx-ns
 ## Pending Pod + Pending PVC = 兩層問題
 
 看到 Pod Pending 且引用的 PVC 也 Pending，代表問題在更底層。
+
+依賴鏈：Pod 等 volume mount → volume 來自 PVC → PVC 等 PV 綁定。PVC 沒 Bound，Pod 就無法啟動，一定 Pending。
 
 修復順序：先解決 PVC（讓它 Bound），再回頭修 Pod。
 
@@ -182,7 +214,7 @@ PV 明明 Available 但 PVC 綁不上，逐一比對這三項：
 | Static provisioning（手動建 PV） | ❌ | 純字串標籤，寫 `banana` 都行，只要 PV 和 PVC 一致 |
 | Dynamic provisioning（自動建 PV） | ✅ | 必須指向真實的 SC，靠 provisioner 動態建立 PV |
 
-手動建 PV 時，storageClassName 只是「暗號」，不需要真的有那個 SC 物件。
+手動建 PV 時，storageClassName 只是「**暗號**」，不需要真的有那個 SC 物件。
 
 ## Troubleshooting 傾向改消費端
 
@@ -219,7 +251,7 @@ Pod Pending
 
 `0/N nodes are available` = scheduler 的淘汰報告，N 個 node 全部不合格。
 
-後面逐一列出每個 node 被刷掉的原因：
+⭐️後面逐一列出每個 node 被刷掉的原因：
 - `didn't match Pod's node affinity/selector` → node 缺 label
 - `had untolerated taint(s)` → node 有 taint，Pod 沒對應 toleration
 
@@ -251,6 +283,79 @@ Pod Pending
 | 多條件 | 全部 AND | 可 OR（多個 nodeSelectorTerms）+ AND |
 
 K8s 保留 `nodeSelector` 純粹是語法簡單，簡單場景少打字。
+
+## nodeAffinity 完整結構
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: with-node-affinity
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:  # 硬性：不符合就不排
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: topology.kubernetes.io/zone
+            operator: In
+            values:
+            - antarctica-east1
+            - antarctica-west1
+      preferredDuringSchedulingIgnoredDuringExecution:  # 軟性：盡量但不強制
+      - weight: 1  # 權重 1-100
+        preference:
+          matchExpressions:
+          - key: another-node-label-key
+            operator: In
+            values:
+            - another-node-label-value
+  containers:
+  - name: with-node-affinity
+    image: registry.k8s.io/pause:3.8
+```
+
+`required` 用 `nodeSelectorTerms`，`preferred` 用 `preference` + `weight`。
+
+## preferred weight 計分機制
+
+`weight`（1-100）是偏好分數，scheduler 對每個 node 計分，挑總分最高的。
+
+- 每條 `preferred` 規則，node 符合就加該規則的 weight
+- 多條規則累加
+- 最後選總分最高的 node（前提是通過所有 `required` 條件）
+
+```yaml
+preferredDuringSchedulingIgnoredDuringExecution:
+- weight: 80
+  preference:
+    matchExpressions:
+    - key: disk
+      operator: In
+      values: ["ssd"]
+- weight: 20
+  preference:
+    matchExpressions:
+    - key: region
+      operator: In
+      values: ["us-west"]
+```
+
+| Node | disk=ssd | region=us-west | 得分 |
+|------|----------|----------------|------|
+| A | ✓ | ✓ | 100 |
+| B | ✓ | ✗ | 80 |
+| C | ✗ | ✓ | 20 |
+
+Scheduler 優先選 A，但 A 資源不夠時 B、C 也能用——這就是「偏好」而非「硬性」。
+
+## weight 只在多條規則時有意義
+
+只有一條 preferred 時，weight 寫 1 還是 100 結果一樣——符合就加分、不符合就不加，沒有比較對象。
+
+weight 的用途是表達「哪個偏好更重要」，**只有多條規則才需要**。
+
+總分相同時，scheduler 還有其他計分因素（資源平衡、Pod 分散等）。如果最終真的完全相同，會依處理順序選，實務上接近隨機。
 
 ## nodeAffinity required 結構
 
