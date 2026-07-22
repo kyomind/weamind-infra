@@ -812,4 +812,120 @@ items:
 
 ---
 
-7○
+7○20
+https://killercoda.com/sachin/course/CKA/cluster-upgrade
+cluster升級就是要看升級的文件。
+打"upgrade"搜，但是第二個才是，標題為「Upgrading kubeadm clusters」
+https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
+本題要升級的是minor版本，1.27.x，x升到**當前的下一個**！(注意，不是最新)
+要求升級三個東東：
+- kubeadmin
+- cluster
+- kubelet
+不包含 kubectl
+最後要驗證！
+
+反正這題就是照文件來
+先用 get node 看一下版本，是 1.35.1，所以要升到1.35.2
+文件中的指令：
+```bash
+# replace x in 1.36.x-* with the latest patch version
+sudo apt-mark unhold kubeadm && \
+sudo apt-get update && sudo apt-get install -y kubeadm='1.36.x-*' && \
+sudo apt-mark hold kubeadm
+```
+不能直接用，因為只有要升到下一版，而且我們是1.35
+要改一下，變成「1.35.2」其餘應該不用改
+
+第四步一樣要改！
+```bash
+sudo kubeadm upgrade apply v1.36.x
+改成
+sudo kubeadm upgrade apply v1.35.2
+```
+按y，最後要看到成功msg，版本是我們的版本
+**這步要等很久！**
+```bash
+[upgrade/successful] SUCCESS! Your cluster was upgraded to "v1.36.x". Enjoy!
+
+[upgrade/kubelet] Now that your control plane is upgraded, please proceed with upgrading your kubelets if you haven't already done so.
+```
+
+其中"For the other control plane nodes"部分可別執行
+
+
+🐱：這一段是不需要的！多做了！因為題意只要升級cp而已
+第二步，worker node
+要在get一次node名稱，執行指令
+`kubectl drain <node-to-drain> --ignore-daemonsets`
+即
+`kubectl drain node01 --ignore-daemonsets`
+
+然後又有改動點：
+```bash
+sudo apt-mark unhold kubelet kubectl && \
+sudo apt-get update && sudo apt-get install -y kubelet='1.35.2-*' kubectl='1.35.2-*' && \
+sudo apt-mark hold kubelet kubectl
+```
+
+最後要檢查：
+```bash
+k get node
+k version
+kubeadm version
+```
+
+不難，但耗時！
+
+---
+
+8○20
+https://killercoda.com/sachin/course/CKA/secret
+給定一個檔，建立secret！
+
+先看檔的內容
+```bash
+root@controlplane:~$ cat database-data.txt
+DB_User=REJfVXNlcj1teXVzZXI=
+DB_Password=REJfUGFzc3dvcmQ9bXlwYXNzd29yZA==
+```
+
+好，重點在於怎麼使用參數而已，應該是from file之類的，還是from env，可以先查一下：
+`k create secret generic -h`
+別忘了 generic
+
+有了！
+```
+--from-env-file=[]:
+        Specify the path to a file to read lines of key=val pairs to create a secret.
+```
+注意，內容是array，元素顯然是path字串，不要寫錯
+
+一直出錯！只好問ai
+>📌 速記：kubectl help 裡的 `[]`、`<>` 是文件語法標記（代表型別或選填），**不是要你原樣輸入的字元**。
+
+最後要檢查
+```bash
+root@controlplane:~$ k get secrets
+NAME                  TYPE     DATA   AGE
+database-app-secret   Opaque   2      12s
+root@controlplane:~$ k describe secrets database-app-secret
+Name:         database-app-secret
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Type:  Opaque
+
+Data
+====
+DB_Password:  34 bytes
+DB_User:      20 bytes
+```
+結果過不了！奇怪
+結果是，要用`--from-file`而不是`--from-env-file`
+題意也不算很清楚，可惡
+
+---
+
+10○
