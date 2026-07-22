@@ -965,7 +965,7 @@ https://killercoda.com/sachin/course/CKA/log-reader-1
 
 ---
 
-12○
+12○10
 https://killercoda.com/sachin/course/CKA/etcd-backup
 這題是etcd備份！反正就兩種題目：備份跟還原
 備份就是指令比較長啦，然後要複製的內容比較多
@@ -1005,5 +1005,76 @@ ETCDCTL_API=3 etcdctl snapshot save /opt/cluster_backup.db \
 
 ---
 
-12○
+13○10
+https://killercoda.com/sachin/course/CKA/pod-filter
+又要考jsonpath了！可惡
+雖然是非常非常基本的一題，只要會jsonpath寫就行
 
+結果，這題目充滿危險！講幾個重點吧！
+- jsonpath 格式再說一下：`k get po nginx-pod -o jsonpath='{.spec.containers[0].name}'`
+- 結果這題是要你去拿某個label key，我完全沒看懂題目，大錯
+- 輸出為指令腳本，**這個指令腳本一定要自己執行看看**。因為指令如果是錯誤，結果就是空白
+
+---
+
+14⭐️20
+https://killercoda.com/sachin/course/CKA/pod-log
+純粹是建pod，但要求很多，包含使用configmap作為volume
+
+第一個是要判斷能不能不要生yaml，應該是沒辦法，因為同時要求了args和command，那就不可能了，畢竟`--`只一個！
+- 就算沒有上面，它要設定容器名——那就不可能不建yaml了！
+- 其三，其實 volume 的使用也無法靠指令去建
+乖乖生吧！
+
+注意這指令的結構與順序，非常重要
+```bash
+k run alpine-pod-pod --image alpine:latest --restart Never --dry-run=client -o yaml  -- tail -f /config/log.txt > pod
+```
+- 重導向一定在最後
+- 任何參數一定要在`--`之前
+
+後來想想參數應該用command，修改比較容易！
+然後，volume要打很多，直接去文件吧！
+查"volume"，第一個，下面就有了
+https://kubernetes.io/docs/concepts/storage/volumes/
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: configmap-pod
+spec:
+  containers:
+    - name: test
+      image: busybox:1.28
+      command: ['sh', '-c', 'echo "The app is running!" && tail -f /dev/null']
+      volumeMounts:
+        - name: config-vol
+          mountPath: /etc/config
+  volumes:
+    - name: config-vol
+      configMap:
+        name: log-config
+        items:
+          - key: log_level
+            path: log_level.conf
+```
+
+其中一個隱藏提示是：mountPath path是否？
+答案就是`['tail -f /config/log.txt']`的這個path！
+
+犯錯：插入volume**沒改好全部的縮排**！
+
+執行，有錯！path字串少了一個單引號，可惡，這裡：
+```yaml
+    volumeMounts:
+        - name: config-volume
+          mountPath: /config/log.txt'
+```
+其實可以不用引號的！但如果有，就要成雙成對
+
+這題驗證器有問題，我們command有加`-c`它覺得不對，但不加一定不行
+這題就這樣，不管了
+
+---
+
+15○
