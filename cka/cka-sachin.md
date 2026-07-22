@@ -1077,4 +1077,128 @@ spec:
 
 ---
 
-15○
+15○15
+https://killercoda.com/sachin/course/CKA/pod-log-1
+跟pod env有關，不是很直覺
+
+簡單講，要設定env，然後在command的指令裡面使用這個env
+後者要怎麼寫？
+
+先設定env吧！
+env怎麼寫我也忘了，去文件，查"env"，第一條就有！
+https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
+```yaml
+spec:
+  containers:
+  - name: envar-demo-container
+    image: gcr.io/google-samples/hello-app:2.0
+    env:
+    - name: DEMO_GREETING
+      value: "Hello from the environment"
+    - name: DEMO_FAREWELL
+      value: "Such a sweet sorrow"
+```
+我寫這樣，但顯然是錯的，因為用k logs看就知道變數沒還原
+```yaml
+spec:
+  containers:
+  - command:
+    - sh
+    - -c
+    - echo '"$TV" && sleep 3600'
+    env:
+    - name: TV
+      value: "Sony Tv Is Good"
+```
+重點是 command 裡面要用單引號（'）包住**整個 shell 指令**，這樣 shell 才會展開 env 變數。如果用雙引號或直接寫，k8s 會把 $TV 當字串，不會展開。
+
+正確寫法，這樣就夠了！
+```yaml
+command:
+- sh
+- -c
+- echo "$TV" && sleep 3600
+```
+🐱：但`"$TV"`是對的！
+切記`$`要跟變數名稱黏緊緊！
+光這個變數寫法就花了我10分鐘去了！
+
+---
+
+16○4
+https://killercoda.com/sachin/course/CKA/pod-resource
+是 k top 題
+
+我一樣，不管排序，肉眼看！
+`k top pod -h`先查參數，知道兩個關鍵的：
+- -A，因為要查全cluster
+- 排序--sort-by，此時只能填cpu或memeory
+本題查cpu
+
+`k top pod -A --sort-by cpu`
+寫入文件中
+`echo "kube-apiserver-controlplane,kube-system" > high_cpu_pod.txt`
+
+---
+
+17○
+https://killercoda.com/sachin/course/CKA/sa-cr-crb-1
+rbac題
+
+三個都要建！
+熊熊忘記這三個有指令直接create嗎？不過試試就知道了
+- `k create serviceaccount app-account` ok，而且這個很單純
+
+`k create role app-role-cka -h` ok，但要查參數
+看權限和資源怎麼寫，其實還有api group
+```
+    --resource=[]:
+        Resource that the rule applies to
+    --resource-name=[]: 應該不是這個
+        Resource in the white list that the rule applies to, **repeat this flag for multiple items**
+    --verb=[]:
+        Verb that applies to the resources contained in the rule
+```
+就這兩個，並沒有api group的參數
+
+好 試試
+```bash
+root@controlplane:~$ k create role app-role-cka --verb 'get' --resource pods
+role.rbac.authorization.k8s.io/app-role-cka created
+```
+
+最後是role binding
+這個指令相對簡單，但第一次忘記給名稱了
+```bash
+root@controlplane:~$ k create rolebinding --serviceaccount app-account --role app-role-binding-cka
+error: exactly one NAME is required, got 0
+See 'kubectl create rolebinding -h' for help and examples
+```
+又犯了一個最常見錯誤！
+```bash
+root@controlplane:~$ k create rolebinding app-role-binding-cka  --serviceaccou
+nt app-account --role app-role-binding-cka
+error: serviceaccount must be <namespace>:<name>
+```
+題外話，知道當前所在ns的方法：
+```
+kubectl config view --minify -o jsonpath='{..namespace}'
+```
+其實不太容易知道！還好本題就是要預設ns
+```bash
+root@controlplane:~$ k create rolebinding app-role-binding-cka  --serviceaccount default:app-account --role app-role-binding-cka
+```
+這個指令有誤，這裡`--role app-role-binding-cka`
+砍掉這個role binding
+重點是，做完要檢查，使用指令
+`k auth can-i get pods --as=system:serviceaccount:default:app-account`
+當然，describe確認一下，對照，也是可以
+
+總之，通常情況，三者都會create，很難直接驗證或看出來哪個有問題，只能靠實際測試權限或 describe 來確認
+
+所以要驗證這題是否通過，也是要`k auth can-i`
+```bash
+root@controlplane:~$ k auth can-i get pods --as=system:serviceaccount:default:app-account
+yes
+```
+參數這段也只能背了！--as=system:serviceaccount:<namespace>:<serviceaccount>
