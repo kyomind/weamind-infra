@@ -551,3 +551,65 @@ k get svc redis-service -o jsonpath='{.spec.ports[0].targetPort}'
 ## jsonpath 報 unclosed action = 字串被斷行
 
 引號內混進換行就會報 `unclosed action`。vim 游標移到斷行處按 `J` 合併回一行。
+
+## kubeadm upgrade patch 版本不用改 apt source list
+
+只有 minor 版本升級（如 1.27→1.28）才需要更新 `/etc/apt/sources.list.d/kubernetes.list`。patch 版本（如 1.27.1→1.27.2）不用改，apt source list 版本沒對齊時 `apt update` 才會找不到目標版本，這時才需要回頭檢查。
+
+## 節點升級完整 SOP 順序
+
+| 步驟 | 指令 | 節點 |
+|---|---|---|
+| 1. 更新 kubeadm | `apt-get install -y kubeadm=<version>` | control-plane |
+| 2. 查看版本計畫 | `kubeadm upgrade plan` | control-plane |
+| 3. 套用版本 | `kubeadm upgrade apply v<version>` | control-plane |
+| 4. drain 節點 | `kubectl drain <node> --ignore-daemonsets` | 任一 |
+| 5. 升級 kubelet + kubectl | `apt-get install -y kubelet=<version> kubectl=<version>` | control-plane |
+| 6. 重啟 kubelet | `systemctl daemon-reload && systemctl restart kubelet` | control-plane |
+| 7. uncordon | `kubectl uncordon <node>` | 任一 |
+| 8. 驗證 | `kubectl get nodes` | 任一 |
+
+## 考試策略：耗時指令下完就切題
+
+遇到會卡住終端機的操作（版本升級、drain、etcd restore），下完指令確認已經開始跑（沒有立即性錯誤）就切到下一題，之後再回來驗證，不要乾等。避免因為等待而拖垮整場時間分配。
+
+## 三種版本指令各自代表不同東西
+
+| 指令 | 代表版本 |
+|---|---|
+| `kubectl get nodes` VERSION 欄位 | kubelet 版本 |
+| `kubectl version` Client Version | kubectl 版本 |
+| `kubectl version` Server Version | control plane（cluster）版本 |
+| `kubeadm version` | kubeadm 本身版本 |
+
+只看 `get nodes` 版本號就當升級完成是常見誤區，`kubeadm upgrade apply` 若實際失敗，這裡不會反映出來。四個都要確認才算完整驗證升級結果。
+
+## kubectl help 語法方括號是文件標記
+
+`--from-env-file=[]` 的 `[]` 只是 help 文件表示「這個 flag 可以有值」的語法標記，不是要你連同括號一起打進指令。
+
+## --from-env-file 相對路徑以 pwd 為準
+
+現場不確定目前所在目錄時，直接用絕對路徑，避免相對路徑找不到檔案。
+
+## --from-file vs --from-env-file key 命名邏輯完全不同
+
+| 用法 | key 從哪來 | value 是什麼 | 產生幾組 key |
+|---|---|---|---|
+| `--from-env-file=file` | 檔案每行 `=` 前的字串 | 每行 `=` 後的字串 | 多組 |
+| `--from-file=file` | 檔案的 basename | 整個檔案內容當一份 | 一組 |
+| `--from-file=key=file` | 自訂的 `key` | 整個檔案內容當一份 | 一組（自訂 key 名） |
+
+沒有明確指定 key 名稱、也沒有多變數線索時，`--from-file` 是較安全的預設選項；題目提到 env 格式或多變數才用 `--from-env-file`。key 命名對不上是最容易誤判的坑，跟語法錯誤是兩回事。
+
+## YAML 值裡的孤立多餘字元只在執行期爆炸
+
+`mountPath: /config/log.txt'` 這種值尾端多一個引號字元，YAML parser 會照單全收（合法字串），`apply`、Pod 排程、image pull 都正常，錯誤只會在容器實際執行時（如 `tail` 找不到帶引號的路徑）以 Exit Code 1 呈現。同類陷阱：`env`/`envFrom` value 多餘引號、command/args 字串多餘空白、ConfigMap key 本身帶特殊字元——都是 YAML 值層級的問題，不是邏輯層級的問題。
+
+## 排錯時 describe 輸出的多餘字元要對照 YAML 找
+
+`describe` 輸出裡任何「看起來不該出現的符號」，都應該直接比對原始 YAML 值有沒有誤植，而不是懷疑掛載/資源關聯邏輯錯了。
+
+## command 已指定 -c 時，args 整段指令要放單一字串元素
+
+`command: ['bin/sh', '-c']` 時，`-c` 後面只吃一個字串參數，所以 `args: ['tail -f /config/log.txt']` 要整串放進一個元素，不能拆成多個 array 元素，否則語意錯亂。
