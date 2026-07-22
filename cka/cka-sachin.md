@@ -928,4 +928,13 @@ DB_User:      20 bytes
 
 ---
 
-10○
+10○`
+https://killercoda.com/sachin/course/CKA/log-reader-2
+k logs 加上 grep 應用題xd，因為只能輸出error
+沒啥難度
+`k logs pod-name | grep "ERROR" > poderrorlogs.txt`
+
+---
+
+11○
+
