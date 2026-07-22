@@ -967,5 +967,43 @@ https://killercoda.com/sachin/course/CKA/log-reader-1
 
 12○
 https://killercoda.com/sachin/course/CKA/etcd-backup
-etcd備份！
+這題是etcd備份！反正就兩種題目：備份跟還原
+備份就是指令比較長啦，然後要複製的內容比較多
+在 CLI 的情況下，一定要使用 Grep 去篩選，才能夠上下對照
+
+留意這個寫法：`grep -- "--"`
+`k get po etcd-controlplane -n kube-system -o yaml | grep -- "--"`
+效果：
+```bash
+root@controlplane:~$ k get po etcd-controlplane -n kube-system -o yaml | grep -- "--"
+    - --advertise-client-urls=https://172.30.1.2:2379⭐️
+    - --cert-file=/etc/kubernetes/pki/etcd/server.crt⭐️
+    (略)
+    - --key-file=/etc/kubernetes/pki/etcd/server.key⭐️
+    (略)
+    - --peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt
+    - --peer-client-cert-auth=true
+    - --peer-key-file=/etc/kubernetes/pki/etcd/peer.key
+    - --peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt
+    - --snapshot-count=10000
+    - --trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt⭐️
+    - --watch-progress-notify-interval=5s
+```
+然後就可以一邊看一邊寫指令+參數了！
+好，四個參數，我沒有完全記得！直接複習吧！
+```bash
+ETCDCTL_API=3 etcdctl snapshot save /opt/cluster_backup.db \
+  --endpoints=https://172.30.1.2:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key
+```
+除了注意參數，也要留意值，值可能會搞錯，例如 endpoints、cert 路徑、key 路徑都要和實際環境一致
+
+> 如果忘記路徑，直接查看 etcd 靜態 Pod 的定義檔：cat /etc/kubernetes/manifests/etcd.yaml | grep -E "**trusted-ca-file|cert-file|key-file**" 即可快速對照路徑。
+上面這幾個key的對應很重要，然後最後要 `&>`
+
+---
+
+12○
 
