@@ -928,7 +928,7 @@ DB_User:      20 bytes
 
 ---
 
-10○`
+9○`
 https://killercoda.com/sachin/course/CKA/log-reader-2
 k logs 加上 grep 應用題xd，因為只能輸出error
 沒啥難度
@@ -936,5 +936,36 @@ k logs 加上 grep 應用題xd，因為只能輸出error
 
 ---
 
-11○
+10○2
+https://killercoda.com/sachin/course/CKA/pod-create
+題目「Create a pod called sleep-pod  using the nginx  image and also sleep (using `command` ) for give any value for seconds.」
+重點在command
+
+我這樣寫，結果只是arg！
+`k run sleep-pod --image nginx -- sleep 3`
+顯然要用`--command`參數才是對的
+`k run sleep-pod --image nginx --command -- sleep 3`
+果然！
+```yaml
+spec:
+  containers:
+  - command:
+    - sleep
+    - "3"
+    image: nginx
+    imagePullPolicy: Always
+    name: sleep-pod
+```
+
+---
+
+11○1
+https://killercoda.com/sachin/course/CKA/log-reader-1
+和前面那題一樣，但更簡單，因連grep都不用
+
+---
+
+12○
+https://killercoda.com/sachin/course/CKA/etcd-backup
+etcd備份！
 
