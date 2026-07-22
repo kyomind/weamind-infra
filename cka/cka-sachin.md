@@ -1202,3 +1202,7 @@ root@controlplane:~$ k auth can-i get pods --as=system:serviceaccount:default:ap
 yes
 ```
 參數這段也只能背了！--as=system:serviceaccount:<namespace>:<serviceaccount>
+
+## Troubleshooting
+
+1○
