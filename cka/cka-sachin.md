@@ -1205,4 +1205,149 @@ yes
 
 ## Troubleshooting
 
-1○
+1○5
+https://killercoda.com/sachin/course/CKA/pod-issue-6
+這題實際是卡pvc，access mode不合
+
+access mode無法k edit，只能重做
+結果我犯了一個大錯，沒匯出pvc就先刪了它！
+這在考試中就gg了！
+
+就一個點，很簡單，但誤刪真的很可怕！
+
+---
+
+2⭐️20
+https://killercoda.com/sachin/course/CKA/controller-manager-issue
+改變repica，那用scale就好了
+
+`k scale deployment video-app --replicas 2`
+改完後確認一下：
+```bash
+root@controlplane:~$ k get deployments.apps
+NAME        READY   UP-TO-DATE   AVAILABLE   AGE
+video-app   0/2     0            0           103s
+```
+沒用，yaml還有問題
+但要先看pod為何起不來才是正道，要describe
+目前沒有任何pod存在，只能去describe deploy
+看不出deploy yaml有何問題，重點應該在UP-TO-DATE 為0
+
+結果這題是控制器問題
+>因為 controller-manager 是負責監控 Deployment/ReplicaSet 並生成對應 Pod 的元件，它掛了
+也就是controller-manager沒running：
+```bash
+kube-controller-manager-controlplane   0/1     CrashLoopBackOff   6 (3m56s ago)   9m22s
+```
+要修好它！
+要修static pod的yaml，看有沒有問題，此時知道path很重要，我忘了！
+`cat /etc/kubernetes/manifests/kube-controller-manager.yaml`
+一眼看不出來，丟給ai，是指令錯了！
+```yaml
+command:
+- kube-controller-manegaar    # ⚠️ 打錯字
+```
+
+這題也花了20分鐘，但其實關鍵只有一個！
+而且想想，其實static pod，絕對都是錯在指令，尤其是第一行
+
+---
+
+3⭐️20
+https://killercoda.com/sachin/course/CKA/cronjob-issue
+cronjob題
+
+監控svc的cronjob不wrok，於是先看一下svc，還有endpoints，發現沒有後者
+```bash
+root@controlplane:~$ k get endpoints
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME          ENDPOINTS         AGE
+cka-service   <none>            2m13s
+kubernetes    172.30.1.2:6443   2d6h
+```
+表示svc沒有正確導流，通常是 selector 沒有對到 pod label
+看一下pod
+```bash
+root@controlplane:~$ k get po
+NAME                         READY   STATUS    RESTARTS      AGE
+cka-cronjob-29746202-x5xbr   0/1     Error     4 (97s ago)   2m22s
+cka-cronjob-29746203-zt8ds   0/1     Error     4 (44s ago)   82s
+cka-cronjob-29746204-5ffds   0/1     Error     2 (21s ago)   22s
+cka-pod                      1/1     Running   0             3m20s
+```
+結果是pod本身根本沒有labels！
+來人，上labels——但要先看svc選的是啥
+```yaml
+    selector:
+      app: cka-pod
+```
+
+好，指令怎麼下？
+```bash
+root@controlplane:~$ k label po cka-pod app=cka-pod
+pod/cka-pod labeled
+```
+labels貼上應該會立刻生效，因為這不是pod spec
+
+結果還沒完！
+```bash
+NAME                         READY   STATUS             RESTARTS        AGE
+cka-cronjob-29746204-5ffds   0/1     CrashLoopBackOff   5 (2m ago)      4m54s
+cka-cronjob-29746205-xvs9f   0/1     Error              5 (2m16s ago)   3m54s
+cka-cronjob-29746206-j9mbc   0/1     CrashLoopBackOff   4 (80s ago)     2m54s
+cka-cronjob-29746207-956b6   0/1     Error              4 (77s ago)     114s
+cka-cronjob-29746208-m9tsr   0/1     Error              3 (39s ago)     54s
+cka-pod                      1/1     Running            0               7m52s
+```
+這裡要有想法⭐️——看這些pod的失敗原因是什麼
+這是一開始就要做的事了⭐️筆記都有寫debug順序
+```bash
+root@controlplane:~$ k logs cka-cronjob-29746212-6tkts
+curl: (6) Could not resolve host: cka-pod
+```
+再搭上這個就懂了！
+```bash
+root@controlplane:~$ k get svc
+NAME          TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+cka-service   ClusterIP   10.98.163.77   <none>        80/TCP    13m
+kubernetes    ClusterIP   10.96.0.1      <none>        443/TCP   2d7h
+```
+應該是cka-service！
+cka-cronjob 裡 curl 指令**應該打 service 名稱（cka-service）**，不是 pod 名稱（cka-pod）。
+```yaml
+spec:
+  concurrencyPolicy: Allow
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    metadata: {}
+    spec:
+      template:
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - curl
+            - cka-pod # 錯誤！
+```
+結果還沒完！
+```bash
+root@controlplane:~$ k get po
+NAME                         READY   STATUS             RESTARTS        AGE
+cka-cronjob-29746214-fx5sq   0/1     CrashLoopBackOff   5 (2m39s ago)   5m43s
+cka-cronjob-29746215-fz645   0/1     CrashLoopBackOff   5 (103s ago)    4m43s
+cka-cronjob-29746216-7nbvj   0/1     Error              5 (2m1s ago)    3m43s
+cka-cronjob-29746217-nql76   0/1     Error              4 (2m6s ago)    2m43s
+cka-cronjob-29746218-s4jfj   0/1     Completed          0               103s
+cka-cronjob-29746219-64ltl   0/1     Completed          0               43s
+cka-pod                      1/1     Running            0               18m
+```
+還是not ready，只是變成Completed
+只好再看最新的一批pod的logs
+結果應該是對的，not ready只是執行完畢，pod已經關了，關掉變成Completed
+驗證器沒通過可能是還有失敗的，我來主動砍掉
+
+我想到了，這題最終無法驗過，是因**為cron的時間語法**，不管了
+
+---
+
+4○
