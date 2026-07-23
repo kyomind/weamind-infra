@@ -1350,4 +1350,148 @@ cka-pod                      1/1     Running            0               18m
 
 ---
 
-4○
+4○7
+https://killercoda.com/sachin/course/CKA/deployment-issue
+fix deploy yaml，我感覺這應該比較容易
+
+起手式一定要先apply，看錯誤
+結果可以create，那就要看錯在哪了
+```bash
+root@controlplane:~$ k get po
+NAME                                  READY   STATUS                       RESTARTS   AGE
+postgres-deployment-6d5b9f49c-pv7xm   0/1     CreateContainerConfigError   0          20s
+```
+應該是和環境變數有關
+先describe pod，發現
+```bash
+tgres-container}: Error: secret "postgres-secrte" not found
+```
+secrte，拼錯了
+```bash
+root@controlplane:~$ k get secrets -o yaml
+apiVersion: v1
+items:
+- apiVersion: v1
+  data:
+    password: ZGJwYXNzd29yZAo=
+    username: ZGJ1c2VyCg==
+  kind: Secret
+(略)
+    name: postgres-secret  # 重點
+    namespace: default
+    resourceVersion: "5226"
+```
+
+修完後，新pod錯誤是：
+`Error: couldn't find key db_user in Secret default/postgres-secret`
+顯然是`username`和`password`
+再修，就ok了
+
+---
+
+5⭐️10
+https://killercoda.com/sachin/course/CKA/deployment-issue-1
+一樣，修deploy，但不是yaml，是物件
+
+```bash
+root@controlplane:~$ k get po
+NAME                                READY   STATUS     RESTARTS   AGE
+nginx-deployment-776565b456-942lq   0/1     Init:0/1   0          81s
+root@controlplane:~$ k get deployments.apps
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+nginx-deployment   0/1     1            0           93s
+```
+重點錯誤：`Init:0/1`，再describe pod
+`failed for volume "nginx-config" : configmap "nginx-configuration" not found`
+乍看有點難懂：
+```yaml
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: nginx-configuration
+        name: nginx-config
+```
+其實一個是configMap的名字，一個是volume的名字，這就不難懂了
+這裡是cm的名字錯了
+重跑還是錯，再看pod，錯誤換成
+`error during container init: exec: "shell": executable file not found in $PATH`
+command有錯
+```yaml
+      - command:
+        - sh
+        - echo 'Welcome To KillerCoda!'
+```
+這樣改是不夠的，⭐️因為少了`-c`！！！！
+
+---
+
+6○2
+https://killercoda.com/sachin/course/CKA/deployment-issue-2
+一樣，改deploy yaml
+
+先是ns不存在，這個簡單，先create
+只有這樣而已，done
+
+---
+
+7○3
+https://killercoda.com/sachin/course/CKA/deployment-issue-3
+一樣deploy，這次是物件
+
+`CreateContainerConfigError`
+其中有Config字樣，我好像不太熟悉，只能先describe
+只有一個po的時候，就不必複製po名稱了
+`Error: configmap "postgres-db-config" not found`
+正確：postgres-config
+
+k edit時，留意了secret，出去看了一下，也是錯的，再改
+這題算很簡單
+
+---
+
+8⭐️6
+https://killercoda.com/sachin/course/CKA/deployment-issue-4
+一樣，物件
+
+get po是pending，那不是pvc就是親和，結果是前者
+`  Warning  FailedScheduling  52s   default-scheduler  0/2 nodes are available: persistentvolumeclaim "postgres-db-pvc" not found. not found`
+```bash
+root@controlplane:~$ k get pvc
+NAME           STATUS    VOLUME        CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+postgres-pvc   Pending   postgres-pv   0                         standard       <unset>                 102s
+```
+這時要改deploy，而不是pvc的名稱！
+
+改完還是pending，因為沒有bound！
+`pod has unbound immediate PersistentVolumeClaims. not found`
+這下就要改pvc了
+
+兩個地方要改，access mode還有空間要縮小
+好像要砍掉pvc才行，要先輸出！不然就gg了
+apply後先看有沒有bound，最好等5秒再看，不會立刻bound
+成功了！再看deploy的po
+
+---
+
+9○5
+https://killercoda.com/sachin/course/CKA/deployment-rollout-resume
+這題比較特別，沒有up to date
+```bash
+root@controlplane:~$ k get deployments.apps
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+stream-deployment   0/0     0            0           47s
+```
+
+沒頭緒，先des一下deploy，可發現
+```bash
+Replicas:               0 desired | 0 updated | 0 total | 0 available | 0 unavailable
+```
+k edit發現`  replicas: 0`
+結果改1似乎就ok了
+關鍵是切入點！怎麼切入，怎麼觀察
+這題並沒有很快解決
+
+---
+
+10○
+
