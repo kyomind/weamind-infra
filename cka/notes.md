@@ -513,6 +513,17 @@ annotations/labels 的 value 被定義成字串，YAML 裸 `true` 會被解析�
 
 Pod 層看的是 container，Deployment 層看的是 Pod 副本數。init container 不算在 Pod 的 READY 裡（跑完就消失）。
 
+`kubectl get deploy` 沒有獨立的 `DESIRED` 欄位，只有 `kubectl get rs` 才有。`READY` 欄位分母本身就是 desired replicas（等同 `spec.replicas`），不要跟 `get rs` 的表格結構搞混。
+
+## Deployment 卡住：READY 分母是否為 0 決定排查路徑
+
+| 情況 | 根因方向 | 檢查方式 |
+|------|---------|---------|
+| 分母 = 0（`0/0`） | `spec.replicas: 0` 或 `spec.paused: true` | `k describe deploy` 的 Events 一定是空的（controller 根本沒嘗試建東西），直接查 spec |
+| 分母 > 0 但分子 = 0（如 `0/3`） | 正常 Pod 故障排除場景 | `k describe pod` 走 Pending/ImagePullBackOff/CreateContainerConfigError/CrashLoopBackOff/readiness probe 路徑，Events 有料 |
+
+`spec.paused: true` 容易被誤判成 `0/0` 情境，兩者 describe 的 Events 都是空的，差異只在 `replicas` 本身是不是 0。
+
 ## readOnly 寫在 volumeMounts 不是 volumes
 
 ```yaml
