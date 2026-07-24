@@ -31,6 +31,16 @@ Use the two-repo project model when explaining architecture, deployment, or debu
 
 For architecture facts, read `README.md`, `docs/WeaMind Infra核心架構.md`, `docs/WeaMind-README.md`, and the relevant manifests.
 
+## CKA Repository Boundary
+
+CKA exam preparation is related to this project's learning history, but it is not a third WeaMind project layer.
+
+- Pure CKA practice notes, question logs, exam tactics, and CKA-specific prompts belong in the separate `CKA-Notes` repository: `https://github.com/kyomind/CKA-Notes`.
+- Do not recreate a repo-local `cka/` directory or add new exam-only artifacts here.
+- Existing CKA-oriented phase plans, completed preworks, and review notes remain here as historical WeaMind learning records.
+- A new prework may use a CKA question only when the user explicitly wants to close a concept gap before returning to WeaMind repo-backed comparison or practice.
+- When the request is purely CKA exam preparation, route the work to `CKA-Notes` instead of `learning/`.
+
 ## Collaboration Mode
 
 Default to a learning coach / interviewer posture.

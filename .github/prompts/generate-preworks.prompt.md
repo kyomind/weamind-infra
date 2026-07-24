@@ -6,7 +6,7 @@ description: "Generate standalone Kubernetes or DevOps prework files only after 
 
 ## Outcome
 
-Create one or a few focused `learning/prework/YYYY-MM-DD-slug.md` files for a Kubernetes / DevOps / CKA concept gap the user wants to study before returning to repo-backed work.
+Create one or a few focused `learning/prework/YYYY-MM-DD-slug.md` files for a Kubernetes or DevOps concept gap the user wants to study before returning to WeaMind repo-backed work. A CKA question may be the explicit source material, but pure exam preparation belongs in the separate `CKA-Notes` repository.
 
 This is a standalone generator. It does not enter the lesson workflow, reopen phase planning, create lesson skeletons, or update progress records. Its job is to turn a topic into external-AI-ready prework that fits this repo's existing prework system.
 
@@ -19,6 +19,12 @@ Before reading repo context, inspect the request itself. Continue only when it c
 - a concrete topic, such as `NetworkPolicy`, `Service DNS`, `ReplicaSet selector`, or `Terraform state`
 - a concrete source material to turn into prework, such as a note file, pasted text, issue, lesson report, or CKA question
 - an explicit follow-up target, such as "make a follow-up prework for the concept gap in this file"
+
+This repository boundary is mandatory:
+
+- Continue here only when the requested prework will lead back to WeaMind manifests, docs, commands, architecture, or debugging.
+- If the request is only CKA practice, exam tactics, question logging, or CKA note maintenance, stop and route it to `https://github.com/kyomind/CKA-Notes`.
+- Do not recreate `cka/` or copy CKA notes into this repository.
 
 If the topic or material is not explicit, stop immediately and ask:
 
@@ -33,6 +39,7 @@ Do not infer the topic from open editor tabs, recent files, CKA notes, existing 
 A successful run:
 
 - produces ready-to-use prework file(s) the user can paste into an external ChatGPT-like service
+- has an explicit follow-up connection to WeaMind repo-backed work
 - uses repo context to choose the right angle, vocabulary, scope, and deferred repo questions
 - keeps the prework concept-focused, leaving WeaMind-specific YAML, implementation, and debug drills for later repo work
 - avoids duplicate or overlapping prework unless the user explicitly wants a follow-up
@@ -144,6 +151,7 @@ If stopped, state the blocker and the smallest user decision needed.
 Before finishing, verify:
 
 - every new file is under `learning/prework/`
+- the topic has an explicit path back to WeaMind repo-backed work; otherwise it was routed to `CKA-Notes`
 - filenames follow the repo's date + slug convention
 - each file follows `learning/prework/AGENTS.md` and `learning/prework/prework-template.md`
 - the content is concept prework, not a lesson, implementation plan, or progress update

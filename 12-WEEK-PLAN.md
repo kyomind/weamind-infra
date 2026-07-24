@@ -14,6 +14,14 @@
 
 ---
 
+## CKA Material Boundary
+
+Phase 3 remains part of this repository's historical learning plan. Current CKA practice notes, question logs, exam tactics, and CKA-specific prompts live in the separate [CKA-Notes](https://github.com/kyomind/CKA-Notes) repository.
+
+This repository keeps completed CKA-oriented preworks and review records only when they document the WeaMind learning path or lead back to repo-backed comparison. New exam-only artifacts should not be added here.
+
+---
+
 ## Weekly Outline
 
 | Week | Topic                        | Focus                                                | Deliverable              |

@@ -29,6 +29,15 @@
 3. 做 Why、trade-off、debug sequence 追問。
 4. 做每日驗收與面試式練習。
 
+## CKA 邊界
+
+`learning/prework/` 可以保留既有的 CKA 取向 prework，因為它們是 WeaMind 學習計畫與概念補強的歷史紀錄；但這不代表新的純 CKA 考試資料仍應放在本 repo。
+
+- 純 CKA 刷題、題庫紀錄、考試技巧、筆記整理與 CKA 專用 prompts，統一放在獨立的 `CKA-Notes` repo：`https://github.com/kyomind/CKA-Notes`。
+- 只有當使用者明確要先補一個通用概念，之後再回來對照 WeaMind manifests、docs、commands 或 debug sequence 時，才在本目錄建立新的 prework。
+- CKA 題目可以作為這類 prework 的明確輸入，但不能只因為 repo 內有歷史 CKA prework，就自行推導下一個考試主題。
+- 若需求只有考試解題、刷題紀錄或整理 CKA notes，應改到 `CKA-Notes` 處理，不要在這裡建立平行副本。
+
 ## AI 工作規則
 
 以下章節是 `learning/prework/` 的目錄局部工作規則。AI 只有在 `learning/AGENTS.md` 已判斷需要外部預習或 lesson 後補強 homework 後，才應使用這些規則。
