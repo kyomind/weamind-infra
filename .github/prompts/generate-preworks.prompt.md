@@ -55,7 +55,7 @@ Then inspect only the repo context needed to shape the prework. Use `rg` first.
 Useful context sources:
 
 - `learning/prework/` for existing topics and naming style
-- `cka/notes.md` and `cka/notes-*.md` for CKA wording, traps, and YAML examples
+- CKA notes or questions explicitly provided by the user for exam wording, traps, and YAML examples
 - `learning/lessons/` for related completed lessons, especially `04-report.md` or `05-note.md`
 - `docs/`, `manifests/`, `references/`, and `.env.example` when the topic touches actual repo architecture or configuration boundaries
 - `review/notes.md` when the topic looks like a recurring review question
