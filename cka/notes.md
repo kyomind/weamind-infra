@@ -80,6 +80,8 @@ etcdctl snapshot save /opt/backup.db &> backup.txt
 systemctl restart kubelet
 ```
 
+Node 的 STATUS 是靠 kubelet heartbeat/lease（預設 10 秒）回報給 API Server，跟 Pod 是否正常運行是兩條不同資訊流。「Pod 都正常」不能推論「Node 正常」，看到題目卡在 kube-system 底下要做事之前，先 `k get no` 排除 Node 層級問題。
+
 ## Conditions vs Events 使用時機
 
 | 面向 | Conditions | Events |
@@ -624,3 +626,47 @@ k get svc redis-service -o jsonpath='{.spec.ports[0].targetPort}'
 ## command 已指定 -c 時，args 整段指令要放單一字串元素
 
 `command: ['bin/sh', '-c']` 時，`-c` 後面只吃一個字串參數，所以 `args: ['tail -f /config/log.txt']` 要整串放進一個元素，不能拆成多個 array 元素，否則語意錯亂。
+
+## kubectl 是一次性 CLI，不是 daemon
+
+改完 `kubeconfig` 不用 restart 任何東西，`kubectl` 每次執行都是重新啟動、重新讀設定檔、送一次 request、結束就釋放。
+
+三種運作方式對照：
+
+| 元件 | 屬性 | 改設定後要怎麼生效 |
+|---|---|---|
+| `kubectl` | 一次性 CLI，執行完就死 | 不用做任何事，下一次執行自動讀新值 |
+| `kubelet` | 常駐 daemon | 要 `systemctl restart kubelet` |
+| static pod（如 etcd） | 由 kubelet 監控 manifest 自動重建 | 改 manifest 後 kubelet 自動偵測，不用手動 restart |
+
+## kubectl 連線錯誤三層診斷
+
+`kubectl get node` 連不上時，依錯誤訊息關鍵字判斷卡在哪一層，錯誤訊息本身就是答案索引：
+
+| 錯誤訊息關鍵字 | 對應層級 | 下一步 |
+|---|---|---|
+| `connection refused` / `no route to host` / `dial tcp ... timeout` | 連線層（port/IP） | 檢查 config 裡 `server` 欄位的 IP、port，`kube-apiserver` 有沒有在跑 |
+| `x509: certificate signed by unknown authority` / `certificate is valid for ..., not ...` | 信任層（TLS cert） | 檢查 `certificate-authority-data` |
+| `Unauthorized` / `Forbidden` / `invalid client certificate` | 認證層（client auth） | 檢查 `client-certificate-data`、`client-key-data` |
+| `error loading config file` / `couldn't get current server API group list` | config 本身找不到或格式壞 | 檢查 `KUBECONFIG` 環境變數、檔案路徑、YAML 格式 |
+
+## "unable to load XXX file: no such file or directory" 通用除錯公式
+
+kubelet 啟動失敗常見這類錯誤，路徑本身就是被寫錯的設定值（如打錯字），不要臆測路徑本來就長那樣：
+
+```
+Step 1：錯誤訊息裡的路徑，就是「該查的」設定值（可能是錯的）
+Step 2：ls 該目錄，找出「實際存在的」正確檔名
+Step 3：回頭改錯誤訊息指出的設定檔，把路徑值改成實際值
+```
+
+適用範圍：
+
+| 錯誤訊息關鍵字 | 通常在哪個設定檔 |
+|---|---|
+| `unable to load client CA file` | `/var/lib/kubelet/config.yaml` → `authentication.x509.clientCAFile` |
+| `unable to load server certificate` | 同上 → `tlsCertFile` / `tlsPrivateKeyFile` |
+| `couldn't get current server API group list` / 認證相關 | `/etc/kubernetes/kubelet.conf` → `client-certificate` / `client-key` |
+| `no such file or directory`（static pod 相關） | `/etc/kubernetes/manifests/*.yaml` → `volumeMounts` 或 `command` 裡的 `--xxx-file` 參數 |
+
+不需要背標準檔名，`journalctl -u kubelet -e --no-pager` 或 `describe` 直接把錯誤訊息印出來，照上面表格對照。
