@@ -1493,5 +1493,98 @@ k edit發現`  replicas: 0`
 
 ---
 
-10○
+10⭐️10
+https://killercoda.com/sachin/course/CKA/ds-issue
+daemonSet！
 
+cp沒建pod，一定是被taint擋了，要幫在pod template中加tolerations
+這肯定要查文件了，那個很難寫耶
+但要先查cp的taint長啥樣
+
+```bash
+root@controlplane:~$ k get no controlplane -o yaml
+apiVersion: v1
+kind: Node
+(略)
+spec:
+  podCIDR: 192.168.0.0/24
+  podCIDRs:
+  - 192.168.0.0/24
+  taints:  # 這裡
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+```
+再來就是要怎麼查文件，我就查"taint"就好
+就有怎麼寫的說明了
+🐱：其實親和比較複雜，t&t是比較單純的，文件如下：
+```yaml
+tolerations:
+- key: "key1"
+  operator: "Equal"
+  value: "value1"
+  effect: "NoSchedule"
+
+# 第二種
+tolerations:
+- key: "key1"
+  operator: "Exists"
+  effect: "NoSchedule"
+```
+
+選了第一個，結果再回去看，這個taint沒有value！
+所以應該要用第二個，可惡
+DONE！
+
+---
+
+11⭐️13
+https://killercoda.com/sachin/course/CKA/etcd-backup-issue
+純etcd備份題，又要考驗你的grep大法還有參數一對一能力xd
+而且又要輸出成文件，一定要`&>`且不要忘記只有一次機會
+🐱：不是純備份題，而是要先處理kubelet不正常
+
+你熟悉的`k get -n kube-system po etcd-controlplane  -o yaml | grep -- '--'`
+主要是第二、三、四參數很容易confused
+記得，第二個是trust ca file
+三、四的檔都是server，它們有對稱關係！
+
+```bash
+root@controlplane:~$ etcdctl snapshot save /opt/cluster_backup.db \
+> --endpoints=https://172.30.1.2:2379 \
+> --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+> --key=/etc/kubernetes/pki/etcd/server.key \
+> --cert=/etc/kubernetes/pki/etcd/server.crt &> backup.txt
+```
+
+結果沒過，理由是：
+> The **kubelet service is currently inactive** on the controlplane node — this is why the node shows NotReady. You'll need to address that first before the etcd backup can proceed successfully.
+
+ai說：
+> 這題其實不是備份指令錯，而是 controlplane 節點的 kubelet 沒有啟動，導致 **node 狀態是 NotReady**，etcd 也無法正常備份。⭐️要先把 kubelet service 啟動起來（`systemctl start kubelet`），確認 node 變成 Ready，再執行 etcdctl snapshot save 才會成功。
+原來是node，我想說，po明明都正常
+```bash
+root@controlplane:~$ k get no
+NAME           STATUS     ROLES           AGE    VERSION
+controlplane   NotReady   control-plane   3d7h   v1.35.1
+node01         Ready      <none>          3d7h   v1.35.1
+```
+還真的！
+重新啟動kubelet就過了
+
+---
+
+12○5
+https://killercoda.com/sachin/course/CKA/kubectl-issue
+修kubectl的config檔，這題比較簡單是port有錯，寫成644333
+修完後，你再打，就有了
+因為每一次使用k指令都會讀檔
+
+---
+
+13○
+https://killercoda.com/sachin/course/CKA/kubelet-issue
+要很了解kubelet的連線機制，先略過
+
+---
+
+14○
