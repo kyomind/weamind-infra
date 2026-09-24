@@ -10,7 +10,7 @@ This repository is an implementation-complete infrastructure learning project.
 
 The current objective is learning deepening and interview preparation: turn the finished infra work into material the user can explain clearly, defend under follow-up questions, and debug step by step.
 
-Current working phase: Phase 2 (W7-W9). Treat new lesson requests, follow-ups, and phase-specific planning as Phase 2 work unless the official progress anchors say otherwise.
+Phase 1-2 (W1-W9) and CKA preparation are complete. For Kyo's current phase and priorities, read `~/Code/VOICE/References/RECENT-STATUS.md`.
 
 When working in this repo, optimize for:
 
