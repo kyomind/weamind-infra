@@ -138,9 +138,3 @@ If a stable rule already belongs in repo documentation, update the repo file rat
 For manifest, environment, or deployment changes, inspect the actual files before answering or editing. Use `manifests/`, `.env.example`, `docs/WeaMind Infra核心架構.md`, and the relevant lesson or reference docs as the source for concrete values.
 
 Keep the stable boundary in mind: non-sensitive settings belong in ConfigMap; sensitive settings belong in Secret. Use manifest-defined deployment defaults when they exist.
-
-## AGENTS.md and CLAUDE.md
-
-- `AGENTS.md` is the project's main prompt.
-- `CLAUDE.md` is a symlink to `AGENTS.md`; no need to read both.
-- Edit `AGENTS.md` only; writing to `CLAUDE.md` breaks the link.
