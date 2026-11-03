@@ -85,6 +85,7 @@ skills-lock.json                # skill 來源與 hash
 
 - canvas 1160×920；node 文字區寬 164（CSS `margin-left:-16px`，所以 inline 仍寫 `left = centerX - 66`），tile 60×60，node box 約高 112
 - 字級：節點名稱 18px、群組標籤 17px（圖示 18px）、role 15px、箭頭標籤 15px。role 是等寬字，15px 時最長的 `tcp passthrough` 約 150px 寬，所以文字區要 ≥164 才不會折行
+- canvas 外的網頁區塊（只出現在 HTML 網頁版，PNG 只截 `.canvas` 所以不含）：標題 `h1` 22–30px、kicker 13px、右上說明文字 14px（`max-width` 380px）、圖例 13px、頁尾 12px。改這些不用重截 PNG，只要 build。曾因只放大 canvas 內的字、沒動這些 template 預設值（10–12px），網頁版看起來仍有很小的字
 - 列的 tile top：GitHub 列 84、主流程列 382、第二列 542、底列 780
 - 欄的 centerX：LINE 90、LB 290、Traefik/cert-manager 480、line-bot/Prometheus 640、Grafana 800、PG/Redis 1020；Cloudflare 320
 - 群組：GitHub `390,24,340×210`；Hetzner `200,274,934×442`；K3s `390,322,500×370`；Bastion `930,322,180×370`
