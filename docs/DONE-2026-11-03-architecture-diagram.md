@@ -79,7 +79,11 @@ skills-lock.json                # skill 來源與 hash
 
    `render_png.py` 會同時輸出 `weamind-architecture.png` 與 `weamind-architecture-dark.png`。本機沒裝 Playwright，所以用 `uv run --with playwright`。第一次跑要先執行 `uv run --with playwright python -m playwright install chromium`
 
-4. **一定要打開兩張 PNG 實際看過**：箭頭不穿過文字、群組標籤不被線壓到、暗色下圖示可見
+4. **一定要打開兩張 PNG 實際看過**：箭頭不穿過文字、群組標籤不被線壓到、暗色下圖示可見。也要看整頁網頁（canvas 外的標題、圖例、頁尾），PNG 不含這些區塊
+5. **commit 成品並 push**：`src.html`、`docs/site/index.html`、兩張 PNG 都要 commit。CI 不會 build 或截圖，只會把 `docs/site/` 原樣部署，所以忘了重建，線上就會是舊版
+   - push 後，`docs/site/**` 有變更才會觸發 `.github/workflows/pages.yml`；只改 PNG 不會觸發，但 README 會直接顯示新 PNG
+   - 驗證線上版本要比對內容，例如 `curl -sL "https://kyomind.github.io/weamind-infra/?v=$(date +%s)" | rg 'font-size:18px'`，不能只看 HTTP 200
+   - 有改 README 的 HTML 結構時，另外照「README 暗色主題卻顯示亮色圖」那條的方法檢查渲染結果
 
 ### 座標速記（現行版面）
 
@@ -93,7 +97,7 @@ skills-lock.json                # skill 來源與 hash
 
 ### 加 Argo CD 的建議做法
 
-Argo CD 跑在叢集內，從 GitHub repo（`weamind-infra` 的 `manifests/`）拉期望狀態。可以把它放在 K3s 群組內，從 GitHub 群組拉一條虛線（`sync` / `git pull`）進來，再拉一條灰線到 line-bot（`apply`）。K3s 群組目前右側到 x=890 還有空間，必要時擴大 canvas。GitHub 群組內也可以補一個 `weamind-infra repo` 節點作為 Argo CD 的來源。
+Argo CD 跑在叢集內，從 GitHub repo（`weamind-infra` 的 `manifests/`）拉期望狀態。可以把它放在 K3s 群組內，從 GitHub 群組拉一條虛線（`sync` / `git pull`）進來，再拉一條灰線到 line-bot（`apply`）。**K3s 群組內已經沒有空位**：節點文字區寬 164 後，Grafana（centerX 800）的文字延伸到 x≈882，貼著 K3s 右緣 890。要加 Argo CD 得先騰出空間，例如把 canvas 加寬 160px、Bastion 群組與 PG/Redis 右移 160，K3s 群組加寬 160，Argo CD 放在 centerX 960 的第二列。GitHub 群組內也可以補一個 `weamind-infra repo` 節點作為 Argo CD 的來源。加完要重新檢查 x=910 走廊（line-bot → Redis 的 elbow）是否還在兩個群組之間。
 
 ## 實作中的決策與踩坑
 
@@ -150,7 +154,7 @@ Argo CD 跑在叢集內，從 GitHub repo（`weamind-infra` 的 `manifests/`）�
 | `dd707c8` | Record README picture link pitfall in diagram notes |
 | `2b59ab7` | Enlarge header, legend, and footer text on diagram page |
 
-HTML 自動亮暗 script 與重截的 PNG 已包含在 `6795fb9` 內。
+HTML 自動亮暗 script 與重截的 PNG 已包含在 `6795fb9` 內。之後只更新這份紀錄文件的 commit 不再列入此表；完整歷史用 `git log -- docs/DONE-2026-11-03-architecture-diagram.md docs/architecture-diagram docs/site README.md` 查。
 
 ## 待處理事項
 
