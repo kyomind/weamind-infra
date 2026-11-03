@@ -16,12 +16,12 @@
 
 ## Architecture
 
-<a href="https://kyomind.github.io/weamind-infra/"><picture>
+<picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/weamind-architecture-dark.png">
   <img alt="WeaMind K8s Architecture" src="docs/weamind-architecture.png">
-</picture></a>
+</picture>
 
-[互動版（可縮放、自動切換亮暗）](https://kyomind.github.io/weamind-infra/)
+[HTML 網頁版](https://kyomind.github.io/weamind-infra/)
 
 **架構摘要**：
 - **混合式執行環境**：應用層部署於 K8s，資料層保留在堡壘機，兩者透過 Hetzner Private Network 互通。

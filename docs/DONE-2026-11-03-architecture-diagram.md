@@ -6,8 +6,8 @@
 
 - `README.md` 與 `README.en.md` 的 Architecture 區塊已從 Mermaid 改為 `<picture>` 嵌入 PNG，GitHub 會依讀者主題自動切換亮/暗圖
 - 圖的唯一原始檔是 `docs/architecture-diagram/src.html`；`docs/site/index.html` 與兩張 PNG 都是由它產生的成品，**不要直接改成品**
-- 互動版 HTML 透過 GitHub Pages 公開在 https://kyomind.github.io/weamind-infra/ ；`.github/workflows/pages.yml` 只部署 `docs/site/`，`docs/` 其他文件不會上 Pages
-- README 的圖點下去就會開互動版，圖下方另有文字連結
+- HTML 網頁版透過 GitHub Pages 公開在 https://kyomind.github.io/weamind-infra/ ；`.github/workflows/pages.yml` 只部署 `docs/site/`，`docs/` 其他文件不會上 Pages
+- README 圖下方有「HTML 網頁版」文字連結。**不要用 `<a>` 包住 `<picture>`**：GitHub 會把同一行的 `<a><picture>` 當行內 HTML，提早關閉 `<picture>`，`<source>` 失效，結果永遠只顯示亮色圖
 - 重建指令寫在 `src.html` 開頭的 HTML 註解裡（build → render 兩行）
 - 產圖工具 stack-diagram skill 已放進 repo：`.agents/skills/stack-diagram/`（本體）+ `.claude/skills/stack-diagram`（symlink）+ `skills-lock.json`
 - Argo CD 尚未實作（使用者於 2026-11-03 確認），所以不進圖；圖示已預先抓好（`docs/architecture-diagram/icons/argocd.svg`），實作後再加
