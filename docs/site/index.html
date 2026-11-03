@@ -3,8 +3,8 @@
   WeaMind architecture diagram source (stack-diagram skill).
   Rebuild from repo root:
     S=.claude/skills/stack-diagram
-    python3 $S/scripts/build.py docs/architecture-diagram/src.html docs/architecture-diagram/icons docs/weamind-architecture.html --fonts $S/assets/fonts
-    uv run --with playwright python $S/scripts/render_png.py docs/weamind-architecture.html docs/weamind-architecture.png --selector .canvas --scale 2
+    python3 $S/scripts/build.py docs/architecture-diagram/src.html docs/architecture-diagram/icons docs/site/index.html --fonts $S/assets/fonts
+    uv run --with playwright python $S/scripts/render_png.py docs/site/index.html docs/weamind-architecture.png --selector .canvas --scale 2
   render_png.py writes both weamind-architecture.png and weamind-architecture-dark.png.
 -->
 <html lang="en"><!-- set lang to the label language, e.g. "ja" for Japanese labels -->

@@ -16,10 +16,12 @@
 
 ## Architecture
 
-<picture>
+<a href="https://kyomind.github.io/weamind-infra/"><picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/weamind-architecture-dark.png">
   <img alt="WeaMind K8s Architecture" src="docs/weamind-architecture.png">
-</picture>
+</picture></a>
+
+[Interactive version (zoomable, follows light/dark)](https://kyomind.github.io/weamind-infra/)
 
 **Architecture summary**:
 - **Hybrid runtime**: The application layer runs on K8s while the data layer stays on the bastion VM, connected through Hetzner Private Network.

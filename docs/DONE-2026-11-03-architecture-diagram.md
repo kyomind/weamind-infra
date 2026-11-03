@@ -5,7 +5,9 @@
 ## MEMOS
 
 - `README.md` 與 `README.en.md` 的 Architecture 區塊已從 Mermaid 改為 `<picture>` 嵌入 PNG，GitHub 會依讀者主題自動切換亮/暗圖
-- 圖的唯一原始檔是 `docs/architecture-diagram/src.html`；`docs/weamind-architecture.html` 與兩張 PNG 都是由它產生的成品，**不要直接改成品**
+- 圖的唯一原始檔是 `docs/architecture-diagram/src.html`；`docs/site/index.html` 與兩張 PNG 都是由它產生的成品，**不要直接改成品**
+- 互動版 HTML 透過 GitHub Pages 公開在 https://kyomind.github.io/weamind-infra/ ；`.github/workflows/pages.yml` 只部署 `docs/site/`，`docs/` 其他文件不會上 Pages
+- README 的圖點下去就會開互動版，圖下方另有文字連結
 - 重建指令寫在 `src.html` 開頭的 HTML 註解裡（build → render 兩行）
 - 產圖工具 stack-diagram skill 已放進 repo：`.agents/skills/stack-diagram/`（本體）+ `.claude/skills/stack-diagram`（symlink）+ `skills-lock.json`
 - Argo CD 尚未實作（使用者於 2026-11-03 確認），所以不進圖；圖示已預先抓好（`docs/architecture-diagram/icons/argocd.svg`），實作後再加
@@ -48,7 +50,8 @@ docs/
 ├── architecture-diagram/
 │   ├── src.html          # 唯一原始檔，圖示用 %%ICON_<name>%% token
 │   └── icons/            # 圖示 + manifest.json（每個圖示的來源）
-├── weamind-architecture.html       # build 產物，自包含（字型與圖示皆 base64 內嵌，約 205 KB）
+├── site/
+│   └── index.html                  # build 產物，自包含（字型與圖示皆 base64 內嵌，約 205 KB），Pages 只部署這個資料夾
 ├── weamind-architecture.png        # render 產物（亮色）
 └── weamind-architecture-dark.png   # render 產物（暗色）
 
@@ -70,8 +73,8 @@ skills-lock.json                # skill 來源與 hash
 
    ```bash
    S=.claude/skills/stack-diagram
-   python3 $S/scripts/build.py docs/architecture-diagram/src.html docs/architecture-diagram/icons docs/weamind-architecture.html --fonts $S/assets/fonts
-   uv run --with playwright python $S/scripts/render_png.py docs/weamind-architecture.html docs/weamind-architecture.png --selector .canvas --scale 2
+   python3 $S/scripts/build.py docs/architecture-diagram/src.html docs/architecture-diagram/icons docs/site/index.html --fonts $S/assets/fonts
+   uv run --with playwright python $S/scripts/render_png.py docs/site/index.html docs/weamind-architecture.png --selector .canvas --scale 2
    ```
 
    `render_png.py` 會同時輸出 `weamind-architecture.png` 與 `weamind-architecture-dark.png`。本機沒裝 Playwright，所以用 `uv run --with playwright`。第一次跑要先執行 `uv run --with playwright python -m playwright install chromium`
@@ -103,7 +106,8 @@ Argo CD 跑在叢集內，從 GitHub repo（`weamind-infra` 的 `manifests/`）�
 - **第一版的碰撞問題**：K3s 群組標籤原本是 `K3s cluster · 1 control plane + 2 workers`，太長，壓到 `pull image` 虛線，縮短為 `K3s · 3 nodes`；`DNS-01` / `ACME` 標籤原本落在 Hetzner 框線上，往下移到 y=736
 - **README 亮暗自動切換**：`<picture>` + `<source media="(prefers-color-scheme: dark)">` 是 HTML 標準，GitHub 的 sanitizer 允許，且 `prefers-color-scheme` 跟隨 GitHub 主題設定。不支援的檢視器會 fallback 到 `<img>` 的亮色圖
 - **HTML 亮暗自動切換**：template 只有 `[data-theme="dark"]`，預設亮色。在 `<head>` 加了一行 `matchMedia('(prefers-color-scheme: dark)')` script 設定 `data-theme`。`render_png.py` 截亮色圖前會先 `removeAttribute('data-theme')`（`render_png.py:89`），所以截圖不受影響；已用 Playwright 模擬 light/dark 驗證
-- **GitHub 上看不到渲染後的 HTML**：repo 內的 `.html` 只會顯示原始碼，要本機打開或用 GitHub Pages
+- **GitHub 上看不到渲染後的 HTML**：repo 內的 `.html` 只會顯示原始碼，raw 也是 `text/plain`。README 原本寫了一行原始檔路徑，但點了打不開，已刪除
+- **只公開一頁的 Pages**：Pages 的 branch 部署來源只能選 `/` 或 `/docs`，會把整個 `docs/` 公開，且 Jekyll 可能被 `{{ }}` 弄壞 build。改用 GitHub Actions 部署（`upload-pages-artifact` 指定 `path: docs/site`），workflow 只在 `docs/site/**` 變更時觸發，也可手動 `workflow_dispatch`。Pages 設定的來源為「GitHub Actions」（`build_type=workflow`）
 - **skill 進版控**：原本 `.claude/` 未追蹤，換機就無法重建。決定 vendor 進 repo（MIT 授權允許）。`.claude/settings.local.json` 是個人 skill 開關設定，改為 gitignore
 - **macOS 檔**：repo 原本就沒追蹤任何 Apple metadata，`.DS_Store` 也早已 ignore。順手把 `._*`、`.AppleDouble`、`Icon\r`、`.Spotlight-V100` 等常見項補進 `.gitignore`
 
