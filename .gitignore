@@ -11,6 +11,14 @@ kubeconfig.yaml
 
 # OS
 .DS_Store
+._*
+.AppleDouble
+.LSOverride
+Icon
+.Spotlight-V100
+.Trashes
+.fseventsd
+.TemporaryItems
 Thumbs.db
 
 # Claude Code personal settings
