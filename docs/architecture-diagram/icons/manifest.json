@@ -1,0 +1,100 @@
+{
+  "cloudflare": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/cloudflare.svg",
+    "file": "cloudflare.svg",
+    "bytes": 1473
+  },
+  "k3s": {
+    "source": "devicon",
+    "url": "https://raw.githubusercontent.com/devicons/devicon/master/icons/k3s/k3s-original.svg",
+    "file": "k3s.svg",
+    "bytes": 724
+  },
+  "fastapi": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/fastapi.svg",
+    "file": "fastapi.svg",
+    "bytes": 280
+  },
+  "postgresql": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/postgresql.svg",
+    "file": "postgresql.svg",
+    "bytes": 3944
+  },
+  "redis": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/redis.svg",
+    "file": "redis.svg",
+    "bytes": 1928
+  },
+  "gha": {
+    "source": "gilbarbara",
+    "url": "https://cdn.jsdelivr.net/gh/gilbarbara/logos/logos/github-actions.svg",
+    "file": "gha.svg",
+    "bytes": 6915
+  },
+  "github": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/github_light.svg",
+    "file": "github.svg",
+    "bytes": 997,
+    "dark_file": "github_dark.svg",
+    "dark_url": "https://svgl.app/library/github_dark.svg"
+  },
+  "letsencrypt": {
+    "source": "gilbarbara",
+    "url": "https://cdn.jsdelivr.net/gh/gilbarbara/logos/logos/letsencrypt.svg",
+    "file": "letsencrypt.svg",
+    "bytes": 17610
+  },
+  "prometheus": {
+    "source": "devicon",
+    "url": "https://raw.githubusercontent.com/devicons/devicon/master/icons/prometheus/prometheus-original.svg",
+    "file": "prometheus.svg",
+    "bytes": 1223
+  },
+  "grafana": {
+    "source": "svgl",
+    "url": "https://svgl.app/library/grafana.svg",
+    "file": "grafana.svg",
+    "bytes": 5850
+  },
+  "traefik": {
+    "source": "devicon",
+    "url": "https://raw.githubusercontent.com/devicons/devicon/master/icons/traefikproxy/traefikproxy-original.svg",
+    "file": "traefik.svg",
+    "bytes": 1407
+  },
+  "line": {
+    "source": "explicit",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/41/LINE_logo.svg",
+    "file": "line.svg",
+    "bytes": 1466
+  },
+  "certmanager": {
+    "source": "explicit",
+    "url": "https://raw.githubusercontent.com/cncf/artwork/main/projects/cert-manager/icon/color/cert-manager-icon-color.svg",
+    "file": "certmanager.svg",
+    "bytes": 34889
+  },
+  "hetzner": {
+    "source": "explicit",
+    "url": "https://www.hetzner.com/_resources/themes/hetzner/images/favicons/apple-icon-180x180.png",
+    "file": "hetzner.png",
+    "bytes": 1858
+  },
+  "lb": {
+    "source": "lucide",
+    "url": "https://cdn.jsdelivr.net/npm/lucide-static/icons/split.svg",
+    "file": "lb.svg",
+    "bytes": 408
+  },
+  "argocd": {
+    "source": "devicon",
+    "url": "https://raw.githubusercontent.com/devicons/devicon/master/icons/argocd/argocd-original.svg",
+    "file": "argocd.svg",
+    "bytes": 6216
+  }
+}
