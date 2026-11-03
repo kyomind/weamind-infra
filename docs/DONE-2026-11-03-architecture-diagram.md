@@ -107,6 +107,16 @@ Argo CD 跑在叢集內，從 GitHub repo（`weamind-infra` 的 `manifests/`）�
 - **第一版的碰撞問題**：K3s 群組標籤原本是 `K3s cluster · 1 control plane + 2 workers`，太長，壓到 `pull image` 虛線，縮短為 `K3s · 3 nodes`；`DNS-01` / `ACME` 標籤原本落在 Hetzner 框線上，往下移到 Hetzner 框外（現為 y=756）
 - **字太小（README 縮放後）**：README 會把 1160px 的 canvas 縮到欄寬（約 75%），看起來的字大小取決於「字 / canvas 寬」的比例。第一次只把字放大約 15%，肉眼幾乎看不出來；第二次把字放大約 30%，同時把 node 文字區從 132 加寬到 152、canvas 寬度不變，才明顯變大。字變高後，第二列與底列整體下移 20px，避免列間短箭頭（`TLS secret`、`scrape`）貼到 role 字。Traefik 的 role 也從 `ingress · tls term` 縮成 `ingress · tls`，否則會折成兩行
 - **README 亮暗自動切換**：`<picture>` + `<source media="(prefers-color-scheme: dark)">` 是 HTML 標準，GitHub 的 sanitizer 允許，且 `prefers-color-scheme` 跟隨 GitHub 主題設定。不支援的檢視器會 fallback 到 `<img>` 的亮色圖
+- **README 暗色主題卻顯示亮色圖（已修）**：為了「點圖開 HTML 網頁版」，曾把 README 寫成 `<a href="..."><picture>...</picture></a>`。GitHub 的 Markdown 解析器把這行當成段落內的行內 HTML，輸出變成 `<a><themed-picture><picture></picture></themed-picture></a>`：`<picture>` 被提早關閉成空殼，`<source>` 掉到外面失效，剩下的 `<img>` 永遠是亮色圖。修法：拿掉 `<a>`，讓 `<picture>` 獨立成區塊，網頁版只用圖下方的文字連結。GitHub 本來就會把 `<img>` 包成指向原圖的連結，點圖不會失去功能
+  - 連結文字從「互動版（可縮放、自動切換亮暗）」改成「HTML 網頁版」（英文版「HTML version」）：頁面沒有互動功能，「互動版」有誤導性
+  - **push 前的驗證方法**：用 GitHub Markdown API 渲染 README 片段，確認 `<source>` 在 `<picture>` 裡面
+
+    ```bash
+    sed -n 17,24p README.md | python3 -c "import json,sys;print(json.dumps({'text':sys.stdin.read(),'mode':'gfm','context':'kyomind/weamind-infra'}))" | gh api markdown --input -
+    ```
+
+    正確輸出是 `<themed-picture><picture>` 後面緊接著 `<source ...>` 和 `<img ...>`，再接 `</picture></themed-picture>`。push 後可用 `gh api repos/kyomind/weamind-infra/readme -H "Accept: application/vnd.github.html"` 檢查線上版本
+  - 教訓：改 README 的 HTML 結構後，要檢查 GitHub 實際渲染出的 HTML，不能只確認連結打得開
 - **HTML 亮暗自動切換**：template 只有 `[data-theme="dark"]`，預設亮色。在 `<head>` 加了一行 `matchMedia('(prefers-color-scheme: dark)')` script 設定 `data-theme`。`render_png.py` 截亮色圖前會先 `removeAttribute('data-theme')`（`render_png.py:89`），所以截圖不受影響；已用 Playwright 模擬 light/dark 驗證
 - **GitHub 上看不到渲染後的 HTML**：repo 內的 `.html` 只會顯示原始碼，raw 也是 `text/plain`。README 原本寫了一行原始檔路徑，但點了打不開，已刪除
 - **只公開一頁的 Pages**：Pages 的 branch 部署來源只能選 `/` 或 `/docs`，會把整個 `docs/` 公開，且 Jekyll 可能被 `{{ }}` 弄壞 build。改用 GitHub Actions 部署（`upload-pages-artifact` 指定 `path: docs/site`），workflow 只在 `docs/site/**` 變更時觸發，也可手動 `workflow_dispatch`。Pages 設定的來源為「GitHub Actions」（`build_type=workflow`）。已驗證 `docs/` 其他檔案（`.md`、PNG）在 Pages 上都是 404
@@ -126,6 +136,9 @@ Argo CD 跑在叢集內，從 GitHub repo（`weamind-infra` 的 `manifests/`）�
 | `6fa48b6` | Add architecture diagram work record |
 | `ba94f4a` | Remove diagram source note from README |
 | `1eebf2b` | Publish architecture diagram to GitHub Pages and link it from README |
+| `4f53c6b` | Record Pages custom domain fix in architecture diagram notes |
+| `e29b121` | Enlarge architecture diagram text for README readability |
+| `5a7e432` | Fix README dark-mode diagram and rename HTML link |
 
 HTML 自動亮暗 script 與重截的 PNG 已包含在 `6795fb9` 內。
 
