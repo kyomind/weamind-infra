@@ -106,7 +106,14 @@ Argo CD 跑在叢集內，從 GitHub repo（`weamind-infra` 的 `manifests/`）�
   - Bastion VM 用 skill 內建的 `assets/generic/server.svg`，暗色下加 `plate` class（白底襯）才看得見
 - **群組配色**：Hetzner 群組把 template 的暖色 palette hue 從 55 調到 22（Hetzner 紅）；K3s 與 GitHub 用 accent 藍
 - **第一版的碰撞問題**：K3s 群組標籤原本是 `K3s cluster · 1 control plane + 2 workers`，太長，壓到 `pull image` 虛線，縮短為 `K3s · 3 nodes`；`DNS-01` / `ACME` 標籤原本落在 Hetzner 框線上，往下移到 Hetzner 框外（現為 y=756）
-- **字太小（README 縮放後）**：README 會把 1160px 的 canvas 縮到欄寬（約 75%），看起來的字大小取決於「字 / canvas 寬」的比例。第一次只把字放大約 15%，肉眼幾乎看不出來；第二次把字放大約 30%，同時把 node 文字區從 132 加寬到 152、canvas 寬度不變，才明顯變大。字變高後，第二列與底列整體下移 20px，避免列間短箭頭（`TLS secret`、`scrape`）貼到 role 字。Traefik 的 role 也從 `ingress · tls term` 縮成 `ingress · tls`，否則會折成兩行
+- **字太小（分四輪才調好）**
+  - 核心觀念：README 會把 1160px 的 canvas 縮到欄寬（約 75%），看起來的字大小取決於「字 / canvas 寬」的比例。整張圖等比放大沒用，要讓字變大、canvas 寬度不變
+  - 第一輪：canvas 內的字放大約 15%，肉眼幾乎看不出來
+  - 第二輪：放大約 30%，node 文字區從 132 加寬到 152，第二列與底列整體下移 20px（避免列間短箭頭 `TLS secret`、`scrape` 貼到 role 字），Traefik 的 role 從 `ingress · tls term` 縮成 `ingress · tls`（否則折成兩行）
+  - 第三輪：使用者指定字級，名稱 18px、群組標籤 17px、role 與箭頭標籤 15px。role 是等寬字，15px 時 `tcp passthrough` 撐滿 152，所以文字區再加寬到 164
+  - 第四輪：網頁版仍有很小的字，是 canvas 外的 kicker、說明文字、圖例、頁尾，還是 template 預設的 10–12px。PNG 只截 `.canvas`，所以前三輪檢查 PNG 時都沒發現。已放大到 12–14px（數值見「座標速記」）
+  - 「網頁版和 PNG 字看起來不同」：兩者是同一份 HTML，字級完全相同。網頁以 1:1 顯示，README 則把 2 倍解析度的 PNG 縮到欄寬，所以網頁上看起來比較大
+  - 教訓：檢查時要同時看 PNG 和整頁網頁（`render_png.py --full-page`，或用 Playwright 截整頁），只看 PNG 會漏掉 canvas 外的區塊
 - **README 亮暗自動切換**：`<picture>` + `<source media="(prefers-color-scheme: dark)">` 是 HTML 標準，GitHub 的 sanitizer 允許，且 `prefers-color-scheme` 跟隨 GitHub 主題設定。不支援的檢視器會 fallback 到 `<img>` 的亮色圖
 - **README 暗色主題卻顯示亮色圖（已修）**：為了「點圖開 HTML 網頁版」，曾把 README 寫成 `<a href="..."><picture>...</picture></a>`。GitHub 的 Markdown 解析器把這行當成段落內的行內 HTML，輸出變成 `<a><themed-picture><picture></picture></themed-picture></a>`：`<picture>` 被提早關閉成空殼，`<source>` 掉到外面失效，剩下的 `<img>` 永遠是亮色圖。修法：拿掉 `<a>`，讓 `<picture>` 獨立成區塊，網頁版只用圖下方的文字連結。GitHub 本來就會把 `<img>` 包成指向原圖的連結，點圖不會失去功能
   - 連結文字從「互動版（可縮放、自動切換亮暗）」改成「HTML 網頁版」（英文版「HTML version」）：頁面沒有互動功能，「互動版」有誤導性
@@ -140,6 +147,8 @@ Argo CD 跑在叢集內，從 GitHub repo（`weamind-infra` 的 `manifests/`）�
 | `4f53c6b` | Record Pages custom domain fix in architecture diagram notes |
 | `e29b121` | Enlarge architecture diagram text for README readability |
 | `5a7e432` | Fix README dark-mode diagram and rename HTML link |
+| `dd707c8` | Record README picture link pitfall in diagram notes |
+| `2b59ab7` | Enlarge header, legend, and footer text on diagram page |
 
 HTML 自動亮暗 script 與重截的 PNG 已包含在 `6795fb9` 內。
 
