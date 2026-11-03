@@ -83,10 +83,11 @@ skills-lock.json                # skill 來源與 hash
 
 ### 座標速記（現行版面）
 
-- canvas 1160×900；node 寬 132，`left = centerX - 66`，tile 60×60，node box 約高 100
-- 列的 tile top：GitHub 列 84、主流程列 382、第二列 522、底列 760
+- canvas 1160×920；node 文字區寬 164（CSS `margin-left:-16px`，所以 inline 仍寫 `left = centerX - 66`），tile 60×60，node box 約高 112
+- 字級：節點名稱 18px、群組標籤 17px（圖示 18px）、role 15px、箭頭標籤 15px。role 是等寬字，15px 時最長的 `tcp passthrough` 約 150px 寬，所以文字區要 ≥164 才不會折行
+- 列的 tile top：GitHub 列 84、主流程列 382、第二列 542、底列 780
 - 欄的 centerX：LINE 90、LB 290、Traefik/cert-manager 480、line-bot/Prometheus 640、Grafana 800、PG/Redis 1020；Cloudflare 320
-- 群組：GitHub `390,24,340×210`；Hetzner `200,274,934×422`；K3s `390,322,500×350`；Bastion `930,322,180×350`
+- 群組：GitHub `390,24,340×210`；Hetzner `200,274,934×442`；K3s `390,322,500×370`；Bastion `930,322,180×370`
 - 可用的垂直走廊：x=910（K3s 右緣 890 與 Bastion 左緣 930 之間，line-bot → Redis 的 elbow 用它）、x=560（Traefik 與 line-bot 之間）、x=720（Prometheus 與 Grafana 之間）
 
 ### 加 Argo CD 的建議做法
@@ -103,7 +104,8 @@ Argo CD 跑在叢集內，從 GitHub repo（`weamind-infra` 的 `manifests/`）�
   - Hetzner LB 沒有專屬 logo，用 Lucide `split` 圖示
   - Bastion VM 用 skill 內建的 `assets/generic/server.svg`，暗色下加 `plate` class（白底襯）才看得見
 - **群組配色**：Hetzner 群組把 template 的暖色 palette hue 從 55 調到 22（Hetzner 紅）；K3s 與 GitHub 用 accent 藍
-- **第一版的碰撞問題**：K3s 群組標籤原本是 `K3s cluster · 1 control plane + 2 workers`，太長，壓到 `pull image` 虛線，縮短為 `K3s · 3 nodes`；`DNS-01` / `ACME` 標籤原本落在 Hetzner 框線上，往下移到 y=736
+- **第一版的碰撞問題**：K3s 群組標籤原本是 `K3s cluster · 1 control plane + 2 workers`，太長，壓到 `pull image` 虛線，縮短為 `K3s · 3 nodes`；`DNS-01` / `ACME` 標籤原本落在 Hetzner 框線上，往下移到 Hetzner 框外（現為 y=756）
+- **字太小（README 縮放後）**：README 會把 1160px 的 canvas 縮到欄寬（約 75%），看起來的字大小取決於「字 / canvas 寬」的比例。第一次只把字放大約 15%，肉眼幾乎看不出來；第二次把字放大約 30%，同時把 node 文字區從 132 加寬到 152、canvas 寬度不變，才明顯變大。字變高後，第二列與底列整體下移 20px，避免列間短箭頭（`TLS secret`、`scrape`）貼到 role 字。Traefik 的 role 也從 `ingress · tls term` 縮成 `ingress · tls`，否則會折成兩行
 - **README 亮暗自動切換**：`<picture>` + `<source media="(prefers-color-scheme: dark)">` 是 HTML 標準，GitHub 的 sanitizer 允許，且 `prefers-color-scheme` 跟隨 GitHub 主題設定。不支援的檢視器會 fallback 到 `<img>` 的亮色圖
 - **HTML 亮暗自動切換**：template 只有 `[data-theme="dark"]`，預設亮色。在 `<head>` 加了一行 `matchMedia('(prefers-color-scheme: dark)')` script 設定 `data-theme`。`render_png.py` 截亮色圖前會先 `removeAttribute('data-theme')`（`render_png.py:89`），所以截圖不受影響；已用 Playwright 模擬 light/dark 驗證
 - **GitHub 上看不到渲染後的 HTML**：repo 內的 `.html` 只會顯示原始碼，raw 也是 `text/plain`。README 原本寫了一行原始檔路徑，但點了打不開，已刪除

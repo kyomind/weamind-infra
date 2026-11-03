@@ -91,7 +91,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 
 
 .scroller { overflow-x: auto; border: 1px solid var(--color-rule-2); border-radius: var(--radius-card); }
 /* CANVAS SIZE: set width/height here AND on svg.edges AND its viewBox — keep the three in sync */
-.canvas { position: relative; width: 1160px; height: 900px; background: var(--color-paper);
+.canvas { position: relative; width: 1160px; height: 920px; background: var(--color-paper);
   background-image:
     linear-gradient(var(--color-rule) 1px, transparent 1px),
     linear-gradient(90deg, var(--color-rule) 1px, transparent 1px);
@@ -101,9 +101,9 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 
 /* group labels are names like node names (display font), written in the brand's own case.
    They sit inside the top-left corner, so the border stays unbroken and needs no mask */
 .g-label { position:absolute; top:12px; left:12px; display:flex; align-items:center; gap:6px;
-  font-family: var(--font-display); font-size: 12px; font-weight: 600;
+  font-family: var(--font-display); font-size: 17px; font-weight: 600;
   color: var(--color-neutral); white-space: nowrap; }
-.g-label img { width: 14px; height: 14px; }
+.g-label img { width: 18px; height: 18px; }
 /* group labels sit on the group's tint, not on a white tile: in the dark theme swap in the brand's own
    dark-theme logo (lt/dk pair), or give a mark with black parts a white plate */
 .g-label img.dk, .tile img.dk { display:none; }
@@ -136,7 +136,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 
 .group.azure.subnet { border:1px solid #A4CBFB; }
 .group.azure.zone { border-color:#FFD965; }
 
-.node { position:absolute; width:132px; text-align:center; }
+.node { position:absolute; width:164px; margin-left:-16px; text-align:center; }  /* inline left stays centerX-66 */
 .tile { width:60px; height:60px; margin:0 auto; border-radius: var(--radius-tile);
   background:#fff; border:1px solid var(--color-rule-2); display:grid; place-items:center;
   box-shadow: 0 1px 2px oklch(24% 0.02 258 / 0.05); transition: border-color .15s cubic-bezier(0.16,1,0.3,1); }
@@ -147,19 +147,19 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 
 .tile.bare { background:none; border:none; box-shadow:none; }
 .tile.bare img { width:60px; height:60px; }
 .tile.bare.res img { width:44px; height:44px; }
-.node .name { font-family: var(--font-display); font-weight:600; font-size:13px; margin-top: var(--space-sm); letter-spacing:0; }
-.node .role { font-family: var(--font-mono); font-size:9.5px; color: var(--color-muted); margin-top:2px; }
+.node .name { font-family: var(--font-display); font-weight:600; font-size:18px; margin-top: var(--space-sm); letter-spacing:0; }
+.node .role { font-family: var(--font-mono); font-size:15px; color: var(--color-muted); margin-top:2px; }
 /* veil behind label spans: crossing edges/grid fade behind text; translucent so it
    blends into group tints (a solid paper rectangle looks pasted-on inside tinted groups) */
 .node .name span, .node .role span { background: var(--color-veil); backdrop-filter: blur(1.5px);
   padding: 0 var(--space-xs); border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 
-svg.edges { position:absolute; inset:0; width:1160px; height:900px; pointer-events:none; }
+svg.edges { position:absolute; inset:0; width:1160px; height:920px; pointer-events:none; }
 .e  { stroke: var(--color-accent); stroke-width:1.6; fill:none; }   /* primary flow */
 .n  { stroke: var(--color-neutral); stroke-width:1.4; fill:none; }  /* internal */
 path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
 .dash { stroke-dasharray:4 5; }                                     /* dev / deploy */
-.el { font-family: var(--font-mono); font-size:10.5px; fill: var(--color-neutral);
+.el { font-family: var(--font-mono); font-size:15px; fill: var(--color-neutral);
   paint-order: stroke; stroke: var(--color-paper); stroke-width:4px; stroke-linejoin:round; }  /* halo */
 .el.a { fill: var(--color-accent); }
 
@@ -195,18 +195,18 @@ path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
     <div class="group gb" style="left:390px; top:24px; width:340px; height:210px;">
       <div class="g-label"><img class="lt" src="%%ICON_github%%" alt=""><img class="dk" src="%%ICON_github_dark%%" alt="">GitHub</div>
     </div>
-    <div class="group ga" style="left:200px; top:274px; width:934px; height:422px;">
+    <div class="group ga" style="left:200px; top:274px; width:934px; height:442px;">
       <div class="g-label"><img src="%%ICON_hetzner%%" alt="">Hetzner Cloud</div>
     </div>
-    <div class="group gb" style="left:390px; top:322px; width:500px; height:350px;">
+    <div class="group gb" style="left:390px; top:322px; width:500px; height:370px;">
       <div class="g-label"><img src="%%ICON_k3s%%" alt="">K3s · 3 nodes</div>
     </div>
-    <div class="group ga-nested" style="left:930px; top:322px; width:180px; height:350px;">
+    <div class="group ga-nested" style="left:930px; top:322px; width:180px; height:370px;">
       <div class="g-label"><img class="plate" src="%%ICON_bastion%%" alt="">Bastion VM</div>
     </div>
 
     <!-- EDGES ============================================================= -->
-    <svg class="edges" viewBox="0 0 1160 900" aria-hidden="true">
+    <svg class="edges" viewBox="0 0 1160 920" aria-hidden="true">
       <defs>
         <!-- context-stroke inherits the line's color, so theme switches (incl. dark)
              recolor arrowheads automatically. #open is for AWS diagrams -->
@@ -225,20 +225,20 @@ path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
       <text class="el a" x="560" y="404" text-anchor="middle">HTTP</text>
       <path class="e" d="M676 412 H984" marker-end="url(#ar)"/>
       <text class="el a" x="800" y="404" text-anchor="middle">private net</text>
-      <path class="n" d="M676 426 H910 V552 H984" marker-end="url(#ar)"/>
-      <path class="n" d="M480 516 V488" marker-end="url(#ar)"/>
-      <text class="el" x="490" y="506">TLS secret</text>
-      <path class="n" d="M640 516 V488" marker-end="url(#ar)"/>
-      <text class="el" x="650" y="506">scrape</text>
-      <path class="n" d="M766 552 H676" marker-end="url(#ar)"/>
-      <text class="el" x="721" y="544" text-anchor="middle">PromQL</text>
-      <path class="n" d="M480 628 V754" marker-end="url(#ar)"/>
-      <text class="el" x="490" y="736">ACME</text>
-      <path class="n" d="M446 552 H320 V754" marker-end="url(#ar)"/>
-      <text class="el" x="330" y="736">DNS-01</text>
+      <path class="n" d="M676 426 H910 V572 H984" marker-end="url(#ar)"/>
+      <path class="n" d="M480 536 V500" marker-end="url(#ar)"/>
+      <text class="el" x="490" y="520">TLS secret</text>
+      <path class="n" d="M640 536 V500" marker-end="url(#ar)"/>
+      <text class="el" x="650" y="520">scrape</text>
+      <path class="n" d="M766 572 H676" marker-end="url(#ar)"/>
+      <text class="el" x="721" y="564" text-anchor="middle">PromQL</text>
+      <path class="n" d="M480 660 V774" marker-end="url(#ar)"/>
+      <text class="el" x="490" y="756">ACME</text>
+      <path class="n" d="M446 572 H320 V774" marker-end="url(#ar)"/>
+      <text class="el" x="330" y="756">DNS-01</text>
       <path class="n dash" d="M516 114 H604" marker-end="url(#ar)"/>
       <text class="el" x="560" y="106" text-anchor="middle">push</text>
-      <path class="n dash" d="M640 190 V376" marker-end="url(#ar)"/>
+      <path class="n dash" d="M640 202 V376" marker-end="url(#ar)"/>
       <text class="el" x="650" y="300">pull image</text>
     </svg>
 
@@ -261,21 +261,21 @@ path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
     </div>
     <div class="node" style="left:414px;top:382px">
       <div class="tile "><img src="%%ICON_traefik%%" alt=""></div>
-      <div class="name"><span>Traefik</span></div><div class="role"><span>ingress · tls term</span></div>
+      <div class="name"><span>Traefik</span></div><div class="role"><span>ingress · tls</span></div>
     </div>
     <div class="node" style="left:574px;top:382px">
       <div class="tile "><img src="%%ICON_fastapi%%" alt=""></div>
       <div class="name"><span>line-bot ×2</span></div><div class="role"><span>fastapi pods</span></div>
     </div>
-    <div class="node" style="left:414px;top:522px">
+    <div class="node" style="left:414px;top:542px">
       <div class="tile "><img src="%%ICON_certmanager%%" alt=""></div>
       <div class="name"><span>cert-manager</span></div><div class="role"><span>clusterissuer</span></div>
     </div>
-    <div class="node" style="left:574px;top:522px">
+    <div class="node" style="left:574px;top:542px">
       <div class="tile "><img src="%%ICON_prometheus%%" alt=""></div>
       <div class="name"><span>Prometheus</span></div><div class="role"><span>metrics</span></div>
     </div>
-    <div class="node" style="left:734px;top:522px">
+    <div class="node" style="left:734px;top:542px">
       <div class="tile "><img src="%%ICON_grafana%%" alt=""></div>
       <div class="name"><span>Grafana</span></div><div class="role"><span>dashboards</span></div>
     </div>
@@ -283,15 +283,15 @@ path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
       <div class="tile "><img src="%%ICON_postgresql%%" alt=""></div>
       <div class="name"><span>PostgreSQL</span></div><div class="role"><span>docker on vm</span></div>
     </div>
-    <div class="node" style="left:954px;top:522px">
+    <div class="node" style="left:954px;top:542px">
       <div class="tile "><img src="%%ICON_redis%%" alt=""></div>
       <div class="name"><span>Redis</span></div><div class="role"><span>lock · cache</span></div>
     </div>
-    <div class="node" style="left:254px;top:760px">
+    <div class="node" style="left:254px;top:780px">
       <div class="tile "><img src="%%ICON_cloudflare%%" alt=""></div>
       <div class="name"><span>Cloudflare DNS</span></div><div class="role"><span>k8s.kyomind.tw</span></div>
     </div>
-    <div class="node" style="left:414px;top:760px">
+    <div class="node" style="left:414px;top:780px">
       <div class="tile "><img src="%%ICON_letsencrypt%%" alt=""></div>
       <div class="name"><span>Let's Encrypt</span></div><div class="role"><span>acme ca</span></div>
     </div>
