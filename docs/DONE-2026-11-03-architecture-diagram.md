@@ -107,7 +107,8 @@ Argo CD 跑在叢集內，從 GitHub repo（`weamind-infra` 的 `manifests/`）�
 - **README 亮暗自動切換**：`<picture>` + `<source media="(prefers-color-scheme: dark)">` 是 HTML 標準，GitHub 的 sanitizer 允許，且 `prefers-color-scheme` 跟隨 GitHub 主題設定。不支援的檢視器會 fallback 到 `<img>` 的亮色圖
 - **HTML 亮暗自動切換**：template 只有 `[data-theme="dark"]`，預設亮色。在 `<head>` 加了一行 `matchMedia('(prefers-color-scheme: dark)')` script 設定 `data-theme`。`render_png.py` 截亮色圖前會先 `removeAttribute('data-theme')`（`render_png.py:89`），所以截圖不受影響；已用 Playwright 模擬 light/dark 驗證
 - **GitHub 上看不到渲染後的 HTML**：repo 內的 `.html` 只會顯示原始碼，raw 也是 `text/plain`。README 原本寫了一行原始檔路徑，但點了打不開，已刪除
-- **只公開一頁的 Pages**：Pages 的 branch 部署來源只能選 `/` 或 `/docs`，會把整個 `docs/` 公開，且 Jekyll 可能被 `{{ }}` 弄壞 build。改用 GitHub Actions 部署（`upload-pages-artifact` 指定 `path: docs/site`），workflow 只在 `docs/site/**` 變更時觸發，也可手動 `workflow_dispatch`。Pages 設定的來源為「GitHub Actions」（`build_type=workflow`）
+- **只公開一頁的 Pages**：Pages 的 branch 部署來源只能選 `/` 或 `/docs`，會把整個 `docs/` 公開，且 Jekyll 可能被 `{{ }}` 弄壞 build。改用 GitHub Actions 部署（`upload-pages-artifact` 指定 `path: docs/site`），workflow 只在 `docs/site/**` 變更時觸發，也可手動 `workflow_dispatch`。Pages 設定的來源為「GitHub Actions」（`build_type=workflow`）。已驗證 `docs/` 其他檔案（`.md`、PNG）在 Pages 上都是 404
+- **Pages 網址被 user site 自訂網域劫持（已修）**：第一次部署成功，但 `kyomind.github.io/weamind-infra/` 被轉到 `blog.kyomind.tw/weamind-infra/`，回的是部落格頁面（HTTP 200，內容不對）。原因是 user site repo `kyomind/kyomind.github.io` 的 Pages 設了 custom domain `blog.kyomind.tw`，同帳號所有 project pages 都會繼承這個網域；而部落格已搬到 Cloudflare Pages，`blog.kyomind.tw` 的 DNS 指向 Cloudflare，請求根本到不了 GitHub。修法：移除 user site 的 custom domain（`echo '{"cname":null}' | gh api -X PUT repos/kyomind/kyomind.github.io/pages --input -`，GitHub 會一併刪掉該 repo 的 `CNAME` 檔），之後 `kyomind.github.io/weamind-infra/` 直接回這張圖。副作用：`kyomind.github.io/<舊文章>` 不再轉址到新部落格。驗證時要比對頁面內容（例如 `<title>`），不能只看 HTTP 200
 - **skill 進版控**：原本 `.claude/` 未追蹤，換機就無法重建。決定 vendor 進 repo（MIT 授權允許）。`.claude/settings.local.json` 是個人 skill 開關設定，改為 gitignore
 - **macOS 檔**：repo 原本就沒追蹤任何 Apple metadata，`.DS_Store` 也早已 ignore。順手把 `._*`、`.AppleDouble`、`Icon\r`、`.Spotlight-V100` 等常見項補進 `.gitignore`
 
@@ -120,10 +121,14 @@ Argo CD 跑在叢集內，從 GitHub repo（`weamind-infra` 的 `manifests/`）�
 | `01f8e6d` | Ignore Claude Code local settings |
 | `29cdabb` | Vendor stack-diagram skill for rebuilding the architecture diagram |
 | `e88a9e1` | Ignore common macOS metadata files |
+| `6fa48b6` | Add architecture diagram work record |
+| `ba94f4a` | Remove diagram source note from README |
+| `1eebf2b` | Publish architecture diagram to GitHub Pages and link it from README |
 
 HTML 自動亮暗 script 與重截的 PNG 已包含在 `6795fb9` 內。
 
 ## 待處理事項
 
 1. **Argo CD 上圖**：等 Argo CD 實際實作完成後，依上方建議加進圖並重建
-2. **（可選）公開圖庫分享**：stack-diagram 可分享到 https://stacks.caru.moe ，但圖上有 `k8s.kyomind.tw`，分享前建議拿掉；需使用者明確同意才可送出
+2. **留意 user site 的 custom domain 是否被加回來**：若有舊的部署流程（例如 Hexo 的 `source/CNAME`）再推到 `kyomind/kyomind.github.io`，`blog.kyomind.tw` 會回來，本圖的 Pages 網址又會壞。檢查：`gh api repos/kyomind/kyomind.github.io/pages -q .cname` 應為 `null`
+3. **（可選）公開圖庫分享**：stack-diagram 可分享到 https://stacks.caru.moe ，但圖上有 `k8s.kyomind.tw`，分享前建議拿掉；需使用者明確同意才可送出
