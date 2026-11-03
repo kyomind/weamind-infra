@@ -16,41 +16,12 @@
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    LINE[LINE Platform] -->|LINE Webhook over HTTPS| LB
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/weamind-architecture-dark.png">
+  <img alt="WeaMind K8s Architecture" src="docs/weamind-architecture.png">
+</picture>
 
-    subgraph Hetzner["Hetzner Cloud"]
-        LB["Hetzner Load Balancer<br/>(TCP 443 Passthrough)"]
-
-        subgraph K3s["K3s Cluster (3 Nodes)"]
-            subgraph CP["Control Plane"]
-                API[API Server]
-            end
-
-            subgraph Workers["Worker Nodes × 2"]
-                Ingress["Traefik Ingress Controller<br/>(TLS Termination)"]
-                Pod1[WeaMind Pod]
-                Pod2[WeaMind Pod]
-            end
-
-            API -.->|manages| Workers
-        end
-
-        subgraph Bastion["Bastion VM (Data Layer)"]
-            PG[(PostgreSQL)]
-            Redis[(Redis)]
-        end
-    end
-
-    LB --> Ingress
-    Ingress --> Pod1
-    Ingress --> Pod2
-    Pod1 --> PG
-    Pod1 --> Redis
-    Pod2 --> PG
-    Pod2 --> Redis
-```
+> Source: `docs/weamind-architecture.html` (self-contained HTML, works offline)
 
 **Architecture summary**:
 - **Hybrid runtime**: The application layer runs on K8s while the data layer stays on the bastion VM, connected through Hetzner Private Network.

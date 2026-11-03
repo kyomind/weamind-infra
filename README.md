@@ -16,41 +16,12 @@
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    LINE[LINE Platform] -->|LINE Webhook over HTTPS| LB
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/weamind-architecture-dark.png">
+  <img alt="WeaMind K8s Architecture" src="docs/weamind-architecture.png">
+</picture>
 
-    subgraph Hetzner["Hetzner Cloud"]
-        LB["Hetzner Load Balancer<br/>(TCP 443 Passthrough)"]
-
-        subgraph K3s["K3s Cluster (3 Nodes)"]
-            subgraph CP["Control Plane"]
-                API[API Server]
-            end
-
-            subgraph Workers["Worker Nodes × 2"]
-                Ingress["Traefik Ingress Controller<br/>(TLS Termination)"]
-                Pod1[WeaMind Pod]
-                Pod2[WeaMind Pod]
-            end
-
-            API -.->|manages| Workers
-        end
-
-        subgraph Bastion["Bastion VM (Data Layer)"]
-            PG[(PostgreSQL)]
-            Redis[(Redis)]
-        end
-    end
-
-    LB --> Ingress
-    Ingress --> Pod1
-    Ingress --> Pod2
-    Pod1 --> PG
-    Pod1 --> Redis
-    Pod2 --> PG
-    Pod2 --> Redis
-```
+> 原始檔：`docs/weamind-architecture.html`（單一 HTML，可離線開啟）
 
 **架構摘要**：
 - **混合式執行環境**：應用層部署於 K8s，資料層保留在堡壘機，兩者透過 Hetzner Private Network 互通。
