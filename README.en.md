@@ -21,8 +21,6 @@
   <img alt="WeaMind K8s Architecture" src="docs/weamind-architecture.png">
 </picture>
 
-> Source: `docs/weamind-architecture.html` (self-contained HTML, works offline)
-
 **Architecture summary**:
 - **Hybrid runtime**: The application layer runs on K8s while the data layer stays on the bastion VM, connected through Hetzner Private Network.
 - **Ingress and cutover model**: Hetzner Load Balancer handles the public entry, Traefik terminates TLS inside the cluster, and traffic is switched between K8s and the single-server environment through the LINE webhook URL.

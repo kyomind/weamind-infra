@@ -21,8 +21,6 @@
   <img alt="WeaMind K8s Architecture" src="docs/weamind-architecture.png">
 </picture>
 
-> 原始檔：`docs/weamind-architecture.html`（單一 HTML，可離線開啟）
-
 **架構摘要**：
 - **混合式執行環境**：應用層部署於 K8s，資料層保留在堡壘機，兩者透過 Hetzner Private Network 互通。
 - **入口與切換模型**：Hetzner Load Balancer 負責外部入口，Traefik 在叢集內終止 TLS，K8s 與單機環境則透過 LINE webhook URL 切換流量。
