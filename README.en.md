@@ -72,5 +72,5 @@ Takes effect in seconds with no DNS propagation delay. K8s and single-server env
 
 - **Main application**: [WeaMind](https://github.com/kyomind/weamind) — LINE Bot FastAPI application
 - **CKA study notes**: [CKA-Notes](https://github.com/kyomind/CKA-Notes) — Dedicated CKA practice, review, and exam notes
-- **DeepWiki docs**: [deepwiki.com/kyomind/weamind-infra](https://deepwiki.com/kyomind/weamind-infra)
+- **Wiki docs**: [kyomind.github.io/weamind-infra/wiki](https://kyomind.github.io/weamind-infra/wiki/)
 - **Project article**: [WeaMind project walkthrough (Chinese)](https://blog.kyomind.tw/weamind/)

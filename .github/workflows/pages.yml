@@ -1,10 +1,10 @@
 name: Deploy diagram to Pages
 
-# Publishes only docs/site/ (the architecture diagram), not the rest of docs/.
+# Publishes docs/site/ (the architecture diagram) plus docs/wiki/ (CodeWiki) under /wiki/.
 on:
   push:
     branches: [main]
-    paths: ["docs/site/**"]
+    paths: ["docs/site/**", "docs/wiki/**"]
   workflow_dispatch:
 
 permissions:
@@ -24,6 +24,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
+      - name: Add CodeWiki under /wiki/
+        run: cp -r docs/wiki docs/site/wiki
       - uses: actions/upload-pages-artifact@v5
         with:
           path: docs/site

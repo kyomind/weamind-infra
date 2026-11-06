@@ -1,0 +1,84 @@
+{
+  "generation_info": {
+    "timestamp": "2026-11-06T04:33:22.871753+00:00",
+    "provider": "codex",
+    "main_model": "gpt-6.1-terra",
+    "generator_version": "2.0.0",
+    "repo_path": "/Users/kyo/Code/weamind-infra",
+    "commit_id": "e3def014f4525200cd1671a87838fb6ec57a16bd",
+    "language": "Chinese (Traditional)",
+    "layout": "hierarchical"
+  },
+  "statistics": {
+    "total_components": 16,
+    "leaf_nodes": 16,
+    "max_depth": 3
+  },
+  "files_generated": [
+    "overview.md",
+    "module_tree.json",
+    "first_module_tree.json"
+  ],
+  "usage": {
+    "schema_version": 2,
+    "scope": "this run only (modules resumed from disk cost nothing)",
+    "currency": "USD",
+    "cost_status": "unknown",
+    "incomplete": false,
+    "unknown_usage_calls": 0,
+    "n_calls": 1,
+    "totals": {
+      "input_tokens": 264800,
+      "output_tokens": 4382,
+      "total_tokens": 269182,
+      "cache_read_tokens": 201856,
+      "cache_write_tokens": 0,
+      "cost_usd": 0.0
+    },
+    "by_phase": {
+      "modules": {
+        "calls": 1,
+        "input_tokens": 264800,
+        "output_tokens": 4382,
+        "total_tokens": 269182,
+        "cache_read_tokens": 201856,
+        "cache_write_tokens": 0,
+        "cost_usd": 0.0,
+        "unpriced_calls": 1
+      }
+    },
+    "by_model": {
+      "gpt-6.1-terra": {
+        "calls": 1,
+        "input_tokens": 264800,
+        "output_tokens": 4382,
+        "total_tokens": 269182,
+        "cache_read_tokens": 201856,
+        "cache_write_tokens": 0,
+        "cost_usd": 0.0,
+        "unpriced_calls": 1
+      }
+    },
+    "unpriced_models": [
+      "gpt-6.1-terra"
+    ],
+    "calls": [
+      {
+        "phase": "modules",
+        "kind": "module_agent",
+        "target": "weamind-infra",
+        "model": "gpt-6.1-terra",
+        "seconds": 126.94,
+        "input_tokens": 264800,
+        "output_tokens": 4382,
+        "total_tokens": 269182,
+        "cache_read_tokens": 201856,
+        "cache_write_tokens": 0,
+        "cost_usd": 0.0,
+        "usage_reported": true,
+        "provider": "codex",
+        "cost_source": "unknown"
+      }
+    ]
+  }
+}

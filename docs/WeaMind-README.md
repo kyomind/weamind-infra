@@ -119,4 +119,4 @@ graph TB
 
 進一步了解：
 - 文章〈[WeaMind 專案介紹：技術選型與架構](https://blog.kyomind.tw/weamind)〉（撰寫中）
-- [DeepWiki 技術文件](https://deepwiki.com/kyomind/WeaMind)
+- [WeaMind Wiki](https://kyomind.github.io/WeaMind/wiki/)
