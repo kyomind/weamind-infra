@@ -87,7 +87,7 @@ Use the following source hierarchy.
 
 For learning workflow decisions, use this authority order:
 
-1. active plan
+1. active plan, when one exists; otherwise start from `learning/AGENTS.md`
 2. the relevant `AGENTS.md` at the current workflow layer
 3. lesson or prework templates
 4. repo-local evidence such as issue notes, existing lesson files, manifests, and references
@@ -111,7 +111,7 @@ When the active phase plan provides a daily block for the current lesson, treat 
 
 - `.privatedocs/28day-progress.md`: records what the user actually learned and can now explain
 - `.privatedocs/ai-memories.md`: high-level handoff notes and stable interaction preferences
-- `.privatedocs/Phase2三週計畫.md`: authoritative detailed plan when Phase 2 is active
+- `.privatedocs/Phase2三週計畫.md`: historical Phase 2 plan
 - `.privatedocs/六週版學習計畫.md`: authoritative detailed plan for historical Phase 1 context
 - `.privatedocs/weamind/`: archive of historical implementation and external AI conversations; use it when deeper debug context or decision history is needed
 - `learning/lessons/`: authoritative per-lesson scope, QA, notes, and report files
