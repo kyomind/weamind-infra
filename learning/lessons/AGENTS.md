@@ -104,7 +104,7 @@ normal lesson 預設流程：
 
 ## 分支命名
 
-- 學習內容預設要先開一個獨立 git 分支並 checkout，再用 PR 方式合併回 main。
+- 學習內容直接 commit 在 main。需要另行審閱或跨多天累積時，才開 `lesson/<slug>` 分支並以 PR 合併。
 - 從 2026-03-23 起，分支命名統一為 `lesson/<slug>`。
 - `<slug>` 直接使用當天 lesson 的 slug 去掉日期部分（例如 `2026-03-16-deployment-basics` → `lesson/deployment-basics`）。
 - 若同一分支承接多天但屬同一學習主軸，可改用週級或主題級 slug（例如 `lesson/k8s-debug-and-troubleshooting`）。
@@ -124,10 +124,9 @@ normal lesson 預設流程：
 
 每次完成一份 lesson 後：
 
-1. 先依 `.privatedocs/12週計畫.md` 與 active phase plan 判斷正式進度。
-2. 視需要更新 active phase plan 的 execution tracking。
-3. 視需要更新 `.privatedocs/28day-progress.md`，只記錄使用者實際學到並能解釋的內容。
-4. 視需要更新 `.privatedocs/ai-memories.md`，保留 AI 接手需要的高階摘要。
+1. 若有 active plan，依它判斷正式進度，並視需要更新它的 execution tracking。
+2. 視需要更新 `.privatedocs/28day-progress.md`，只記錄使用者實際學到並能解釋的內容。
+3. 視需要更新 `.privatedocs/ai-memories.md`，保留 AI 接手需要的高階摘要。
 
 ## Self-Check
 

@@ -70,10 +70,9 @@
 
 當使用者只說「continue」或「繼續」時，先確認目前學習位置：
 
-1. 讀 `.privatedocs/12週計畫.md` 判斷當前 phase。
-2. 讀 active phase plan：Phase 2 用 `.privatedocs/Phase2三週計畫.md`；Phase 1 歷史脈絡用 `.privatedocs/六週版學習計畫.md`。
-3. 若有進行中的 lesson，先讀該 lesson 的 `02-qa.md`。
-4. 依未完成工作 route 到目前 active 的 prework 或 lesson file。
+1. 若有 active plan，先讀它判斷今日位置；12 週計畫與各 phase 計畫已全部完成，只作歷史脈絡。
+2. 若有進行中的 lesson，先讀該 lesson 的 `02-qa.md`。
+3. 依未完成工作 route 到目前 active 的 prework 或 lesson file。
 
 ## Self-Check
 
