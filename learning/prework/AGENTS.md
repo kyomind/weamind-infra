@@ -27,7 +27,7 @@
 1. 對照 WeaMind 專案實際檔案。
 2. 做 YAML 觀察與 kubectl 操作。
 3. 做 Why、trade-off、debug sequence 追問。
-4. 做每日驗收與面試式練習。
+4. 做每日驗收與追問式練習。
 
 ## CKA 邊界
 
