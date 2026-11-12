@@ -13,6 +13,7 @@ spec:
       labels:
         app: weamind # Pod 的 label，必須與上面的 selector 一致
     spec:
+      automountServiceAccountToken: false # 應用不呼叫 K8s API，不掛 SA token
       nodeSelector:
         nodepool: worker # 只在 worker 節點上排程，避免佔用 control-plane
       containers:
