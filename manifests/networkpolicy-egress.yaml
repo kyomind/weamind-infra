@@ -1,0 +1,46 @@
+# 第二階段：確認 networkpolicy-ingress.yaml 沒問題後，離峰時段再單獨套用，並用 LINE 實測。
+# 出站只放行：kube-dns、bastion 上的 Postgres / Redis、公網 HTTPS（LINE API）。
+# 公網規則排除私有網段與 169.254.0.0/16，因此 Pod 連不到叢集內其他服務，也讀不到 Hetzner metadata。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: weamind-egress
+  namespace: weamind
+spec:
+  podSelector:
+    matchLabels:
+      app: weamind
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.2/32 # bastion：對照 configmap.yaml 的 POSTGRES_HOST、REDIS_URL
+      ports:
+        - protocol: TCP
+          port: 5433
+        - protocol: TCP
+          port: 6379
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8 # 含 Hetzner 私網、Pod CIDR 10.42/16、Service CIDR 10.43/16
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 169.254.0.0/16 # Hetzner metadata 169.254.169.254
+      ports:
+        - protocol: TCP
+          port: 443 # LINE API 走 CDN，IP 不固定，只能以埠限制

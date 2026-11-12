@@ -1,0 +1,31 @@
+# 只放行 traefik（對外入口）與 watchmind prometheus（抓 /metrics）連進 WeaMind Pod。
+# 只選 app=weamind，不影響 cert-manager 在本 namespace 建的 HTTP-01 solver Pod。
+# kubelet 的 probe 來自本機節點，kube-router 預設放行，不需另開。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: weamind-ingress
+  namespace: weamind
+spec:
+  podSelector:
+    matchLabels:
+      app: weamind
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: watchmind
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 8000

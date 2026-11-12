@@ -1,0 +1,14 @@
+# watchmind（kube-prometheus-stack 83.6.0）的 user-supplied values。
+# 2026-11-12 以前此 release 沒有任何自訂 values，全用 chart 預設。
+#
+# 套用：
+#   helm upgrade watchmind prometheus-community/kube-prometheus-stack \
+#     -n watchmind --version 83.6.0 -f helm/watchmind-values.yaml
+# 驗證（應為 no）：
+#   kubectl auth can-i list secrets -A --as=system:serviceaccount:watchmind:watchmind-grafana
+grafana:
+  rbac:
+    namespaced: true # 用 Role 取代 ClusterRole，grafana 只能讀 watchmind 內的 secrets
+  sidecar:
+    dashboards:
+      searchNamespace: null # chart 預設是 ALL；所有 dashboard ConfigMap 都在 watchmind
