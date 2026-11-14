@@ -149,6 +149,16 @@ Reusable task prompts live in `.github/prompts/`; `.github/prompts/index.md` lis
 
 Open a branch for a new feature; commit small changes directly to `main`.
 
+## Discuss Before Acting
+
+Kyo discusses first and acts after agreeing. Before editing manifests or changing the cluster, re-check the current state, discuss the approach, and wait for his go-ahead. "Continue" on a handoff or plan document means resume the discussion, not start editing. Every command that changes the cluster needs his ok at that moment.
+
+For a new feature, Kyo prefers to delegate the implementation to a subagent through the `herdr-collaboration` skill; the main agent keeps git, deployment, and verification.
+
+## Public Repo Boundary
+
+This repo is public. Keep the cluster version, node connection details, SSH settings, and lists of remaining security risks out of files, commit messages, PR descriptions, and release notes; they belong in Kyo's private ops repo. Check before posting: the edit history of a PR description stays visible after a fix.
+
 ## Commit Approval
 
 Do not commit until Kyo has reviewed the diff and said ok. After editing, stop and leave the change uncommitted in the working tree so Kyo can read the diff himself; quoting it in the reply does not replace that. The same applies to pushing and opening a PR.
