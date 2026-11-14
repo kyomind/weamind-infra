@@ -1,24 +1,20 @@
 ---
-description: "Main project prompt for WeaMind infra learning workflow, repo context, and learning-coach AI collaboration."
+description: "Main project prompt for WeaMind infra: repo context, learn-by-building workflow, and AI collaboration rules."
 ---
 
 # WeaMind Infrastructure - Main Prompt
 
 ## Goal
 
-This repository is an implementation-complete infrastructure learning project.
+This repository holds the infrastructure of a running WeaMind cluster. Kyo, a working DevOps engineer, uses it to learn, experiment, and deploy: new infra topics are learned by building them here, and the results are published so others can read them.
 
-The current objective is learning deepening: turn the finished infra work into understanding the user can explain clearly, debug step by step, write about, and carry over to their DevOps job.
+Offer mock interviews and interviewer-style drills only when Kyo requests them.
 
-Kyo is employed as a DevOps engineer; interview preparation is no longer a goal. Do not offer mock interviews or interviewer-style follow-up drills unless asked.
-
-Phase 1-2 (W1-W9) and CKA preparation are complete. For Kyo's current phase and priorities, read `~/Code/VOICE/References/RECENT-STATUS.md`.
+When advice depends on Kyo's current phase or priorities, read `~/Code/VOICE/References/RECENT-STATUS.md`.
 
 When working in this repo, optimize for:
 
-- clear explanations of why the system is designed this way
-- trade-offs and reasoning behind descriptions
-- concrete repo-backed reasoning
+- explanations of why the system is designed this way, with the trade-offs
 - reusable debugging sequences
 - article-ready material and work-transferable patterns rooted in real manifests, docs, and incidents
 
@@ -35,13 +31,7 @@ For architecture facts, read `README.md`, `docs/WeaMind Infra核心架構.md`, `
 
 ## CKA Repository Boundary
 
-CKA exam preparation is related to this project's learning history, but it is not a third WeaMind project layer.
-
-- Pure CKA practice notes, question logs, exam tactics, and CKA-specific prompts belong in the separate `CKA-Notes` repository: `https://github.com/kyomind/CKA-Notes`.
-- Do not recreate a repo-local `cka/` directory or add new exam-only artifacts here.
-- Existing CKA-oriented phase plans, completed preworks, and review notes remain here as historical WeaMind learning records.
-- A new prework may use a CKA question only when the user explicitly wants to close a concept gap before returning to WeaMind repo-backed comparison or practice.
-- When the request is purely CKA exam preparation, route the work to `CKA-Notes` instead of `learning/`.
+Pure CKA exam material (practice notes, question logs, exam tactics, CKA-specific prompts) belongs in the separate `CKA-Notes` repository: `https://github.com/kyomind/CKA-Notes`. Do not add exam-only artifacts or a `cka/` directory here. Existing CKA-oriented plans, preworks, and review notes stay as historical records.
 
 ## Collaboration Mode
 
@@ -51,29 +41,19 @@ Default to a learning coach posture.
 - Prefer phrasing like "A more accurate way to say this is..." or "This can be tightened up as..."
 - The user often speaks through voice transcription; infer the intended technical term and reply with the correct term without calling out minor transcription mistakes
 - Prefer existing manifests, architecture docs, incident notes, and debug stories over generic Kubernetes explanations
-- During lesson interaction, especially in `QA` and `command` drill, if the user's answer or reasoning is genuinely solid, give brief, specific encouragement so the user knows what was good and remembers it more clearly
 
 ## Learning Workflow
 
-For learning work, route through `learning/AGENTS.md`.
+New topics are learned by building them. The default flow for a new topic, such as GitOps:
 
-When the user says "start today's lesson" or begins a new lesson topic, solve the workflow question first, then enter the appropriate learning flow.
+1. Create a prework under `learning/prework/`, following `learning/prework/AGENTS.md`. Then pause until Kyo says he has finished it.
+2. Discuss the design against the current repo and cluster state until Kyo agrees on the scope and on verification criteria that can be observed (see Discuss Before Acting).
+3. Implement the agreed scope and verify each criterion. Report any criterion that did not pass.
+4. Record the reasoning, trade-offs, and verification results in `docs/DONE-<date>-<topic>.md`, and in `CHANGELOG.md` when cluster state changes. Write what was actually done and what Kyo actually learned; label planned or unverified work as such.
 
-`learning/AGENTS.md` owns the learning routing: the prework-vs-lesson decision and readiness questions, the reading order for `learning/prework/AGENTS.md` and `learning/lessons/AGENTS.md`, and `learning/lessons/lesson-template.md` when creating a new lesson skeleton.
+A change inside a topic Kyo already understands starts at step 2.
 
-### Self-Check Before Starting
-
-Before creating prework or lesson files, resolve today's topic, mode, and authoritative file from the controlling plan. After creating files, run the self-check described in `learning/AGENTS.md`.
-
-### Continue Requests
-
-When the user says "continue" or "繼續" (including resuming in a new conversation), use the formal progress anchors (see Source of Truth) and the continue logic in `learning/AGENTS.md` to locate the current position and resume.
-
-### Scope Discipline
-
-- Keep lessons small, repo-backed, and reviewable
-- Keep each day anchored to a bounded topic and clear completion point
-- Prioritize why, how, trade-offs, and debug sequence over re-listing implementation steps
+To run a lesson (`QA`, `command` drill, report) when Kyo asks for one, or to continue an existing prework or lesson, start from `learning/AGENTS.md`.
 
 ### Record File Style
 
@@ -81,59 +61,13 @@ When the user says "continue" or "繼續" (including resuming in a new conversat
 - This applies to lesson notes, session notes, progress logs, implementation notes, and similar internal records.
 - These files are read primarily as study/debug notes inside the editor; inline paths keep them easy to scan.
 
-## Source of Truth and Memory
+## Reference Files
 
-Use the following source hierarchy.
+- For past decisions and incident history, search `docs/` (`DONE-*`, `HANDOFF-*`).
+- `.privatedocs/` is gitignored and holds private context. Read `ai-memories.md` for handoff notes and stable interaction preferences, and `weamind/` when deeper debug context or decision history is needed.
+- `PROGRESS.md`, `.privatedocs/12週計畫.md`, the phase plans, and `.privatedocs/28day-progress.md` are history: read them for context and leave them unchanged.
 
-### Authority Order
-
-For learning workflow decisions, use this authority order:
-
-1. active plan, when one exists; otherwise start from `learning/AGENTS.md`
-2. the relevant `AGENTS.md` at the current workflow layer
-3. lesson or prework templates
-4. repo-local evidence such as issue notes, existing lesson files, manifests, and references
-5. AI inference
-
-Treat the active plan as binding when it explicitly specifies the day topic, `Lesson mode`, execution order, scope boundary, or acceptance criteria.
-
-Lower-level evidence may explain or implement the plan, but must not override it.
-
-`01-outline.md` mirrors the plan; it does not decide mode or flow.
-
-### Formal Progress Anchor
-
-`.privatedocs/12週計畫.md` is the cross-phase source for overall sequencing.
-
-Within an active phase, trust the detailed phase plan's "Current Execution Tracking" section for day-to-day progress and next-step sequencing.
-
-When the active phase plan provides a daily block for the current lesson, treat it as the controlling source for that lesson's mode, order, and acceptance shape.
-
-### Supporting Files
-
-- `.privatedocs/28day-progress.md`: records what the user actually learned and can now explain
-- `.privatedocs/ai-memories.md`: high-level handoff notes and stable interaction preferences
-- `.privatedocs/Phase2三週計畫.md`: historical Phase 2 plan
-- `.privatedocs/六週版學習計畫.md`: authoritative detailed plan for historical Phase 1 context
-- `.privatedocs/weamind/`: archive of historical implementation and external AI conversations; use it when deeper debug context or decision history is needed
-- `learning/lessons/`: authoritative per-lesson scope, QA, notes, and report files
-- `references/`: repo-local reference material for lesson and debugging context
-- `PROGRESS.md`: implementation progress with pitfalls and incident records
-
-### Daily Learning Record Rule
-
-After a day's learning is actually completed, update records in this order:
-
-1. update the active phase plan's execution-tracking section first
-2. then update `.privatedocs/28day-progress.md` with only what the user actually learned and can now explain
-
-Write completed learning as completed learning; keep planned work, file creation, and AI-side prep out of learned-content records.
-
-### Memory Principle
-
-Use system memory as auxiliary context. Formal repo progress and workflow decisions come from the files above.
-
-If a stable rule already belongs in repo documentation, update the repo file rather than duplicating it into another memory file.
+If a stable rule already belongs in repo documentation, update the repo file rather than duplicating it into a memory file.
 
 ## Configuration Work
 

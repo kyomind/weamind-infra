@@ -142,7 +142,7 @@
    - 今天要建立的最小理解骨架
    - 建議教學順序
    - 學完後要產出的學習報告格式
-6. prework 建立後，預設應先停在 prework 階段，等使用者完成外部預習後，再進入 `learning/lessons/`。
+6. prework 建立後，預設應先停在 prework 階段，等使用者完成外部預習後，回到 root `AGENTS.md` 的 Learning Workflow 進入設計討論；使用者開口要 lesson 時才進入 `learning/lessons/`。
 7. 正式開始外部預習前，應再快速自檢一次，確認內容仍符合本檔的結構與輕量原則。
 8. 寫完後，若有必要，更新 `.privatedocs/ai-memories.md`，記錄新的 prework 已建立。
 
@@ -201,7 +201,7 @@ repo 內 AI 協作負責：
 2. 指出專案特定設計選擇
 3. 帶操作題與 debug 題
 4. 追問 Why、trade-off、debug sequence
-5. 更新 `.privatedocs/28day-progress.md` 與 `.privatedocs/ai-memories.md`
+5. 視需要更新 `.privatedocs/ai-memories.md`
 
 ---
 

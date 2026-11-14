@@ -52,7 +52,9 @@
 
 ### Route To Lesson
 
-當使用者已能進入 repo-backed comparison、QA、command drill、implementation work 或 report / note update 時，讀 `learning/lessons/AGENTS.md`。
+當使用者開口要 lesson（repo-backed comparison、QA、command drill 或 report / note update）時，讀 `learning/lessons/AGENTS.md`。
+
+新主題的實作不經 lesson：prework 完成後回到 root `AGENTS.md` 的 Learning Workflow，從設計討論接續。
 
 常見訊號：
 

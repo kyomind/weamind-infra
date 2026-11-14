@@ -116,17 +116,14 @@ normal lesson 預設流程：
 - 優先保留三個月後仍值得複習的 repo-specific 理解。
 - 讓 command、QA、note、report 各自承擔自己的工作，避免同一份檔案膨脹成第二份總結。
 - 補寫 `05-note.md` 時，預設優先 append 模式追加；只有為了同主題關聯性與可讀性才插回前面段落之間。
+- lesson 互動中（尤其 `QA` 與 `command` drill），使用者的回答或推理確實扎實時，給簡短而具體的鼓勵，讓他知道好在哪裡、記得更清楚。
 - QA 只保留主答案與最小修正；延伸追問、額外原理、旁支理解預設移到 `05-note.md`。
 - Flashcards 只有在使用者明確下指令時才建立或更新；不要在補 note 或補 QA 時順手新增。
 - lesson / note 內容若出現「這樣做的好處是：」「最小鏈路可以收成：」這類上層項目，下面的子項目要做明確縮排，不和上層 bullet 混成同一層。
 
 ## 維護方式
 
-每次完成一份 lesson 後：
-
-1. 若有 active plan，依它判斷正式進度，並視需要更新它的 execution tracking。
-2. 視需要更新 `.privatedocs/28day-progress.md`，只記錄使用者實際學到並能解釋的內容。
-3. 視需要更新 `.privatedocs/ai-memories.md`，保留 AI 接手需要的高階摘要。
+每次完成一份 lesson 後，視需要更新 `.privatedocs/ai-memories.md`，保留 AI 接手需要的高階摘要。
 
 ## Self-Check
 
