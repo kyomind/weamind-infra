@@ -45,10 +45,10 @@ tag 的定義與版號規則以 `references/release-management.md` 為準，開�
 依 `references/release-management.md` 的版號規則，取影響最大的那一筆決定升級幅度，然後向 Kyo 提出：
 
 - 建議的版號，以及一句理由（哪一筆變更決定了幅度）。
-- 本次發版包含的條目摘要。
+- 本次發版的 CHANGELOG 段落全文，也就是發版後會出現在 GitHub Release 的內容。Kyo 要先看過這段才選版號，不要只給摘要。
 - 其他合理的版號選項。
 
-等 Kyo 選定。
+等 Kyo 選定。Kyo 要求修改條目時，改完再給他看一次全文，然後才詢問版號。
 
 ### 5. 整理 CHANGELOG 並發版
 

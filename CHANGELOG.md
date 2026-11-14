@@ -4,9 +4,9 @@
 
 - **tag 的定義**：tag 代表「已同步到叢集並驗證過」的狀態，不是部署的觸發點。目前的流程是 merge → 手動 `kubectl apply` → 驗證 → 打 tag。
 - **版號**：獨立的 [SemVer](https://semver.org/lang/zh-TW/)，不跟 WeaMind app 的版本連動。
-  - major：重大改動才會動，不輕易升。
-  - minor：大改動，例如部署行為改變（topology spread、PDB、NetworkPolicy）。
-  - patch：小改動，例如 image 版本更新、數值微調。
+  - major：整個部署或維運模型的重大改動才會動，不輕易升。
+  - minor：引進新的機制，也就是叢集原本沒有的資源種類、元件或保護，例如 topology spread、PDB、NetworkPolicy、導入 GitOps。
+  - patch：調整既有的東西，也就是值、版本或數量，例如 image 版本更新、資源限制、副本數、K3s 升版。
 
 ## [Unreleased]
 

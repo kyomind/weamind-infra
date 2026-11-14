@@ -13,9 +13,11 @@ A tag marks a state that is already synced to the cluster and verified. It is re
 
 Independent SemVer with a `v` prefix (`v1.2.3`). It is not tied to the WeaMind app version.
 
-- major: a truly major change. Rare; see below.
-- minor: a large change, such as a deployment behavior change (for example topology spread, PDB, NetworkPolicy)
-- patch: a small change (for example image bump, value tuning)
+- major: a change to the whole deployment or operating model that Kyo judges to be truly major. Rare; see below.
+- minor: introduces a new mechanism, meaning a resource kind, component, or protection the cluster did not have (for example topology spread, PDB, NetworkPolicy, adopting GitOps, adding a service)
+- patch: adjusts something that already exists, meaning a value, version, or count (for example image bump, resource limits, probe timing, replica count, uvicorn workers, a K3s or Helm chart upgrade)
+
+A quick test: if the changelog entry has to explain why the thing exists at all, it is minor; if it only says "changed from A to B", it is patch. The version states what kind of change it is, not how risky it is; risk belongs in the changelog entry.
 
 Do not move to the next major version lightly. When unsure between minor and major, choose minor; only a change Kyo judges to be truly major bumps major.
 
