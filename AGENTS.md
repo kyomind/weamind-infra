@@ -145,6 +145,10 @@ Keep the stable boundary in mind: non-sensitive settings belong in ConfigMap; se
 
 Reusable task prompts live in `.github/prompts/`; `.github/prompts/index.md` lists each one with its description. The index is generated: after adding, removing, or re-describing a prompt, run `make update-prompt-index` and commit the result with it.
 
+## Branching
+
+Open a branch for a new feature; commit small changes directly to `main`.
+
 ## Commit Approval
 
 Do not commit until Kyo has reviewed the diff and said ok. After editing, stop and show the diff; the same applies to pushing and opening a PR.
