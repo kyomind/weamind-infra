@@ -45,14 +45,14 @@ tag 的定義與版號規則以 `references/release-management.md` 為準，開�
 依 `references/release-management.md` 的版號規則，取影響最大的那一筆決定升級幅度，然後向 Kyo 提出：
 
 - 建議的版號，以及一句理由（哪一筆變更決定了幅度）。
-- 本次發版的 CHANGELOG 段落全文，也就是發版後會出現在 GitHub Release 的內容。Kyo 要先看過這段才選版號，不要只給摘要。
+- 本次發版的 CHANGELOG 變更：先用建議的版號把第 5 步第 1 點的改名寫進工作樹（不 commit），讓 Kyo 自己看 `git diff`。Kyo 要先看過 diff 才選版號；在回應裡貼出內容不能取代這一步。
 - 其他合理的版號選項。
 
-等 Kyo 選定。Kyo 要求修改條目時，改完再給他看一次全文，然後才詢問版號。
+等 Kyo 選定。Kyo 要求修改條目或選了別的版號時，改在工作樹裡，請他再看一次 diff。
 
 ### 5. 整理 CHANGELOG 並發版
 
-1. 需要改名時：把 `## [Unreleased]` 改成 `## [X.Y.Z] - YYYY-MM-DD`（台北日期），上方補一個新的空 `## [Unreleased]`。
+1. 需要改名時：把 `## [Unreleased]` 改成 `## [X.Y.Z] - YYYY-MM-DD`（台北日期），上方補一個新的空 `## [Unreleased]`。這一點在第 4 步已經先寫進工作樹，這裡確認版號與 Kyo 選定的一致。
 2. 用與 workflow 相同的指令確認該版本取得出非空段落：
 
    ```sh

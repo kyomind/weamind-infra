@@ -151,7 +151,7 @@ Open a branch for a new feature; commit small changes directly to `main`.
 
 ## Commit Approval
 
-Do not commit until Kyo has reviewed the diff and said ok. After editing, stop and show the diff; the same applies to pushing and opening a PR.
+Do not commit until Kyo has reviewed the diff and said ok. After editing, stop and leave the change uncommitted in the working tree so Kyo can read the diff himself; quoting it in the reply does not replace that. The same applies to pushing and opening a PR.
 
 ## Release Management
 
