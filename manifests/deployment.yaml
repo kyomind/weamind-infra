@@ -16,6 +16,15 @@ spec:
       automountServiceAccountToken: false # 應用不呼叫 K8s API，不掛 SA token
       nodeSelector:
         nodepool: worker # 只在 worker 節點上排程，避免佔用 control-plane
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule # 排不開就 Pending，不擠到同一台；節點回來後自動排回
+          labelSelector:
+            matchLabels:
+              app: weamind
+          matchLabelKeys:
+            - pod-template-hash # 只計算同一個 ReplicaSet 的 Pod，滾動更新時不把舊 Pod 算進去
       containers:
         - name: app
           image: ghcr.io/kyomind/weamind:1.3.0
