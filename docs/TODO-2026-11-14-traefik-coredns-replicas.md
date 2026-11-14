@@ -53,9 +53,21 @@
 | K3s 唯一的 server | `weamind-001` 掛掉時，已在跑的服務通常還能處理請求，但不能排程、rollout 或 drain | 見 `DONE-2026-11-14-node-maintenance-availability.md` | 影響維運能力，不是流量；未實測 |
 | 滾動更新期間是否掉請求 | `readinessProbe` 已設定，沒有明確設 `strategy`，用預設值 | `manifests/deployment.yaml` | rollout 約 40 秒完成且沒卡住，但沒測過期間是否有失敗請求 |
 
+### 資料層的備份現況（2026-11-14 查證）
+
+來源：`~/Code/fleet-ops/docs/backup.md`、`~/Code/agent-scheduler/README.md`，以及 `~/Code/WeaMind/app/core/processing_lock.py`。備份由 fleet-ops 負責，細節與維護以該 repo 為準，這裡只記錄對「不中斷」的影響。
+
+- **PostgreSQL 有每日備份。** 每天台北時間 03:15 備份到 Mac 的 `~/Backups/fleet-ops/`，保留 14 份，並封存一份到 Google Drive。04:00 有健康檢查 Job，缺失、損壞或超過 36 小時沒更新會通知。同日確認最新一份備份目錄建立於 11/14 03:16。
+- **Redis 沒有備份，但影響小。** WeaMind 只用 Redis 做 processing lock（`SET NX EX`），且是 fail-open：Redis 不可用時請求照常處理，只是少了防重複處理的保護。所以 Redis 遺失不會掉資料，也不會讓服務停擺。這項不必補備份。
+- **還原只驗到資料層。** 2026-11-09 與 2026-11-11 做過隔離容器的 PostgreSQL 還原。應用連線、登入與整台 VM 重建都沒演練過。bastion 壞掉時，實際停機時間取決於這段，很可能是小時級，沒有量過。
+- **備份依賴 Mac。** 排程要 Mac 登入且 scheduler 在前景運作；未執行或 timeout 不保證通知。
+- **只有每日快照。** 最糟損失約 24 小時的資料，沒有時間點還原。
+
+因此對「不中斷」來說，bastion 的真正風險是 PostgreSQL 主機單點加上還原時間未知，不是 Redis。
+
 ### 明天開工前先做
 
-1. 確認 `bastion` 上 PostgreSQL 與 Redis 的現況：是否仍是單一主機、有沒有備份與還原演練（fleet-ops 有 `docs/backup.md`），以及重開時的實際影響。這件事決定「做完 Traefik 與 CoreDNS 之後，離不中斷還差多少」。
+1. 確認 `bastion` 上 PostgreSQL 重開或壞掉時的實際影響與還原時間（備份與資料層還原已查證，見上一節；Redis 是 fail-open，不是重點）。這件事決定「做完 Traefik 與 CoreDNS 之後，離不中斷還差多少」。
 2. 把答案補回這一節，再決定要不要為資料層另開 TODO。
 
 ## 後續
