@@ -7,7 +7,7 @@
 給沒有上下文的下一個 AI：先讀這一節。
 
 - **目前狀態：** 三件事都已完成並 commit 在 `main`：單一 uvicorn worker 定案（`83259ec`）、`AGENTS.md` 改寫（`e72cd5b`）、CodeWiki 增量更新（`059ab07`）。
-- **還沒 push：** 寫這份文件時，上面三個 commit 與這份文件都還在本機。push 會觸發 `.github/workflows/pages.yml` 部署 wiki，要 Kyo 說推才推。用 `git status -sb` 確認是否已推。
+- **已 push：** 2026-11-14 把上面三個 commit 與這份文件一起推上 `origin/main`。同一次 push 還帶出兩個更早就留在本機的 commit：`42bfd20`（版號界線同日修訂的註記）與 `0fc59ee`（`AGENTS.md` 的 Discuss Before Acting 與 Public Repo Boundary）。push 會觸發 `.github/workflows/pages.yml` 部署 wiki。
 - **沒有發版：** 這三件事都沒有改變叢集狀態，Kyo 決定不 release。理由見「為什麼不發版」。
 - **下次要更新 wiki：** 直接照「CodeWiki 增量更新」一節的指令與檢查清單做，那一節記了這次踩到的兩個坑。
 - **下次要改 `AGENTS.md`：** 先讀「AGENTS.md 改寫」一節的定位，不要把「淡化學習過程」誤解成「拿掉學習」。
@@ -149,7 +149,6 @@ Kyo 原本想為這次的改動發一版，討論後決定不發。依據是 `re
 
 ## 待處理
 
-- **push。** 本機的 commit 還沒推，等 Kyo 決定。
 - **新的學習流程還沒實際跑過。** `AGENTS.md` 的四個步驟第一次使用預計是 GitOps 的 prework，屆時才知道完成條件合不合用。
 - **`AGENTS.md` 的 `Record File Style` 沒有精簡。** reviewer 建議縮成一段，Kyo 沒有選這一項。
 - **`learning/` 還有兩句「若有 active plan」。** 在 `learning/AGENTS.md` 的 Continue Requests 與 `learning/prework/AGENTS.md` 的產生流程裡。兩句都是條件式，沒有計畫時不會觸發，這次沒改。
