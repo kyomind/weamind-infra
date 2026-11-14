@@ -141,6 +141,10 @@ For manifest, environment, or deployment changes, inspect the actual files befor
 
 Keep the stable boundary in mind: non-sensitive settings belong in ConfigMap; sensitive settings belong in Secret. Use manifest-defined deployment defaults when they exist.
 
+## Commit Approval
+
+Do not commit until Kyo has reviewed the diff and said ok. After editing, stop and show the diff; the same applies to pushing and opening a PR.
+
 ## Release Management
 
 This repo is versioned with git tags, GitHub Releases, and `CHANGELOG.md`. Before adding a changelog entry, tagging, or publishing a release, read `references/release-management.md` and follow it. To release, follow `.github/prompts/release.prompt.md`.
