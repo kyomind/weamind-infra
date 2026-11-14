@@ -48,7 +48,7 @@ This repository covers the runtime infrastructure stack, observability tooling, 
 5. **Public entry setup**: Configure the Hetzner Load Balancer for TCP 443 forwarding and health checks, then point Cloudflare DNS to the LB public IP.
 6. **Traffic switch**: Update the LINE Developers webhook URL to cut traffic over from `api.kyomind.tw` to `k8s.kyomind.tw`.
 
-For detailed implementation progress and lessons learned, see [PROGRESS.md](PROGRESS.md).
+For detailed implementation progress and lessons learned, see [PROGRESS.md](PROGRESS.md). For per-version changes and the reasoning behind them, see [CHANGELOG.md](CHANGELOG.md) (Chinese).
 
 ## Design Decisions
 

@@ -48,7 +48,7 @@
 5. **公開入口配置**：設定 Hetzner Load Balancer 的 TCP 443 轉發與健康檢查，並讓 Cloudflare DNS 指向 LB 公網 IP。
 6. **流量切換**：修改 LINE Developers webhook URL，將流量從 `api.kyomind.tw` 切換到 `k8s.kyomind.tw`。
 
-詳細實作進度與踩坑記錄請見 [PROGRESS.md](PROGRESS.md)。
+詳細實作進度與踩坑記錄請見 [PROGRESS.md](PROGRESS.md)；各版本的變更與設計理由請見 [CHANGELOG.md](CHANGELOG.md)。
 
 ## Why This Architecture
 
