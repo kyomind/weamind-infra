@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+### 工作負載
+- **以 `topologySpreadConstraints` 強制兩個副本分在不同的工作節點**：被驅逐的 Pod 由排程器逐個挑節點，不保證分散，節點回來後也不會搬回去；2026-11-14 節點維護後，兩個副本就都落在同一台，那一台一停服務會整個中斷。`whenUnsatisfiable` 選 `DoNotSchedule`：drain 一台時，被驅逐的副本會 Pending，等節點回來再排回去。代價是那台節點不在的期間只剩一個副本，換來節點回來後不必人工重新平衡。這個代價在節點故障時同樣成立：故障節點的副本不會到另一台補位，要等節點修好或從叢集移除。
+- **spread 加上 `matchLabelKeys: pod-template-hash`，只計算同一個 ReplicaSet 的 Pod**：少了這一行，滾動更新時舊 ReplicaSet 的 Pod 也會算進去，第二個新 Pod 排到哪一台都合法，等舊 Pod 砍完，兩個新 Pod 可能又在同一台。spread 只在排程當下檢查，事後不會修正，所以要在規則裡排除舊 Pod。
+- **新增 PodDisruptionBudget，`minAvailable: 1`**：spread 只管排程，擋不住連續 drain 兩台節點。有了 PDB，另一個副本還沒 Ready 之前，第二次驅逐會被拒絕。它只對自願性中斷（drain、驅逐）有效，節點故障這類非自願中斷不在保護範圍內。
+
 ## [1.0.0] - 2026-11-14
 
 第一個版本，為版本管理開始當下的架構留下基準：`main` 的內容已用 `kubectl diff` 確認與叢集一致。以下是這個基準包含的設計，以及各自的理由。
