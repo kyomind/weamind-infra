@@ -1,17 +1,17 @@
 {
   "generation_info": {
-    "timestamp": "2026-11-06T04:33:22.871753+00:00",
+    "timestamp": "2026-11-14T08:32:56.969778+00:00",
     "provider": "codex",
     "main_model": "gpt-6.1-terra",
     "generator_version": "2.0.0",
     "repo_path": "/Users/kyo/Code/weamind-infra",
-    "commit_id": "e3def014f4525200cd1671a87838fb6ec57a16bd",
+    "commit_id": "e72cd5b083bb488113b72b7b28b60838e5679028",
     "language": "Chinese (Traditional)",
     "layout": "hierarchical"
   },
   "statistics": {
-    "total_components": 16,
-    "leaf_nodes": 16,
+    "total_components": 45,
+    "leaf_nodes": 45,
     "max_depth": 3
   },
   "files_generated": [
@@ -28,20 +28,20 @@
     "unknown_usage_calls": 0,
     "n_calls": 1,
     "totals": {
-      "input_tokens": 264800,
-      "output_tokens": 4382,
-      "total_tokens": 269182,
-      "cache_read_tokens": 201856,
+      "input_tokens": 242659,
+      "output_tokens": 1638,
+      "total_tokens": 244297,
+      "cache_read_tokens": 200704,
       "cache_write_tokens": 0,
       "cost_usd": 0.0
     },
     "by_phase": {
-      "modules": {
+      "update": {
         "calls": 1,
-        "input_tokens": 264800,
-        "output_tokens": 4382,
-        "total_tokens": 269182,
-        "cache_read_tokens": 201856,
+        "input_tokens": 242659,
+        "output_tokens": 1638,
+        "total_tokens": 244297,
+        "cache_read_tokens": 200704,
         "cache_write_tokens": 0,
         "cost_usd": 0.0,
         "unpriced_calls": 1
@@ -50,10 +50,10 @@
     "by_model": {
       "gpt-6.1-terra": {
         "calls": 1,
-        "input_tokens": 264800,
-        "output_tokens": 4382,
-        "total_tokens": 269182,
-        "cache_read_tokens": 201856,
+        "input_tokens": 242659,
+        "output_tokens": 1638,
+        "total_tokens": 244297,
+        "cache_read_tokens": 200704,
         "cache_write_tokens": 0,
         "cost_usd": 0.0,
         "unpriced_calls": 1
@@ -64,15 +64,15 @@
     ],
     "calls": [
       {
-        "phase": "modules",
-        "kind": "module_agent",
-        "target": "weamind-infra",
+        "phase": "update",
+        "kind": "update_agent",
+        "target": "overview",
         "model": "gpt-6.1-terra",
-        "seconds": 126.94,
-        "input_tokens": 264800,
-        "output_tokens": 4382,
-        "total_tokens": 269182,
-        "cache_read_tokens": 201856,
+        "seconds": 73.75,
+        "input_tokens": 242659,
+        "output_tokens": 1638,
+        "total_tokens": 244297,
+        "cache_read_tokens": 200704,
         "cache_write_tokens": 0,
         "cost_usd": 0.0,
         "usage_reported": true,
@@ -80,5 +80,233 @@
         "cost_source": "unknown"
       }
     ]
-  }
+  },
+  "last_update": {
+    "run_id": "6a08470a-450e-4a31-b25d-ef88480c8ec8",
+    "started_at": "2026-11-14T16:31:43+0800",
+    "outcome": "incremental",
+    "finished_at": "2026-11-14T16:32:56+0800",
+    "rung": "3",
+    "revision": {
+      "old_commit": "e3def014f4525200cd1671a87838fb6ec57a16bd",
+      "new_commit": "e72cd5b083bb488113b72b7b28b60838e5679028",
+      "repo_path": "/Users/kyo/Code/weamind-infra"
+    },
+    "diff_counts": {
+      "added": 29,
+      "deleted": 0,
+      "interface": 0,
+      "body": 4,
+      "edge": 0,
+      "renamed": 0
+    },
+    "n_active": 1,
+    "n_adopted": 0,
+    "n_adopted_by_agent": 0,
+    "fallback": {
+      "r_leaf": 1.0,
+      "r_tree": 0.0,
+      "n_active": 1,
+      "n_leaves": 1,
+      "n_structural": 0,
+      "tau_full": 0.5,
+      "tau_tree": 0.3,
+      "fired": false,
+      "clustering_tokens": 7560,
+      "leaf_tokens": 8289,
+      "tau_cluster": 363690,
+      "note": "whole-repository mode: scope still fits one page; fallback rule not applied"
+    },
+    "n_calls": 1,
+    "usage_total": {
+      "input_tokens": 242659,
+      "output_tokens": 1638,
+      "total_tokens": 244297,
+      "cache_read_tokens": 200704,
+      "cache_write_tokens": 0,
+      "cost_usd": 0.0
+    },
+    "usage": {
+      "schema_version": 2,
+      "scope": "this run only (modules resumed from disk cost nothing)",
+      "currency": "USD",
+      "cost_status": "unknown",
+      "incomplete": false,
+      "unknown_usage_calls": 0,
+      "n_calls": 1,
+      "totals": {
+        "input_tokens": 242659,
+        "output_tokens": 1638,
+        "total_tokens": 244297,
+        "cache_read_tokens": 200704,
+        "cache_write_tokens": 0,
+        "cost_usd": 0.0
+      },
+      "by_phase": {
+        "update": {
+          "calls": 1,
+          "input_tokens": 242659,
+          "output_tokens": 1638,
+          "total_tokens": 244297,
+          "cache_read_tokens": 200704,
+          "cache_write_tokens": 0,
+          "cost_usd": 0.0,
+          "unpriced_calls": 1
+        }
+      },
+      "by_model": {
+        "gpt-6.1-terra": {
+          "calls": 1,
+          "input_tokens": 242659,
+          "output_tokens": 1638,
+          "total_tokens": 244297,
+          "cache_read_tokens": 200704,
+          "cache_write_tokens": 0,
+          "cost_usd": 0.0,
+          "unpriced_calls": 1
+        }
+      },
+      "unpriced_models": [
+        "gpt-6.1-terra"
+      ],
+      "calls": [
+        {
+          "phase": "update",
+          "kind": "update_agent",
+          "target": "overview",
+          "model": "gpt-6.1-terra",
+          "seconds": 73.75,
+          "input_tokens": 242659,
+          "output_tokens": 1638,
+          "total_tokens": 244297,
+          "cache_read_tokens": 200704,
+          "cache_write_tokens": 0,
+          "cost_usd": 0.0,
+          "usage_reported": true,
+          "provider": "codex",
+          "cost_source": "unknown"
+        }
+      ]
+    },
+    "pages_written": [
+      "overview"
+    ],
+    "pages_removed": [],
+    "wall_seconds": 73.76
+  },
+  "update_history": [
+    {
+      "run_id": "6a08470a-450e-4a31-b25d-ef88480c8ec8",
+      "started_at": "2026-11-14T16:31:43+0800",
+      "outcome": "incremental",
+      "finished_at": "2026-11-14T16:32:56+0800",
+      "rung": "3",
+      "revision": {
+        "old_commit": "e3def014f4525200cd1671a87838fb6ec57a16bd",
+        "new_commit": "e72cd5b083bb488113b72b7b28b60838e5679028",
+        "repo_path": "/Users/kyo/Code/weamind-infra"
+      },
+      "diff_counts": {
+        "added": 29,
+        "deleted": 0,
+        "interface": 0,
+        "body": 4,
+        "edge": 0,
+        "renamed": 0
+      },
+      "n_active": 1,
+      "n_adopted": 0,
+      "n_adopted_by_agent": 0,
+      "fallback": {
+        "r_leaf": 1.0,
+        "r_tree": 0.0,
+        "n_active": 1,
+        "n_leaves": 1,
+        "n_structural": 0,
+        "tau_full": 0.5,
+        "tau_tree": 0.3,
+        "fired": false,
+        "clustering_tokens": 7560,
+        "leaf_tokens": 8289,
+        "tau_cluster": 363690,
+        "note": "whole-repository mode: scope still fits one page; fallback rule not applied"
+      },
+      "n_calls": 1,
+      "usage_total": {
+        "input_tokens": 242659,
+        "output_tokens": 1638,
+        "total_tokens": 244297,
+        "cache_read_tokens": 200704,
+        "cache_write_tokens": 0,
+        "cost_usd": 0.0
+      },
+      "usage": {
+        "schema_version": 2,
+        "scope": "this run only (modules resumed from disk cost nothing)",
+        "currency": "USD",
+        "cost_status": "unknown",
+        "incomplete": false,
+        "unknown_usage_calls": 0,
+        "n_calls": 1,
+        "totals": {
+          "input_tokens": 242659,
+          "output_tokens": 1638,
+          "total_tokens": 244297,
+          "cache_read_tokens": 200704,
+          "cache_write_tokens": 0,
+          "cost_usd": 0.0
+        },
+        "by_phase": {
+          "update": {
+            "calls": 1,
+            "input_tokens": 242659,
+            "output_tokens": 1638,
+            "total_tokens": 244297,
+            "cache_read_tokens": 200704,
+            "cache_write_tokens": 0,
+            "cost_usd": 0.0,
+            "unpriced_calls": 1
+          }
+        },
+        "by_model": {
+          "gpt-6.1-terra": {
+            "calls": 1,
+            "input_tokens": 242659,
+            "output_tokens": 1638,
+            "total_tokens": 244297,
+            "cache_read_tokens": 200704,
+            "cache_write_tokens": 0,
+            "cost_usd": 0.0,
+            "unpriced_calls": 1
+          }
+        },
+        "unpriced_models": [
+          "gpt-6.1-terra"
+        ],
+        "calls": [
+          {
+            "phase": "update",
+            "kind": "update_agent",
+            "target": "overview",
+            "model": "gpt-6.1-terra",
+            "seconds": 73.75,
+            "input_tokens": 242659,
+            "output_tokens": 1638,
+            "total_tokens": 244297,
+            "cache_read_tokens": 200704,
+            "cache_write_tokens": 0,
+            "cost_usd": 0.0,
+            "usage_reported": true,
+            "provider": "codex",
+            "cost_source": "unknown"
+          }
+        ]
+      },
+      "pages_written": [
+        "overview"
+      ],
+      "pages_removed": [],
+      "wall_seconds": 73.76
+    }
+  ]
 }
