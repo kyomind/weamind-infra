@@ -6,11 +6,10 @@
 
 給沒有上下文的下一個 AI：先讀這一節。
 
-- **目前狀態：** release 管理的檔案已合併進 `main`（PR #13，merge commit `9ad3ffe`）。**`v1.0.0` 尚未打 tag，也還沒有 GitHub Release。**
+- **目前狀態：** 已完成並發出 `v1.0.0`（tag 在 commit `3bc7115`）。release 管理的檔案經 PR #13 合併（merge commit `9ad3ffe`），GitHub Release 已由 workflow 建立。沒有待辦。
 - **規則的主文件：** `references/release-management.md`。`AGENTS.md` 的 `Release Management` 小節只留引用與兩條常駐規則。要改發版規則，改 references 那份。
 - **發版入口：** `.github/prompts/release.prompt.md`。AI 先建議版號、請 Kyo 選定，再整理 CHANGELOG、打 tag、推送並驗證。
-- **下一步：** 依該 prompt 推出 `v1.0.0`。推出後確認 `release.yml` 首次執行成功，並把結果補進本文件的「驗證」。
-- **尚未驗證的事：** `.github/workflows/release.yml` 沒有在 GitHub 上實際跑過。
+- **下一步：** 沒有。之後有會改變叢集狀態的變更時，在 `Unreleased` 寫一筆，套用並驗證後依發版 prompt 發版。
 - **暫緩、不在本次範圍：** WeaMind 的 topology spread 與 PDB（Kyo 於 2026-11-14 指示先不做），以及 GitOps（Argo CD 已安裝，沒有任何 Application）。
 
 ## 背景
@@ -47,14 +46,10 @@ Kyo 決定從 2026-11-14 起，像 app repo（`WeaMind`）一樣替 weamind-infr
 
 - **基準與叢集一致：** 2026-11-14 合併前後各跑一次 `kubectl diff -f manifests/`，都沒有差異。只涵蓋 `manifests/`；`helm/` 與 `terraform/` 沒有比對。
 - **段落擷取：** 在本機用 workflow 的同一段指令測試。`1.0.0` 取出內容；`9.9.9`（不存在）、`Unreleased`（空段落）、`1.0`（不完整的版號）都判定失敗。
+- **workflow 實際執行：** 2026-11-14 推出 `v1.0.0` 後，`release.yml` 首次執行成功（run `43564647631`）。Release 內文是 `1.0.0` 段落，24 行非空內容，首尾與 `CHANGELOG.md` 相符。
+- **發版 prompt：** `v1.0.0` 就是照 `.github/prompts/release.prompt.md` 的流程發出的，走的是「`Unreleased` 為空、最上面的版本段落尚無 tag」這條分支。「`Unreleased` 有內容」與「漏記」兩條分支還沒實際走過。
 - **workflow YAML：** 可解析。本機沒有 `actionlint`，沒有做 lint。
 - **基準摘要的內容：** 對照過 Grafana RBAC、NetworkPolicy、ServiceAccount token、Load Balancer passthrough、`Makefile` 的部署指令等項目的來源檔，沒有逐項查完全部。
-
-## 待辦
-
-1. 依 `.github/prompts/release.prompt.md` 推出 `v1.0.0`。該 prompt 會先建議版號並請 Kyo 選定，再打 tag、推送並驗證。
-2. 確認 `release.yml` 首次執行成功，Release 內文是 `1.0.0` 段落。
-3. 把上面兩步的結果補進本文件，並更新 MEMOS。
 
 ## 限制
 
