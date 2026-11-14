@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-14
+
 ### 工作負載
 - **以 `topologySpreadConstraints` 強制兩個副本分在不同的工作節點**：被驅逐的 Pod 由排程器逐個挑節點，不保證分散，節點回來後也不會搬回去；2026-11-14 節點維護後，兩個副本就都落在同一台，那一台一停服務會整個中斷。`whenUnsatisfiable` 選 `DoNotSchedule`：drain 一台時，被驅逐的副本會 Pending，等節點回來再排回去。代價是那台節點不在的期間只剩一個副本，換來節點回來後不必人工重新平衡。這個代價在節點故障時同樣成立：故障節點的副本不會到另一台補位，要等節點修好或從叢集移除。
 - **spread 加上 `matchLabelKeys: pod-template-hash`，只計算同一個 ReplicaSet 的 Pod**：少了這一行，滾動更新時舊 ReplicaSet 的 Pod 也會算進去，第二個新 Pod 排到哪一台都合法，等舊 Pod 砍完，兩個新 Pod 可能又在同一台。spread 只在排程當下檢查，事後不會修正，所以要在規則裡排除舊 Pod。
