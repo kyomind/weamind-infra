@@ -22,7 +22,7 @@ Kyo 決定從 2026-11-14 起，像 app repo（`WeaMind`）一樣替 weamind-infr
 | --- | --- | --- |
 | tag 的意義 | 已同步到叢集並驗證過的狀態，事後標記 | 這個 repo 的 tag 沒有下游會讀它；定義成「已驗證的部署狀態」才有回滾點的用途 |
 | GitOps 之後 | Argo CD 追 `main`，Synced 且 Healthy 後才打 tag；原則上禁止手動 `kubectl apply` | 若改成追 tag，app 每次發版開的 image bump PR 合併後，還要在這裡再發一版才會上線 |
-| 版號 | 獨立的 SemVer，不跟 app 版本連動 | major 為架構改變，minor 為部署行為改變，patch 為 image bump 與數值微調 |
+| 版號 | 獨立的 SemVer，不跟 app 版本連動 | 當時的界線：major 為架構改變，minor 為部署行為改變，patch 為 image bump 與數值微調。同日下午已修訂為：minor 是引進新機制，patch 是調整既有的值、版本或數量，major 不輕易升。現行規則以 `references/release-management.md` 為準 |
 | `CHANGELOG.md` | 要有，手動編輯 | 自動產生的 release notes 只是 PR 標題清單，看不出設計理由 |
 | 工具 | 不搬 app repo 的 `changelog.sh`、Makefile 指令與核可關卡 | 變更頻率低：2026-10-01 至 11-14 的 27 個 commit 中，只有 3 個動到 `manifests/` |
 | 規則放哪 | `references/release-management.md`，`AGENTS.md` 只引用 | 發版不是每次工作都會用到，不該占 `AGENTS.md` 的篇幅 |
