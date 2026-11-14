@@ -141,6 +141,10 @@ For manifest, environment, or deployment changes, inspect the actual files befor
 
 Keep the stable boundary in mind: non-sensitive settings belong in ConfigMap; sensitive settings belong in Secret. Use manifest-defined deployment defaults when they exist.
 
+## Prompts
+
+Reusable task prompts live in `.github/prompts/`; `.github/prompts/index.md` lists each one with its description. The index is generated: after adding, removing, or re-describing a prompt, run `make update-prompt-index` and commit the result with it.
+
 ## Commit Approval
 
 Do not commit until Kyo has reviewed the diff and said ok. After editing, stop and show the diff; the same applies to pushing and opening a PR.

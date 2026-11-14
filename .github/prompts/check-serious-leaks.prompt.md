@@ -1,3 +1,7 @@
+---
+description: "Check this public repo for serious secret leaks only, without flagging low-risk environment details."
+---
+
 # Check serious secret leaks
 
 ## Role
