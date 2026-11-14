@@ -140,3 +140,9 @@ If a stable rule already belongs in repo documentation, update the repo file rat
 For manifest, environment, or deployment changes, inspect the actual files before answering or editing. Use `manifests/`, `.env.example`, `docs/WeaMind Infra核心架構.md`, and the relevant lesson or reference docs as the source for concrete values.
 
 Keep the stable boundary in mind: non-sensitive settings belong in ConfigMap; sensitive settings belong in Secret. Use manifest-defined deployment defaults when they exist.
+
+## Release Management
+
+This repo is versioned with git tags, GitHub Releases, and `CHANGELOG.md`. Before adding a changelog entry, tagging, or publishing a release, read `references/release-management.md` and follow it.
+
+A PR that changes cluster state adds its entry under `## [Unreleased]` in `CHANGELOG.md`. Tagging and pushing are Kyo's decision; do not tag or publish a release unless asked.
