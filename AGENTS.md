@@ -143,6 +143,6 @@ Keep the stable boundary in mind: non-sensitive settings belong in ConfigMap; se
 
 ## Release Management
 
-This repo is versioned with git tags, GitHub Releases, and `CHANGELOG.md`. Before adding a changelog entry, tagging, or publishing a release, read `references/release-management.md` and follow it.
+This repo is versioned with git tags, GitHub Releases, and `CHANGELOG.md`. Before adding a changelog entry, tagging, or publishing a release, read `references/release-management.md` and follow it. To release, follow `.github/prompts/release.prompt.md`.
 
 A PR that changes cluster state adds its entry under `## [Unreleased]` in `CHANGELOG.md`. Tagging and pushing are Kyo's decision; do not tag or publish a release unless asked.

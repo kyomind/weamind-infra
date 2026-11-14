@@ -25,10 +25,8 @@ Independent SemVer with a `v` prefix (`v1.2.3`). It is not tied to the WeaMind a
 
 ## Release Steps
 
-1. Confirm the changes under `## [Unreleased]` are merged, applied to the cluster, and verified.
-2. Pick the version from the highest-impact entry using the version rules.
-3. Rename `## [Unreleased]` to the version and date, add a new empty `## [Unreleased]`, and land that change on `main`.
-4. Tag that commit and push the tag: `git tag vX.Y.Z && git push origin vX.Y.Z`.
-5. `.github/workflows/release.yml` creates the GitHub Release from that version's `CHANGELOG.md` section. It fails when the section is missing or empty; do not use auto-generated release notes.
+To release, follow `.github/prompts/release.prompt.md`. It checks that `main` matches the cluster, suggests a version, asks Kyo to choose it, then finalizes `CHANGELOG.md`, tags, pushes, and verifies the result.
+
+`.github/workflows/release.yml` creates the GitHub Release from that version's `CHANGELOG.md` section. It fails when the section is missing or empty; do not use auto-generated release notes.
 
 Tagging and pushing are Kyo's decision. Do not tag or publish a release unless asked.

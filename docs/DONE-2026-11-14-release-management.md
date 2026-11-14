@@ -8,7 +8,8 @@
 
 - **目前狀態：** release 管理的檔案已合併進 `main`（PR #13，merge commit `9ad3ffe`）。**`v1.0.0` 尚未打 tag，也還沒有 GitHub Release。**
 - **規則的主文件：** `references/release-management.md`。`AGENTS.md` 的 `Release Management` 小節只留引用與兩條常駐規則。要改發版規則，改 references 那份。
-- **下一步：** 由 Kyo 決定並推出 `v1.0.0`（指令見「待辦」）。推出後確認 `release.yml` 首次執行成功，並把結果補進本文件的「驗證」。
+- **發版入口：** `.github/prompts/release.prompt.md`。AI 先建議版號、請 Kyo 選定，再整理 CHANGELOG、打 tag、推送並驗證。
+- **下一步：** 依該 prompt 推出 `v1.0.0`。推出後確認 `release.yml` 首次執行成功，並把結果補進本文件的「驗證」。
 - **尚未驗證的事：** `.github/workflows/release.yml` 沒有在 GitHub 上實際跑過。
 - **暫緩、不在本次範圍：** WeaMind 的 topology spread 與 PDB（Kyo 於 2026-11-14 指示先不做），以及 GitOps（Argo CD 已安裝，沒有任何 Application）。
 
@@ -35,7 +36,8 @@ Kyo 決定從 2026-11-14 起，像 app repo（`WeaMind`）一樣替 weamind-infr
 
 - `CHANGELOG.md`：開頭說明 tag 定義與版號規則；空的 `## [Unreleased]`；`## [1.0.0] - 2026-11-14` 是現有架構的基準摘要，分六組共 17 項。
 - `.github/workflows/release.yml`：push `v*` tag 時，用 `awk` 取出該版本的 CHANGELOG 段落，以 `gh release create --notes-file --verify-tag` 建立 Release。段落不存在或為空時失敗。沒有使用第三方 action。
-- `references/release-management.md`：tag 定義、版號規則、CHANGELOG 流程、發版步驟。
+- `references/release-management.md`：tag 定義、版號規則、CHANGELOG 流程。
+- `.github/prompts/release.prompt.md`：可執行的發版流程。2026-11-14 稍晚新增，因為只給 Kyo 一行 git 指令不好用。
 - `AGENTS.md`：新增 `Release Management` 小節。
 - `README.md`、`README.en.md`：各加一個 `CHANGELOG.md` 連結。
 
@@ -50,19 +52,8 @@ Kyo 決定從 2026-11-14 起，像 app repo（`WeaMind`）一樣替 weamind-infr
 
 ## 待辦
 
-1. 推出 `v1.0.0`，tag 打在 merge commit `9ad3ffe` 上（之後的文件 commit 不影響 Release 內文，因為 workflow 讀的是 tag 所在 commit 的 `CHANGELOG.md`）：
-
-   ```sh
-   git tag v1.0.0 9ad3ffe && git push origin v1.0.0
-   ```
-
-2. 確認 workflow 成功、Release 內文是 `1.0.0` 段落：
-
-   ```sh
-   gh run list --workflow release.yml -L 1
-   gh release view v1.0.0
-   ```
-
+1. 依 `.github/prompts/release.prompt.md` 推出 `v1.0.0`。該 prompt 會先建議版號並請 Kyo 選定，再打 tag、推送並驗證。
+2. 確認 `release.yml` 首次執行成功，Release 內文是 `1.0.0` 段落。
 3. 把上面兩步的結果補進本文件，並更新 MEMOS。
 
 ## 限制
