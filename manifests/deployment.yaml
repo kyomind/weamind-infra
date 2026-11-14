@@ -37,7 +37,7 @@ spec:
             - --port
             - "8000"
             - --workers
-            - "1" # Step 3 診斷：先用單 worker 驗證 metrics 序列是否恢復可解讀性
+            - "1" # 每個 Pod 一個 worker：擴展靠副本數；多 worker 會讓 in-memory metrics 各自計數
             - --proxy-headers # 信任代理 headers（X-Forwarded-* 等）
             - --loop
             - uvloop # 使用高效能的 uvloop

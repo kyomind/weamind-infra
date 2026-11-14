@@ -40,7 +40,7 @@ Kyo 決定從 2026-11-14 起，像 app repo（`WeaMind`）一樣替 weamind-infr
 - `AGENTS.md`：新增 `Release Management` 小節。
 - `README.md`、`README.en.md`：各加一個 `CHANGELOG.md` 連結。
 
-基準摘要原本有一項「每個 Pod 只跑一個 uvicorn worker」，已刪除。`manifests/deployment.yaml` 的註解寫的是「Step 3 診斷」，那是排查指標問題時的暫時設定，不是設計決策。該設定要定案還是改回多 worker，尚未處理。
+基準摘要原本有一項「每個 Pod 只跑一個 uvicorn worker」，已刪除。`manifests/deployment.yaml` 的註解寫的是「Step 3 診斷」，那是排查指標問題時的暫時設定，不是設計決策。Kyo 於 2026-11-14 稍晚決定定案為單 worker，註解已改成設計理由；理由記在 `docs/DONE-2026-11-14-node-maintenance-availability.md` 的「待決事項」第 3 項。基準摘要沒有補回這一項。
 
 ## 驗證
 

@@ -8,8 +8,8 @@
 
 - **目前狀態：** 已完成。WeaMind 的 `topologySpreadConstraints` 與 PodDisruptionBudget 經 PR #14 合併（merge commit `b81d5fc`）並套用到叢集；rollout、副本分布、PDB 與 LINE 實測都通過。設計、推導與驗證結果見「待辦一」。
 - **這份文件記什麼：** 2026-11-14 Kyo 與 AI 討論「worker 重開機時 Pod 怎麼搬」得到的結論、這次變更的推導過程，以及還沒決定的事項。同一天的 release 管理另記在 `docs/DONE-2026-11-14-release-management.md`。
-- **還沒決定的三件事：** Traefik 與 CoreDNS 要不要改成兩個副本、單一 uvicorn worker 要不要定案、GitOps 的實作。見「待決事項」第 2 到 4 項。
-- **已決定：** WeaMind 保留 `nodeSelector`，app 只排 worker。理由與重新考慮的時機見「待決事項」第 1 項。
+- **還沒決定的兩件事：** Traefik 與 CoreDNS 要不要改成兩個副本、GitOps 的實作。見「待決事項」第 2 與第 4 項。
+- **已決定：** WeaMind 保留 `nodeSelector`，app 只排 worker（第 1 項）；單一 uvicorn worker 定案（第 3 項）。理由見「待決事項」。
 - **目前叢集剩下的風險：** 唯一的 Traefik 與 CoreDNS 都在 `weamind-002`；那台一停，流量會中斷到它們在別處起來為止。
 - **還沒驗證的一件事：** drain 時「副本 Pending、節點回來後排回」沒有實測過。下次節點維護時觀察，並補記在「還沒驗證的假設」。
 
@@ -134,7 +134,7 @@ spread 只在排程當下檢查，事後不會修正，所以結果只是換一�
 
 ## 待決事項
 
-第 1 項已決定，其餘三項只討論過，沒有決定。
+第 1 與第 3 項已決定，其餘兩項只討論過，沒有決定。
 
 1. **要不要拿掉 WeaMind 的 `nodeSelector`，讓它也能排到 control plane。** **已決定（Kyo，2026-11-14）：不拿掉，app 只排 worker。** 這是個人 side project，為了省成本讓平台元件使用 control plane 的閒置容量，但 app 留在 worker。理由：
    - 眼前要解的「兩個副本同時倒」靠 spread 加 PDB 就夠，不需要多餘容量。拿掉 `nodeSelector` 只多換到「維護期間維持 2 個副本」。
@@ -143,7 +143,12 @@ spread 只在排程當下檢查，事後不會修正，所以結果只是換一�
 
    重新考慮的時機：第二個服務進來、兩台 worker 放不下時。屆時每個 workload 都要寫 memory request 與 limit；另外現在的做法是 app 自己用 `nodeSelector` 避開，新服務忘了寫就會被排上 `weamind-001`。
 2. **Traefik 與 CoreDNS 要不要改成兩個副本。** 它們才是入口路徑上的單點；WeaMind 分散之後，Traefik 所在的節點重開仍會讓流量中斷到它在別台起來。Traefik 在 K3s 要用 `HelmChartConfig` 覆寫。如果計畫內維護可以接受短暫中斷，就不必做。
-3. **單一 uvicorn worker 要定案還是改回多 worker。** `manifests/deployment.yaml` 的註解寫「Step 3 診斷：先用單 worker 驗證」，是排查指標問題時留下的暫時設定。它因此沒有寫進 `CHANGELOG.md` 的 `1.0.0` 基準。
+3. **單一 uvicorn worker 要定案還是改回多 worker。** **已決定（Kyo，2026-11-14）：定案為每個 Pod 一個 worker。** 理由：
+   - 擴展靠副本數，在叢集層級處理，不在容器內再疊一層 process manager。目前副本數固定為 2，沒有 HPA。
+   - 多 worker 時每個行程各有自己的 in-memory counter，Prometheus 每次 scrape 打到不同 worker，`increase()` 會把跳動誤判成 counter reset（見 `review/notes-04.md`）。
+   - requests、limits、探針、PDB 與 topology spread 都以 Pod 為單位，一個 Pod 一個行程時這些設定描述的才是同一個東西。
+
+   `manifests/deployment.yaml` 的註解原本寫「Step 3 診斷：先用單 worker 驗證」，已改成設計理由；`--workers` 的值沒變，沒有觸發 rollout。這個決定沒有寫進 `CHANGELOG.md`：叢集狀態沒變，`1.0.0` 基準當初刪掉的那一項也沒有補回。
 4. **實作 GitOps。** Argo CD 已安裝但沒有任何 Application，計畫在 `docs/gitops-implementation-checklist.md`。已確認的原則：Argo CD 追 `main`、實作後禁止手動 `kubectl apply`、tag 在 Synced 且 Healthy 之後才打。版號是 minor（Kyo 於 2026-11-14 確定）：它引進新機制，但不到 major。先前寫的「預期是 `v2.0.0`」是 AI 的推測，不是 Kyo 的決定。
 
 想立刻解除目前「兩個副本同在一台」的狀態、又不想先做待辦一的話，可以 `kubectl -n weamind rollout restart deploy/weamind`。沒有 spread 規則時不保證分到兩台，而且下次維護後又會回到原狀。這個指令會更動叢集，要 Kyo 同意才執行。
